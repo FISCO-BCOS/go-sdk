@@ -1,0 +1,11 @@
+# this is a default template for the console,
+# you can just edit the config on this file
+
+# the chain ID must be the same as the connected node had set
+FISCOChainID: 1
+
+# the group ID should be set as the connected node belongs
+GroupID: 1
+
+# RPC url with the port
+RPCurl: "http://localhost:8545"
