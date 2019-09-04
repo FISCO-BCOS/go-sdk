@@ -23,8 +23,8 @@ import (
 	"crypto/elliptic"
 	"fmt"
 	
-	"github.com/KasperLiu/gobcos/common/math"
-	"github.com/KasperLiu/gobcos/crypto/secp256k1"
+	"github.com/FISCO-BCOS/go-sdk/common/math"
+	"github.com/FISCO-BCOS/go-sdk/crypto/secp256k1"
 )
 
 // Ecrecover returns the uncompressed public key that created the given signature.

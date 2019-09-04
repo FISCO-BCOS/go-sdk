@@ -16,7 +16,7 @@
 
 package bind
 
-import "github.com/KasperLiu/gobcos/accounts/abi" 
+import "github.com/FISCO-BCOS/go-sdk/accounts/abi" 
 
 // tmplData is the data structure required to fill the binding template.
 type tmplData struct {
@@ -88,11 +88,11 @@ import (
 	"math/big"
 	"strings"
 	
-	"github.com/KasperLiu/gobcos/accounts/abi"
-	"github.com/KasperLiu/gobcos/accounts/abi/bind"
-	"github.com/KasperLiu/gobcos/core/types"
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/event"
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

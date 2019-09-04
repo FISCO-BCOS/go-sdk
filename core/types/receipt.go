@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"encoding/json"
 
-	"github.com/KasperLiu/gobcos/common"
+	"github.com/FISCO-BCOS/go-sdk/common"
 )
 
 // Receipt represents the results of a transaction.

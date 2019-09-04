@@ -28,9 +28,9 @@ import (
 	"math/big"
 	"os"
 	
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/common/math"
-	"github.com/KasperLiu/gobcos/rlp"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/common/math"
+	"github.com/FISCO-BCOS/go-sdk/rlp"
 	"golang.org/x/crypto/sha3"
 )
 

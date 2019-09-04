@@ -6,8 +6,8 @@ import (
 	"errors"
 	"math/big"
 	
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/common/hexutil"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 )
 
 var _ = (*rawtxdataMarshaling)(nil)

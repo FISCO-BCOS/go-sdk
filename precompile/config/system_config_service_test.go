@@ -4,9 +4,9 @@ import (
 	"testing"
 	"context"
 
-	"github.com/KasperLiu/gobcos/client"
-	"github.com/KasperLiu/gobcos/crypto"
-	"github.com/KasperLiu/gobcos/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
 )
 
 func TestSetValueByKey(t *testing.T) {

@@ -11,7 +11,7 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 - 部署、查询、写入智能合约
 - 控制台
 
-`gobcos`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS。
+`go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS。
 
 # 环境准备
 
@@ -23,8 +23,8 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 在使用控制台需要先拉取代码或下载代码，然后对配置文件`gobcos_config.yaml`进行更改:
 
 ```bash
-git clone https://github.com/KasperLiu/gobcos.git
-cd gobcos
+git clone https://github.com/FISCO-BCOS/go-sdk.git
+cd go-sdk
 
 #nano gobcos_config.yaml
 ```
@@ -56,10 +56,10 @@ gobcos help
 
 # Package功能使用
 
-以下的示例是通过`import`的方式来使用`gobcos`，如引入RPC控制台库:
+以下的示例是通过`import`的方式来使用`go-sdk`，如引入RPC控制台库:
 
 ```go
-import "github.com/KasperLiu/gobcos/client"
+import "github.com/FISCO-BCOS/go-sdk/client"
 ```
 
 ## RPC API 测试
@@ -69,7 +69,7 @@ import "github.com/KasperLiu/gobcos/client"
 首先需要拉取代码：
 
 ```shell
-git clone https://github.com/KasperLiu/gobcos.git
+git clone https://github.com/FISCO-BCOS/go-sdk.git
 ```
 
 进行代码测试前，请先按照实际部署节点的RPC URL更改`client/goclient_test.go`中的默认的FISCO BCOS RPC连接以及群组ID：
@@ -109,10 +109,10 @@ go test -v -count=1 ./client
 
 ## JSON-RPC API调用
 
-在测试成功后，可以在用户的工程项目中引用gobcos的RPC客户端，以调用RPC方法，所有的方法返回的是`[]byte`，用户可根据实际需要做进一步的JSON解析：
+在测试成功后，可以在用户的工程项目中引用go-sdk的RPC客户端，以调用RPC方法，所有的方法返回的是`[]byte`，用户可根据实际需要做进一步的JSON解析：
 
 ```go
-import "github.com/KasperLiu/gobcos/client"
+import "github.com/FISCO-BCOS/go-sdk/client"
 ```
 
 下面假设有一个`block.go`文件需要获取FISCO BCOS 区块链的某一个区块的信息，则在引入客户端代码包后首先需要初始化客户端，提供需要连接的FISCO BCOS区块链的RPC URL及群组ID：
@@ -121,7 +121,7 @@ import "github.com/KasperLiu/gobcos/client"
 package main
 import (
     "context"
-    "github.com/KasperLiu/gobcos/client"
+    "github.com/FISCO-BCOS/go-sdk/client"
 )
 
 func main() {
@@ -133,7 +133,7 @@ func main() {
 }
 ```
 
-然后可按照FISCO BCOS的[RPC API文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#)进行区块链信息查询，需要注意的是，gobcos客服端的RPC方法调用需要将API文档里的方法首字母更改为大写字母`Get`：
+然后可按照FISCO BCOS的[RPC API文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#)进行区块链信息查询，需要注意的是，go-sdk客服端的RPC方法调用需要将API文档里的方法首字母更改为大写字母`Get`：
 
 ```go
 blockHash := "0xc0b21d064b97bafda716e07785fe8bb20cc23506bb980f12c7f7a4f4ef50ce30" # fake hash
@@ -154,11 +154,11 @@ client.GetBlockNumber(context.BackGround()) # get the lastest block number of th
 
 ## Solidity合约编译为Go文件
 
-在利用SDK进行项目开发时，对智能合约进行操作时需要将Solidity智能合约利用gobcos的`abigen`工具转换为`Go`文件代码。整体上主要包含了五个流程：
+在利用SDK进行项目开发时，对智能合约进行操作时需要将Solidity智能合约利用go-sdk的`abigen`工具转换为`Go`文件代码。整体上主要包含了五个流程：
 
 - 准备需要编译的智能合约
 - 配置好相应版本的`solc`编译器
-- 构建gobcos的合约编译工具`abigen`
+- 构建go-sdk的合约编译工具`abigen`
 - 编译生成go文件
 - 使用生成的go文件进行合约调用
 
@@ -194,11 +194,11 @@ solc --version
 # Version: 0.4.25+commit.59dbf8f1.Linux.g++
 ```
 
-3.构建`gobcos`的代码生成工具`abigen`
+3.构建`go-sdk`的代码生成工具`abigen`
 
 ```bash
-git clone https://github.com/KasperLiu/gobcos.git # 下载gobcos代码，如已下载请跳过
-cd gobcos # 进入代码目录
+git clone https://github.com/FISCO-BCOS/go-sdk.git # 下载go-sdk代码，如已下载请跳过
+cd go-sdk # 进入代码目录
 go build ./cmd/abigen # 编译生成abigen工具
 ```
 
@@ -238,7 +238,7 @@ abigen  Store.abi  Store.bin  Store.go  Store.sol
 
 ### 创建外部账户
 
-SDK发送交易需要一个外部账户，导入gobcos的`crypto`包，该包提供用于生成随机私钥的`GenerateKey`方法：
+SDK发送交易需要一个外部账户，导入go-sdk的`crypto`包，该包提供用于生成随机私钥的`GenerateKey`方法：
 
 ```go
 privateKey, err := crypto.GenerateKey()
@@ -253,7 +253,7 @@ if err != nil {
 privateKeyBytes := crypto.FromECDSA(privateKey)
 ```
 
-我们现在可以使用gobcos的`common/hexutil`包将它转换为十六进制字符串，该包提供了一个带有字节切片的`Encode`方法。 然后我们在十六进制编码之后删除“0x”。
+我们现在可以使用go-sdk的`common/hexutil`包将它转换为十六进制字符串，该包提供了一个带有字节切片的`Encode`方法。 然后我们在十六进制编码之后删除“0x”。
 
 ```go
 fmt.Println(hexutil.Encode(privateKeyBytes)[2:])
@@ -298,8 +298,8 @@ import (
     "fmt"
     "log"
     "os"
-    "github.com/KasperLiu/gobcos/crypto"
-    "github.com/KasperLiu/gobcos/common/hexutil"
+    "github.com/FISCO-BCOS/go-sdk/crypto"
+    "github.com/FISCO-BCOS/go-sdk/common/hexutil"
 )
 
 func main() {
@@ -336,7 +336,7 @@ touch contract_run.go
 go mod init contract
 ```
 
-此时目录下会生成`go.mod`包管理文件。而在`contract_deploy.go`部署合约之前，需要先从`gobcos`中导入`accounts/abi/bind`包，然后调用传入私钥的`NewKeyedTransactor`：
+此时目录下会生成`go.mod`包管理文件。而在`contract_deploy.go`部署合约之前，需要先从`go-sdk`中导入`accounts/abi/bind`包，然后调用传入私钥的`NewKeyedTransactor`：
 
 ```go 
 package main
@@ -344,9 +344,9 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/KasperLiu/gobcos/client"
-    "github.com/KasperLiu/gobcos/accounts/abi/bind"
-    "github.com/KasperLiu/gobcos/crypto"
+    "github.com/FISCO-BCOS/go-sdk/client"
+    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+    "github.com/FISCO-BCOS/go-sdk/crypto"
     store "contract/testfile" // import Store.go
 )
 
@@ -381,8 +381,8 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/KasperLiu/gobcos/common"
-    "github.com/KasperLiu/gobcos/client"
+    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/FISCO-BCOS/go-sdk/client"
     store "contract/testfile" // for demo
 )
 
@@ -413,9 +413,9 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/KasperLiu/gobcos/common"
-    "github.com/KasperLiu/gobcos/client"
-    "github.com/KasperLiu/gobcos/accounts/abi/bind"
+    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/FISCO-BCOS/go-sdk/client"
+    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
     store "contract/testfile" // for demo
 )
 
@@ -454,10 +454,10 @@ import (
     "fmt"
     "log"
     "context"
-    "github.com/KasperLiu/gobcos/common"
-    "github.com/KasperLiu/gobcos/client"
-    "github.com/KasperLiu/gobcos/accounts/abi/bind"
-    "github.com/KasperLiu/gobcos/crypto"
+    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/FISCO-BCOS/go-sdk/client"
+    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+    "github.com/FISCO-BCOS/go-sdk/crypto"
     store "contract/testfile" // for demo
 )
 

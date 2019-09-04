@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/KasperLiu/gobcos/cmd/console"
+import "github.com/FISCO-BCOS/go-sdk/cmd/console"
 
 func main() {
   console.Execute()

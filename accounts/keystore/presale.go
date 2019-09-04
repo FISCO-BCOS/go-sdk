@@ -25,8 +25,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/KasperLiu/gobcos/accounts"
-	"github.com/KasperLiu/gobcos/crypto"
+	"github.com/FISCO-BCOS/go-sdk/accounts"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 )
