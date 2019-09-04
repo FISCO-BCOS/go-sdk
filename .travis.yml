@@ -1,0 +1,14 @@
+language: go
+
+go:
+- 1.12.x
+
+env:
+- GO111MODULE=on
+
+install: go mod tidy
+
+script: bash -x ci_check.sh
+
+notifications:
+  email: false
