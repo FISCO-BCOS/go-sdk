@@ -40,7 +40,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/KasperLiu/gobcos/crypto"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 )
 
 var dumpEnc bool

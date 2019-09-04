@@ -23,10 +23,10 @@ import (
 	"os"
 	"strings"
 	
-	"github.com/KasperLiu/gobcos/accounts/abi/bind"
-	"github.com/KasperLiu/gobcos/cmd/utils"
-	"github.com/KasperLiu/gobcos/common/compiler"
-	"github.com/KasperLiu/gobcos/crypto"
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/cmd/utils"
+	"github.com/FISCO-BCOS/go-sdk/common/compiler"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 	"gopkg.in/urfave/cli.v1"
 )
 

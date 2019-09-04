@@ -23,7 +23,7 @@ import (
 	"math/big"
 
 	"github.com/spf13/cobra"
-	"github.com/KasperLiu/gobcos/common/hexutil"
+	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 )
 
 

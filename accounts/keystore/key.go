@@ -28,9 +28,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"github.com/KasperLiu/gobcos/accounts"
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/crypto"
+	"github.com/FISCO-BCOS/go-sdk/accounts"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 
 	"github.com/pborman/uuid"
 )
