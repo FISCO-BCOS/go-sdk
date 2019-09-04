@@ -4,8 +4,8 @@ import (
 	"testing"
 	"crypto/ecdsa"
 
-	"github.com/KasperLiu/gobcos/client"
-	"github.com/KasperLiu/gobcos/crypto"
+	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 )
 
 const (

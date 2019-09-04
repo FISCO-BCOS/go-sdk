@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/KasperLiu/gobcos/common"
+	"github.com/FISCO-BCOS/go-sdk/common"
 )
 
 type keyStorePlain struct {

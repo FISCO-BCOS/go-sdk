@@ -22,9 +22,9 @@ import (
 	"reflect"
 	"testing"
 	
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/common/hexutil"
-	"github.com/KasperLiu/gobcos/common/math"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
+	"github.com/FISCO-BCOS/go-sdk/common/math"
 )
 
 var (

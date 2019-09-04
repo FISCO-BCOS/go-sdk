@@ -1,4 +1,4 @@
-module github.com/KasperLiu/gobcos
+module github.com/FISCO-BCOS/go-sdk
 
 go 1.12
 

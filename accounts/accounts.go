@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/KasperLiu/gobcos/core/types"
-	"github.com/KasperLiu/gobcos/common"
-	"github.com/KasperLiu/gobcos/event"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/event"
 	"golang.org/x/crypto/sha3"
 )
 

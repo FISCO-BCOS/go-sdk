@@ -30,7 +30,7 @@ import (
 	"text/template"
 	"unicode"
 	
-	"github.com/KasperLiu/gobcos/accounts/abi"
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
 )
 
 // Lang is a target programming language selector to generate bindings for.

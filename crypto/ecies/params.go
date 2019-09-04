@@ -42,7 +42,7 @@ import (
 	"fmt"
 	"hash"
 
-	ethcrypto "github.com/KasperLiu/gobcos/crypto"
+	ethcrypto "github.com/FISCO-BCOS/go-sdk/crypto"
 )
 
 var (
