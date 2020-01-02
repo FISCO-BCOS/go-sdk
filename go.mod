@@ -6,7 +6,6 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 	github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 	github.com/deckarep/golang-set v1.7.1
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.0
 	github.com/rjeczalik/notify v0.9.2
 	github.com/spf13/cobra v0.0.5

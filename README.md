@@ -20,13 +20,11 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
 # 控制台使用
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`gobcos_config.yaml`进行更改:
+在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.yaml`进行更改:
 
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
-
-#nano gobcos_config.yaml
 ```
 
 本项目使用了`go module`的[特性](https://blog.golang.org/using-go-modules)，可以在旧版本的`$GOPATH`路径之外直接运行`go`命令，如果项目仍然在`$GOPATH`路径之下，则需要显示开启`GO111MODULE`以支持该特性:
@@ -38,7 +36,7 @@ export GO111MODULE=on
 编译代码后会在`$GOBIN`下生成控制台程序，请确保添加`$GOBIN`到系统路径`$PATH`中，关于`$GOBIN`等的设置可以[参考这里](https://www.cnblogs.com/zhaof/p/7906722.html)，以便能正常执行`go`生成的程序:
 
 ```go
-go install gobcos.go
+go build console.go
 ```
 
 如果不能访问外网，则可以设置开源代理进行依赖下载(需使用`go module`的特性)：

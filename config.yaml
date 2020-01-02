@@ -1,0 +1,17 @@
+# this is a default template for the console,
+# you can just edit the config on this file
+
+# connections type, rpc or channel
+ConnectionType: rpc
+
+# node's ip and port
+NodeURL: "http://127.0.0.1:8545"
+
+# the group ID should be set as the connected node belongs
+GroupID: 1
+
+# use sm scypto algorithm
+SMCrypto: false
+
+# the chain ID must be the same as the connected node had set
+ChainID: 1
