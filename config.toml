@@ -1,0 +1,21 @@
+
+[Connection]
+#type rpc or channel
+Type="rpc"
+CAFile="ca.crt"
+Key="sdk.key"
+Cert="sdk.crt"
+Nodes=["127.0.0.1:8545",]
+
+[Account]
+# only support PEM format
+KeyFile="0xa.pem"
+
+[Chain]
+# if use sm scypto algorithm
+SMCrypto=false
+GroupID=1
+ChainID=1
+
+[log]
+Path="./"

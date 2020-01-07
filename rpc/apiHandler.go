@@ -33,11 +33,11 @@ import (
 // APIHandler defines typed wrappers for the Ethereum RPC API.
 // TODO: make client interface
 type APIHandler struct {
-	*Client
+	*Connection
 }
 
 // NewAPIHandler create a new API handler
-func NewAPIHandler(c *Client) *APIHandler {
+func NewAPIHandler(c *Connection) *APIHandler {
 	apiHandler := APIHandler{c}
 	return &apiHandler
 }

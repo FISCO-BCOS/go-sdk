@@ -1,19 +1,3 @@
-// Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
-
 package rpc
 
 import (
@@ -29,45 +13,37 @@ import (
 	"time"
 )
 
-const (
-	maxRequestContentLength = 1024 * 512
-	contentType             = "application/json"
-)
-
-// https://www.jsonrpc.org/historical/json-rpc-over-http.html#id13
-var acceptedContentTypes = []string{contentType, "application/json-rpc", "application/jsonrequest"}
-
-type httpConn struct {
+type channelConn struct {
 	client    *http.Client
 	req       *http.Request
 	closeOnce sync.Once
 	closed    chan interface{}
 }
 
-// httpConn is treated specially by Connection.
-func (hc *httpConn) Write(context.Context, interface{}) error {
-	panic("Write called on httpConn")
+// channelCon n is treated specially by Connection.
+func (hc *channelConn) Write(context.Context, interface{}) error {
+	panic("Write called on channelConn")
 }
 
-func (hc *httpConn) RemoteAddr() string {
+func (hc *channelConn) RemoteAddr() string {
 	return hc.req.URL.String()
 }
 
-func (hc *httpConn) Read() ([]*jsonrpcMessage, bool, error) {
+func (hc *channelConn) Read() ([]*jsonrpcMessage, bool, error) {
 	<-hc.closed
 	return nil, false, io.EOF
 }
 
-func (hc *httpConn) Close() {
+func (hc *channelConn) Close() {
 	hc.closeOnce.Do(func() { close(hc.closed) })
 }
 
-func (hc *httpConn) Closed() <-chan interface{} {
+func (hc *channelConn) Closed() <-chan interface{} {
 	return hc.closed
 }
 
-// HTTPTimeouts represents the configuration params for the HTTP RPC server.
-type HTTPTimeouts struct {
+// ChannelTimeouts represents the configuration params for the Channel RPC server.
+type ChannelTimeouts struct {
 	// ReadTimeout is the maximum duration for reading the entire
 	// request, including the body.
 	//
@@ -90,17 +66,17 @@ type HTTPTimeouts struct {
 	IdleTimeout time.Duration
 }
 
-// DefaultHTTPTimeouts represents the default timeout values used if further
+// DefaultChannelTimeouts represents the default timeout values used if further
 // configuration is not provided.
-var DefaultHTTPTimeouts = HTTPTimeouts{
+var DefaultChannelTimeouts = ChannelTimeouts{
 	ReadTimeout:  30 * time.Second,
 	WriteTimeout: 30 * time.Second,
 	IdleTimeout:  120 * time.Second,
 }
 
-// DialHTTPWithClient creates a new RPC client that connects to an RPC server over HTTP
-// using the provided HTTP Client.
-func DialHTTPWithClient(endpoint string, client *http.Client) (*Connection, error) {
+// DialChannelWithClient creates a new RPC client that connects to an RPC server over Channel
+// using the provided Channel Client.
+func DialChannelWithClient(endpoint string, client *http.Client) (*Connection, error) {
 	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -110,17 +86,17 @@ func DialHTTPWithClient(endpoint string, client *http.Client) (*Connection, erro
 
 	initctx := context.Background()
 	return newClient(initctx, func(context.Context) (ServerCodec, error) {
-		return &httpConn{client: client, req: req, closed: make(chan interface{})}, nil
+		return &channelConn{client: client, req: req, closed: make(chan interface{})}, nil
 	})
 }
 
-// DialHTTP creates a new RPC client that connects to an RPC server over HTTP.
-func DialHTTP(endpoint string) (*Connection, error) {
-	return DialHTTPWithClient(endpoint, new(http.Client))
+// DialChannel creates a new client that connects to node over tls.
+func DialChannel(endpoint string) (*Connection, error) {
+	return DialChannelWithClient(endpoint, new(http.Client))
 }
 
-func (c *Connection) sendHTTP(ctx context.Context, op *requestOp, msg interface{}) error {
-	hc := c.writeConn.(*httpConn)
+func (c *Connection) sendChannel(ctx context.Context, op *requestOp, msg interface{}) error {
+	hc := c.writeConn.(*channelConn)
 	respBody, err := hc.doRequest(ctx, msg)
 	if respBody != nil {
 		defer respBody.Close()
@@ -143,8 +119,8 @@ func (c *Connection) sendHTTP(ctx context.Context, op *requestOp, msg interface{
 	return nil
 }
 
-func (c *Connection) sendBatchHTTP(ctx context.Context, op *requestOp, msgs []*jsonrpcMessage) error {
-	hc := c.writeConn.(*httpConn)
+func (c *Connection) sendBatchChannel(ctx context.Context, op *requestOp, msgs []*jsonrpcMessage) error {
+	hc := c.writeConn.(*channelConn)
 	respBody, err := hc.doRequest(ctx, msgs)
 	if err != nil {
 		return err
@@ -160,7 +136,7 @@ func (c *Connection) sendBatchHTTP(ctx context.Context, op *requestOp, msgs []*j
 	return nil
 }
 
-func (hc *httpConn) doRequest(ctx context.Context, msg interface{}) (io.ReadCloser, error) {
+func (hc *channelConn) doRequest(ctx context.Context, msg interface{}) (io.ReadCloser, error) {
 	body, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -179,26 +155,26 @@ func (hc *httpConn) doRequest(ctx context.Context, msg interface{}) (io.ReadClos
 	return resp.Body, nil
 }
 
-// httpServerConn turns a HTTP connection into a Conn.
-type httpServerConn struct {
+// channelServerConn turns a Channel connection into a Conn.
+type channelServerConn struct {
 	io.Reader
 	io.Writer
 	r *http.Request
 }
 
-func newHTTPServerConn(r *http.Request, w http.ResponseWriter) ServerCodec {
+func newChannelServerConn(r *http.Request, w http.ResponseWriter) ServerCodec {
 	body := io.LimitReader(r.Body, maxRequestContentLength)
-	conn := &httpServerConn{Reader: body, Writer: w, r: r}
+	conn := &channelServerConn{Reader: body, Writer: w, r: r}
 	return NewJSONCodec(conn)
 }
 
 // Close does nothing and always returns nil.
-func (t *httpServerConn) Close() error { return nil }
+func (t *channelServerConn) Close() error { return nil }
 
 // RemoteAddr returns the peer address of the underlying connection.
-func (t *httpServerConn) RemoteAddr() string {
+func (t *channelServerConn) RemoteAddr() string {
 	return t.r.RemoteAddr
 }
 
 // SetWriteDeadline does nothing and always returns nil.
-func (t *httpServerConn) SetWriteDeadline(time.Time) error { return nil }
+func (t *channelServerConn) SetWriteDeadline(time.Time) error { return nil }

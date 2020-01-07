@@ -20,8 +20,8 @@ import (
 	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var cfgFile string
@@ -42,9 +42,9 @@ var URL string
 var PrivateKey = "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58"
 
 // GetClient is used for test, it will be init by a config file later.
-func getClient(url string, groupID uint, chainID int64) *client.Client {
+func getClient(config *conf.Config) *client.Client {
 	// RPC API
-	c, err := client.Dial(url, groupID, chainID) // change to your RPC and groupID
+	c, err := client.Dial(config) // change to your RPC and groupID
 	if err != nil {
 		fmt.Println("can not dial to FISCO node, please check ./config.yaml. error message: ", err)
 		os.Exit(1)
@@ -89,7 +89,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.toml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -98,44 +98,6 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		// home, err := homedir.Dir()
-		// if err != nil {
-		//   fmt.Println(err)
-		//   os.Exit(1)
-		// }
-
-		// Search config in current directory with name "config" (without extension).
-		viper.AddConfigPath(".")
-		viper.SetConfigName("config")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		if viper.IsSet("GroupID") {
-			GroupID = uint(viper.GetInt("GroupID"))
-		} else {
-			fmt.Println("GroupID has not been set, please check the GroupID in config.yaml")
-			os.Exit(1)
-		}
-		if viper.IsSet("NodeURL") {
-			URL = viper.GetString("NodeURL")
-		} else {
-			fmt.Println("NodeURL has not been set, please check the NodeURL in config.yaml")
-			os.Exit(1)
-		}
-		if viper.IsSet("ChainID") {
-			ChainID = int64(viper.GetInt("ChainID"))
-		} else {
-			fmt.Println("ChainID has not been set, please check the ChainID in config.yaml")
-			os.Exit(1)
-		}
-		RPC = getClient(URL, GroupID, ChainID)
-	}
+	config := conf.ParseConfig("config.toml")
+	RPC = getClient(config)
 }

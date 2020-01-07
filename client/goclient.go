@@ -1,18 +1,17 @@
-// Copyright 2016 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
+// @CopyRight:
+// FISCO-BCOS go-sdk is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// FISCO-BCOS go-sdk is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with FISCO-BCOS go-sdk.  If not, see <http://www.gnu.org/licenses/>
+// (c) 2016-2018 fisco-dev contributors.
 
 // Package client provides a client for the FISCO BCOS RPC API.
 package client
@@ -22,12 +21,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/rpc"
 	"math/big"
 	"strconv"
+
+	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/rpc"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
@@ -39,13 +40,13 @@ type Client struct {
 }
 
 // Dial connects a client to the given URL and groupID.
-func Dial(rawurl string, groupID uint, chainID int64) (*Client, error) {
-	return DialContext(context.Background(), rawurl, groupID, chainID)
+func Dial(config *conf.Config) (*Client, error) {
+	return DialContext(context.Background(), config)
 }
 
 // DialContext pass the context to the rpc client
-func DialContext(ctx context.Context, rawurl string, groupID uint, chainID int64) (*Client, error) {
-	c, err := rpc.DialContext(ctx, rawurl)
+func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
+	c, err := rpc.DialContext(ctx, config.URLs[0], config.IsHTTP)
 	if err != nil {
 		return nil, err
 	}
@@ -71,10 +72,10 @@ func DialContext(ctx context.Context, rawurl string, groupID uint, chainID int64
 	if ok != true {
 		return nil, errors.New("Json respond does not contains the key : Chain Id")
 	}
-	if chainID != nodeChainID {
-		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(chainID))
+	if config.ChainID != nodeChainID {
+		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	}
-	client := Client{apiHandler: apiHandler, groupID: groupID, compatibleVersion: compatibleVersion, chainID: chainID}
+	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID}
 	return &client, nil
 }
 
