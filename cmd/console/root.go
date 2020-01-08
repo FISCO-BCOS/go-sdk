@@ -98,6 +98,6 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	config := conf.ParseConfig("config.toml")
-	RPC = getClient(config)
+	configs := conf.ParseConfig("config.toml")
+	RPC = getClient(&configs[0])
 }

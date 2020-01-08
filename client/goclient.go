@@ -34,7 +34,7 @@ import (
 // Client defines typed wrappers for the Ethereum RPC API.
 type Client struct {
 	apiHandler        *rpc.APIHandler
-	groupID           uint
+	groupID           int
 	chainID           int64
 	compatibleVersion string
 }
@@ -46,7 +46,13 @@ func Dial(config *conf.Config) (*Client, error) {
 
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
-	c, err := rpc.DialContext(ctx, config.URLs[0], config.IsHTTP)
+	var c *rpc.Connection
+	var err error
+	if config.IsHTTP {
+		c, err = rpc.DialContextHTTP(config.NodeURL)
+	} else {
+		c, err = rpc.DialContextChannel(config.NodeURL, config.CAFile, config.Cert, config.Key, config.GroupID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +187,7 @@ func (gc *Client) GetGroupID() *big.Int {
 }
 
 // SetGroupID sets the groupID of the client
-func (gc *Client) SetGroupID(newID uint) {
+func (gc *Client) SetGroupID(newID int) {
 	gc.groupID = newID
 }
 

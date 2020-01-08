@@ -21,11 +21,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/bxq2011hust/fisco-tls/crypto/tls"
+	"github.com/bxq2011hust/fisco-tls/crypto/x509"
 )
 
 var (
@@ -146,28 +150,38 @@ func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, 
 	}
 }
 
-// Dial creates a new client for the given URL.
-//
-// The currently supported URL schemes are "http", "https".
-//
-// The client reconnects automatically if the connection is lost.
-func Dial(rawurl string) (*Connection, error) {
-	return DialContext(context.Background(), rawurl, true)
-}
-
-// DialContext creates a new RPC client, just like Dial.
+// DialContextHTTP creates a new RPC client, just like Dial.
 //
 // The context is used to cancel or time out the initial connection establishment. It does
 // not affect subsequent interactions with the client.
-func DialContext(ctx context.Context, rawurl string, isHTTP bool) (*Connection, error) {
+func DialContextHTTP(rawurl string) (*Connection, error) {
 	rawurl = strings.ToLower(rawurl)
-	if isHTTP {
-		if !strings.Contains(rawurl, "http://") {
-			rawurl = "http://" + rawurl
-		}
-		return DialHTTP(rawurl)
+	if !strings.Contains(rawurl, "http://") {
+		rawurl = "http://" + rawurl
 	}
-	return DialChannel(rawurl)
+	return DialHTTP(rawurl)
+}
+
+// DialContextChannel creates a new Channel client, just like Dial.
+func DialContextChannel(rawurl, caFile, certFile, keyFile string, groupID int) (*Connection, error) {
+	roots := x509.NewCertPool()
+	rootPEM, err := ioutil.ReadFile(caFile)
+	if err != nil {
+		panic(err)
+	}
+	ok := roots.AppendCertsFromPEM([]byte(rootPEM))
+	if !ok {
+		panic("failed to parse root certificate")
+	}
+	cer, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		// log.Println(err)
+		return nil, err
+	}
+	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
+		InsecureSkipVerify: true}
+	config.CurvePreferences = append(config.CurvePreferences, tls.CurveSecp256k1)
+	return DialChannelWithClient(rawurl, config, groupID)
 }
 
 // ClientFromContext Connection retrieves the client from the context, if any. This can be used to perform
@@ -204,9 +218,10 @@ func initClient(conn ServerCodec, idgen func() ID, services *serviceRegistry) *C
 		reqSent:     make(chan error, 1),
 		reqTimeout:  make(chan *requestOp),
 	}
-	if !isHTTP {
-		go c.dispatch(conn)
-	}
+	// FIXME: remove substration releated code
+	// if !isHTTP {
+	// 	go c.dispatch(conn)
+	// }
 	return c
 }
 
@@ -270,7 +285,9 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	if c.isHTTP {
 		err = c.sendHTTP(ctx, op, msg)
 	} else {
-		err = c.send(ctx, op, msg)
+		err = c.sendRPCRequest(ctx, op, msg)
+		// FIXME: remove substration releated code
+		// err = c.send(ctx, op, msg)
 	}
 	if err != nil {
 		return err

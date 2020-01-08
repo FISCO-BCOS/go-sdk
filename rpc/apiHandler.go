@@ -36,6 +36,10 @@ type APIHandler struct {
 	*Connection
 }
 
+const (
+	indent = "  "
+)
+
 // NewAPIHandler create a new API handler
 func NewAPIHandler(c *Connection) *APIHandler {
 	apiHandler := APIHandler{c}
@@ -71,7 +75,7 @@ type callResult struct {
 }
 
 // Call invoke the call method of rpc api
-func (api *APIHandler) Call(ctx context.Context, groupID uint, msg common.CallMsg) ([]byte, error) {
+func (api *APIHandler) Call(ctx context.Context, groupID int, msg common.CallMsg) ([]byte, error) {
 	var hex hexutil.Bytes
 	var cr *callResult
 	err := api.CallContext(ctx, &cr, "call", groupID, toCallArg(msg))
@@ -86,7 +90,7 @@ func (api *APIHandler) Call(ctx context.Context, groupID uint, msg common.CallMs
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID uint, tx *types.RawTransaction) error {
+func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.RawTransaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
@@ -97,7 +101,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID uint, tx 
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
-func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID uint, txHash common.Hash) (*types.Receipt, error) {
+func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHash common.Hash) (*types.Receipt, error) {
 	var r *types.Receipt
 	err := api.CallContext(ctx, &r, "getTransactionReceipt", groupID, txHash.Hex())
 	if err == nil {
@@ -115,7 +119,7 @@ func (api *APIHandler) GetClientVersion(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
@@ -151,18 +155,18 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 }
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
-func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) ([]byte, error) {
 	var raw string
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetBlockLimit returns the blocklimit for current blocknumber
-func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID uint) (*big.Int, error) {
+func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID int) (*big.Int, error) {
 	defaultNumber := big.NewInt(500)
 	var raw hexutil.Big
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
@@ -174,13 +178,13 @@ func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID uint) (*big.In
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
 // if the consensus algorithm is not the PBFT.
-func (api *APIHandler) GetPBFTView(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetPBFTView(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getPbftView", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 
 	// TODO
@@ -188,79 +192,79 @@ func (api *APIHandler) GetPBFTView(ctx context.Context, groupID uint) ([]byte, e
 }
 
 // GetSealerList returns the list of consensus nodes' ID according to the groupID
-func (api *APIHandler) GetSealerList(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetSealerList(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getSealerList", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetObserverList returns the list of observer nodes' ID according to the groupID
-func (api *APIHandler) GetObserverList(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetObserverList(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getObserverList", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetConsensusStatus returns the status information about the consensus algorithm on a specific groupID
-func (api *APIHandler) GetConsensusStatus(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetConsensusStatus(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getConsensusStatus", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetSyncStatus returns the synchronization status of the group
-func (api *APIHandler) GetSyncStatus(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetSyncStatus(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getSyncStatus", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetPeers returns the information of the connected peers
-func (api *APIHandler) GetPeers(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetPeers(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getPeers", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetGroupPeers returns the nodes and the overser nodes list on a specific group
-func (api *APIHandler) GetGroupPeers(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetGroupPeers(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getGroupPeers", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetNodeIDList returns the ID information of the connected peers and itself
-func (api *APIHandler) GetNodeIDList(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetNodeIDList(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getNodeIDList", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
@@ -271,91 +275,91 @@ func (api *APIHandler) GetGroupList(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetBlockByHash returns the block information according to the given block hash
-func (api *APIHandler) GetBlockByHash(ctx context.Context, groupID uint, bhash string, includetx bool) ([]byte, error) {
+func (api *APIHandler) GetBlockByHash(ctx context.Context, groupID int, bhash string, includetx bool) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getBlockByHash", groupID, bhash, includetx)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
-func (api *APIHandler) GetBlockByNumber(ctx context.Context, groupID uint, bnum string, includetx bool) ([]byte, error) {
+func (api *APIHandler) GetBlockByNumber(ctx context.Context, groupID int, bnum string, includetx bool) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getBlockByNumber", groupID, bnum, includetx)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetBlockHashByNumber returns the block hash according to the given block number
-func (api *APIHandler) GetBlockHashByNumber(ctx context.Context, groupID uint, bnum string) ([]byte, error) {
+func (api *APIHandler) GetBlockHashByNumber(ctx context.Context, groupID int, bnum string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getBlockHashByNumber", groupID, bnum)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
-func (api *APIHandler) GetTransactionByHash(ctx context.Context, groupID uint, txhash string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByHash(ctx context.Context, groupID int, txhash string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getTransactionByHash", groupID, txhash)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
-func (api *APIHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, groupID uint, bhash string, txindex string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, groupID int, bhash string, txindex string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getTransactionByBlockHashAndIndex", groupID, bhash, txindex)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
-func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, groupID uint, bnum string, txindex string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, groupID int, bnum string, txindex string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getTransactionByBlockNumberAndIndex", groupID, bnum, txindex)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
-func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID uint, txhash string) (*types.Receipt, error) {
+func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, txhash string) (*types.Receipt, error) {
 	var raw *types.Receipt
 	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txhash)
 	if err != nil {
 		return nil, err
 	}
-	// js, err := json.MarshalIndent(raw, "", "\t")
+	// js, err := json.MarshalIndent(raw, "", indent)
 	return raw, err
 }
 
 // GetContractAddress returns a contract address according to the transaction hash
-func (api *APIHandler) GetContractAddress(ctx context.Context, groupID uint, txhash string) (common.Address, error) {
+func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txhash string) (common.Address, error) {
 	var raw interface{}
 	var contractAddress common.Address
 	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txhash)
@@ -380,56 +384,56 @@ func (api *APIHandler) GetContractAddress(ctx context.Context, groupID uint, txh
 }
 
 // GetPendingTransactions returns information of the pending transactions
-func (api *APIHandler) GetPendingTransactions(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetPendingTransactions(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getPendingTransactions", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetPendingTxSize returns amount of the pending transactions
-func (api *APIHandler) GetPendingTxSize(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetPendingTxSize(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getPendingTxSize", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetCode returns the contract code according to the contract address
-func (api *APIHandler) GetCode(ctx context.Context, groupID uint, addr string) ([]byte, error) {
+func (api *APIHandler) GetCode(ctx context.Context, groupID int, addr string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getCode", groupID, addr)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetTotalTransactionCount returns the totoal amount of transactions and the block height at present
-func (api *APIHandler) GetTotalTransactionCount(ctx context.Context, groupID uint) ([]byte, error) {
+func (api *APIHandler) GetTotalTransactionCount(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getTotalTransactionCount", groupID)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }
 
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
-func (api *APIHandler) GetSystemConfigByKey(ctx context.Context, groupID uint, configKey string) ([]byte, error) {
+func (api *APIHandler) GetSystemConfigByKey(ctx context.Context, groupID int, configKey string) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getSystemConfigByKey", groupID, configKey)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", "\t")
+	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
 }

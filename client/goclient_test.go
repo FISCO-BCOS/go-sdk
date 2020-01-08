@@ -3,12 +3,13 @@ package client
 import (
 	"testing"
 	"context"
+	"github.com/FISCO-BCOS/go-sdk/conf"
 )
 
 func GetClient(t *testing.T) (*Client) {
+	config := &conf.Config{IsHTTP:true,ChainID:1,IsSMCrypto:false,ConnInfo:conf.Connection{GroupID:1,NodeURL:"http://localhost:8545"}}
 	// RPC API
-	groupID := uint(1)
-	c, err := Dial("http://localhost:8545", groupID)  // change to your RPC and groupID
+	c, err := Dial(config)  // change to your RPC and groupID
 	if err != nil {
 		t.Fatalf("can not dial to the RPC API: %v", err)
 	}

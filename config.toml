@@ -1,21 +1,24 @@
 
-[Connection]
+[Network]
 #type rpc or channel
-Type="rpc"
+Type="channel"
 CAFile="ca.crt"
 Key="sdk.key"
 Cert="sdk.crt"
-Nodes=["127.0.0.1:8545",]
+[[Network.Connection]]
+NodeURL="127.0.0.1:20200"
+GroupID=1
+# [[Network.Connection]]
+# NodeURL="127.0.0.1:20200"
+# GroupID=2
 
 [Account]
-# only support PEM format
+# only support PEM format for now
 KeyFile="0xa.pem"
 
 [Chain]
-# if use sm scypto algorithm
-SMCrypto=false
-GroupID=1
 ChainID=1
+SMCrypto=false
 
 [log]
 Path="./"
