@@ -16,12 +16,12 @@ import (
 	"sync"
 	"time"
 
-	tls "github.com/bxq2011hust/fisco-tls/crypto/tls"
+	tls "github.com/bxq2011hust/crypto/tls"
 	"github.com/google/uuid"
 )
 
 const (
-	macTopicLength      = 254
+	maxTopicLength      = 254
 	messageHeaderLength = 42
 	protocolVersion     = 2
 	clientType          = "Go-SDK"
@@ -107,7 +107,7 @@ func newChannelMessage(msgType uint16, body []byte) (*channelMessage, error) {
 }
 
 func newTopicMessage(t string, data []byte, msgType uint16) (*channelMessage, error) {
-	if len(t) > macTopicLength {
+	if len(t) > maxTopicLength {
 		return nil, fmt.Errorf("topic length exceeds 255")
 	}
 	topic := &topicData{length: uint8(len(t)) + 1, topic: t, data: data}

@@ -28,8 +28,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bxq2011hust/fisco-tls/crypto/tls"
-	"github.com/bxq2011hust/fisco-tls/crypto/x509"
+	"github.com/bxq2011hust/crypto/tls"
+	"github.com/bxq2011hust/crypto/x509"
 )
 
 var (

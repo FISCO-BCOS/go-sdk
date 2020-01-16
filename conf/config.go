@@ -60,9 +60,22 @@ func ParseConfig(cfgFile string) []Config {
 			os.Exit(1)
 		}
 		if viper.IsSet("Account") {
-			// accountKeyFile := viper.GetString("Account.KeyFile")
-			// FIXME: parse private key from pem file
-			config.PrivateKey = "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58"
+			accountKeyFile := viper.GetString("Account.KeyFile")
+			keyHex, curve, err := LoadECPrivateKeyFromPEM(accountKeyFile)
+			if err != nil {
+				fmt.Println("parse private key failed, err:", err)
+				os.Exit(1)
+			}
+			if config.IsSMCrypto && curve != sm2p256v1 {
+				fmt.Printf("smcrypto must use sm2p256v1 private key, but found %s", curve)
+				os.Exit(1)
+			}
+			if !config.IsSMCrypto && curve != secp256k1 {
+				fmt.Printf("must use secp256k1 private key, but found %s", curve)
+				os.Exit(1)
+			}
+			// fmt.Printf("key=%s,curve=%s", keyHex, curve)
+			config.PrivateKey = keyHex
 		} else {
 			fmt.Println("Network has not been set")
 			os.Exit(1)

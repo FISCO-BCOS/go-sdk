@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aristanetworks/goarista v0.0.0-20191206003309-5d8d36c240c9
-	github.com/bxq2011hust/fisco-tls v0.0.0-20200110063053-f7fbd28cc540
+	github.com/bxq2011hust/crypto v0.0.0-20200116061831-a854d1da0b27
 	github.com/deckarep/golang-set v1.7.1
 	github.com/google/uuid v1.1.1
 	github.com/pborman/uuid v1.2.0
