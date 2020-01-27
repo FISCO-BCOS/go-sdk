@@ -1,32 +1,32 @@
 package permission
 
 import (
-	"fmt"
-	"crypto/ecdsa"
-	"math/big"
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
+	"math/big"
 
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompile/crud"
 )
 
 const (
-	SysConsensus = "_sys_consensus_"
-	SysCNS = "_sys_cns_"
+	SysConsensus   = "_sys_consensus_"
+	SysCNS         = "_sys_cns_"
 	SysTableAccess = "_sys_table_access_"
-	SysConfig = "_sys_config_"
+	SysConfig      = "_sys_config_"
 )
 
 // PermissionService is a precompile contract service.
 type PermissionService struct {
-	permission *Permission
+	permission     *Permission
 	permissionAuth *bind.TransactOpts
-	client *client.Client
-	privateKey *ecdsa.PrivateKey
+	client         *client.Client
+	privateKey     *ecdsa.PrivateKey
 }
 
 // PermissionPrecompileAddress is the contract address of Permission
@@ -40,25 +40,25 @@ func NewPermissionService(client *client.Client, privateKey *ecdsa.PrivateKey) (
 	}
 	auth := bind.NewKeyedTransactor(privateKey)
 	auth.GasLimit = big.NewInt(30000000)
-    return &PermissionService{permission:instance, permissionAuth:auth, client: client, privateKey:privateKey}, nil
+	return &PermissionService{permission: instance, permissionAuth: auth, client: client, privateKey: privateKey}, nil
 }
 
 // GrantUserTableManager grants the info by the table name and user address
 func (service *PermissionService) GrantUserTableManager(tableName string, grantress string) (string, error) {
-	crudService,err := crud.NewCRUDService(service.client, service.privateKey)
+	crudService, err := crud.NewCRUDService(service.client, service.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("PermissionService create CRUDService failed: %v", err)
 	}
 	_, err = crudService.Desc(tableName)
-    if err != nil {
-		return "",fmt.Errorf("GrantUserTableManager failed: %v", err)
+	if err != nil {
+		return "", fmt.Errorf("GrantUserTableManager failed: %v", err)
 	}
-    return service.grant(tableName, grantress)
+	return service.grant(tableName, grantress)
 }
 
 // RevokeUserTableManager revokes a grantress' right of the table name
 func (service *PermissionService) RevokeUserTableManager(tableName string, grantress string) (string, error) {
-    return service.revoke(tableName, grantress)
+	return service.revoke(tableName, grantress)
 }
 
 // ListUserTableManager returns the list of permission info
@@ -75,7 +75,6 @@ func (service *PermissionService) GrantDeployAndCreateManager(grantress string) 
 func (service *PermissionService) RevokeDeployAndCreateManager(grantress string) (string, error) {
 	return service.revoke(crud.SysTable, grantress)
 }
-
 
 // ListDeployAndCreateManager returns the list of permission info
 func (service *PermissionService) ListDeployAndCreateManager() ([]PermissionInfo, error) {
@@ -103,7 +102,7 @@ func (service *PermissionService) GrantNodeManager(grantress string) (string, er
 }
 
 // RevokeNodeManager revokes the Node
-func (service *PermissionService) RevokeNodeManager(grantress string ) (string, error) {
+func (service *PermissionService) RevokeNodeManager(grantress string) (string, error) {
 	return service.revoke(SysConsensus, grantress)
 }
 
@@ -113,12 +112,12 @@ func (service *PermissionService) ListNodeManager() ([]PermissionInfo, error) {
 }
 
 // GrantCNSManager grants the CNS
-func (service *PermissionService) GrantCNSManager(grantress string ) (string, error) {
+func (service *PermissionService) GrantCNSManager(grantress string) (string, error) {
 	return service.grant(SysCNS, grantress)
 }
 
 // RevokeCNSManager revokes the CNS
-func (service *PermissionService) RevokeCNSManager(grantress string ) (string, error) {
+func (service *PermissionService) RevokeCNSManager(grantress string) (string, error) {
 	return service.revoke(SysCNS, grantress)
 }
 
@@ -128,12 +127,12 @@ func (service *PermissionService) ListCNSManager() ([]PermissionInfo, error) {
 }
 
 // GrantSysConfigManager grants the System configuration manager
-func (service *PermissionService) GrantSysConfigManager(grantress string ) (string, error) {
+func (service *PermissionService) GrantSysConfigManager(grantress string) (string, error) {
 	return service.grant(SysConfig, grantress)
 }
 
 // RevokeSysConfigManager revokes the System configuration manager
-func (service *PermissionService) RevokeSysConfigManager(grantress string ) (string, error) {
+func (service *PermissionService) RevokeSysConfigManager(grantress string) (string, error) {
 	return service.revoke(SysConfig, grantress)
 }
 
@@ -150,7 +149,7 @@ func (service *PermissionService) grant(tableName string, grantress string) (str
 	// wait for the mining
 	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
 	if err != nil {
-        return "", fmt.Errorf("PermissionService wait for the transaction receipt failed: %v", err)
+		return "", fmt.Errorf("PermissionService wait for the transaction receipt failed: %v", err)
 	}
 	return handleReceipt(receipt)
 }
@@ -163,7 +162,7 @@ func (service *PermissionService) revoke(tableName string, address string) (stri
 	// wait for the mining
 	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
 	if err != nil {
-        return "", fmt.Errorf("PermissionService wait for the transaction receipt failed: %v", err)
+		return "", fmt.Errorf("PermissionService wait for the transaction receipt failed: %v", err)
 	}
 	return handleReceipt(receipt)
 }
@@ -184,9 +183,9 @@ func (service *PermissionService) list(tableName string) ([]PermissionInfo, erro
 
 func handleReceipt(receipt *types.Receipt) (string, error) {
 	status := receipt.GetStatus()
-	if "0x0" != status {
+	if common.Success != status {
 		return "", fmt.Errorf(common.GetStatusMessage(status))
-	} 
+	}
 	output := receipt.GetOutput()
 	if output != "" {
 		return common.GetJsonStr(output)

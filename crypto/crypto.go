@@ -30,7 +30,7 @@ import (
 	
 	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/common/math"
-	"github.com/FISCO-BCOS/go-sdk/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 

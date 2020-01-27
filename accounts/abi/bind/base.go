@@ -18,15 +18,15 @@ package bind
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
-	"crypto/rand"
 	"time"
-	
+
 	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
 
@@ -49,11 +49,10 @@ type TransactOpts struct {
 	Nonce  *big.Int       // Nonce to use for the transaction execution (nil = use pending state)
 	Signer SignerFn       // Method to use for signing the transaction (mandatory)
 
-	Value    *big.Int // Funds to transfer along along the transaction (nil = 0 = no funds)
-	GasPrice *big.Int // Gas price to use for the transaction execution (nil = gas price oracle)
-	GasLimit *big.Int   // Gas limit to set for the transaction execution (0 = estimate)
-
-	Context context.Context // Network context to support cancellation and timeouts (nil = no timeout)
+	Value    *big.Int        // Funds to transfer along along the transaction (nil = 0 = no funds)
+	GasPrice *big.Int        // Gas price to use for the transaction execution (nil = gas price oracle)
+	GasLimit *big.Int        // Gas limit to set for the transaction execution (0 = estimate)
+	Context  context.Context // Network context to support cancellation and timeouts (nil = no timeout)
 }
 
 // FilterOpts is the collection of options to fine tune filtering for events
@@ -86,6 +85,7 @@ type BoundContract struct {
 // NewBoundContract creates a low level contract interface through which calls
 // and transactions may be made through.
 func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller, transactor ContractTransactor, filterer ContractFilterer) *BoundContract {
+	abi.SMCrypto = transactor.SMCrypto()
 	return &BoundContract{
 		address:    address,
 		abi:        abi,
@@ -115,7 +115,7 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	for range time.Tick(time.Second) {
 		address, err = c.transactor.GetContractAddress(ensureContext(opts.Context), tx.Hash().Hex())
 		if err != nil {
-            timeTick++
+			timeTick++
 		}
 		if timeTick == 15 {
 			return common.Address{}, nil, nil, fmt.Errorf("time out for the contract deployment: %+v", err)
@@ -138,7 +138,6 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 		opts = new(CallOpts)
 	}
 
-	
 	// Pack the input, call and unpack the results
 	input, err := c.abi.Pack(method, params...)
 	if err != nil {
@@ -198,7 +197,7 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.RawTransaction, err
 	return c.transact(opts, &c.address, nil)
 }
 
-// transact executes an actual transaction invocation, first deriving any missing 
+// transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.RawTransaction, error) {
 	var err error
@@ -208,8 +207,8 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if value == nil {
 		value = new(big.Int)
 	}
-    // generate random Nonce between 0 - 2^250 - 1
-    max := new(big.Int)
+	// generate random Nonce between 0 - 2^250 - 1
+	max := new(big.Int)
 	max.Exp(big.NewInt(2), big.NewInt(250), nil).Sub(max, big.NewInt(1))
 	//Generate cryptographically strong pseudo-random between 0 - max
 	nonce, err := rand.Int(rand.Reader, max)
@@ -239,10 +238,10 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 		gasLimit = big.NewInt(30000000)
 	}
 
-    var blockLimit *big.Int
+	var blockLimit *big.Int
 	blockLimit, err = c.transactor.GetBlockLimit(ensureContext(opts.Context))
 	if err != nil {
-		 return nil, err
+		return nil, err
 	}
 
 	var chainID *big.Int
@@ -250,8 +249,8 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if err != nil {
 		return nil, err
 	}
-	
-    var groupID *big.Int
+
+	var groupID *big.Int
 	groupID = c.transactor.GetGroupID()
 	if groupID == nil {
 		return nil, fmt.Errorf("failed to get the group ID")
@@ -262,9 +261,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	str := ""
 	extraData := []byte(str)
 	if contract == nil {
-		rawTx = types.NewRawContractCreation(nonce, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData)
+		rawTx = types.NewRawContractCreation(nonce, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
 	} else {
-		rawTx = types.NewRawTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData)
+		rawTx = types.NewRawTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
 	}
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")

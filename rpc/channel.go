@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 	tls "github.com/bxq2011hust/crypto/tls"
 	"github.com/google/uuid"
 )
@@ -23,7 +24,7 @@ import (
 const (
 	maxTopicLength      = 254
 	messageHeaderLength = 42
-	protocolVersion     = 2
+	protocolVersion     = 3
 	clientType          = "Go-SDK"
 )
 
@@ -35,9 +36,11 @@ type nodeInfo struct {
 
 type channelSession struct {
 	// groupID   uint
-	c             *tls.Conn
-	mu            sync.RWMutex
-	responses     map[string]*channelResponse
+	c         *tls.Conn
+	mu        sync.RWMutex
+	responses map[string]*channelResponse
+	// receiptsMutex sync.Mutex
+	receipts      map[string]*channelResponse
 	topicMu       sync.RWMutex
 	topicHandlers map[string]func(*topicData)
 	buf           []byte
@@ -284,8 +287,8 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			return nil, err
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
-			topicHandlers: make(map[string]func(*topicData)),
-			nodeInfo:      nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
+			receipts: make(map[string]*channelResponse), topicHandlers: make(map[string]func(*topicData)),
+			nodeInfo: nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
 			fmt.Printf("handshake channel protocol failed, use default protocol version")
@@ -299,25 +302,36 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 
 func (c *Connection) sendRPCRequest(ctx context.Context, op *requestOp, msg interface{}) error {
 	hc := c.writeConn.(*channelSession)
-	respBody, err := hc.doRPCRequest(ctx, msg)
-	if respBody != nil {
-		defer respBody.Close()
-	}
-
-	if err != nil {
-		if respBody != nil {
-			buf := new(bytes.Buffer)
-			if _, err2 := buf.ReadFrom(respBody); err2 == nil {
-				return fmt.Errorf("%v %v", err, buf.String())
-			}
+	rpcMsg := msg.(*jsonrpcMessage)
+	if rpcMsg.Method == "sendRawTransaction" {
+		respBody, err := hc.sendTransaction(ctx, msg)
+		if err != nil {
+			return fmt.Errorf("sendTransaction %v", err)
 		}
-		return err
+		rpcResp := new(jsonrpcMessage)
+		rpcResp.Result = respBody
+		op.resp <- rpcResp
+	} else {
+		respBody, err := hc.doRPCRequest(ctx, msg)
+		if respBody != nil {
+			defer respBody.Close()
+		}
+
+		if err != nil {
+			if respBody != nil {
+				buf := new(bytes.Buffer)
+				if _, err2 := buf.ReadFrom(respBody); err2 == nil {
+					return fmt.Errorf("%v %v", err, buf.String())
+				}
+			}
+			return err
+		}
+		var respmsg jsonrpcMessage
+		if err := json.NewDecoder(respBody).Decode(&respmsg); err != nil {
+			return err
+		}
+		op.resp <- &respmsg
 	}
-	var respmsg jsonrpcMessage
-	if err := json.NewDecoder(respBody).Decode(&respmsg); err != nil {
-		return err
-	}
-	op.resp <- &respmsg
 	return nil
 }
 
@@ -370,6 +384,71 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	return ioutil.NopCloser(bytes.NewReader(response.Message.body)), nil
 }
 
+func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) ([]byte, error) {
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	var rpcMsg *channelMessage
+	rpcMsg, err = newChannelMessage(rpcMessage, body)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
+	receipt := &channelResponse{Message: nil, Notify: make(chan interface{})}
+	hc.mu.Lock()
+	hc.responses[rpcMsg.uuid] = response
+	hc.receipts[rpcMsg.uuid] = receipt
+	hc.mu.Unlock()
+	defer func() {
+		hc.mu.Lock()
+		delete(hc.responses, rpcMsg.uuid)
+		delete(hc.receipts, rpcMsg.uuid)
+		hc.mu.Unlock()
+	}()
+	msgBytes := rpcMsg.Encode()
+	_, err = hc.c.Write(msgBytes)
+	if err != nil {
+		return nil, err
+	}
+	<-response.Notify
+
+	hc.mu.Lock()
+	response = hc.responses[rpcMsg.uuid]
+	delete(hc.responses, rpcMsg.uuid)
+	hc.mu.Unlock()
+	if response.Message.errorCode != 0 {
+		return nil, errors.New("response error:" + string(response.Message.errorCode))
+	}
+	var respmsg jsonrpcMessage
+	if err := json.NewDecoder(bytes.NewReader(response.Message.body)).Decode(&respmsg); err != nil {
+		return nil, err
+	}
+	if respmsg.Error != nil {
+		return nil, fmt.Errorf("send transaction error, code=%d, message=%s", respmsg.Error.Code, respmsg.Error.Message)
+	}
+	// fmt.Printf("sendTransaction reveived response,seq:%s message:%s\n ", rpcMsg.uuid, respmsg.Result)
+
+	<-receipt.Notify
+
+	hc.mu.RLock()
+	receipt = hc.receipts[rpcMsg.uuid]
+	hc.mu.RUnlock()
+	if receipt.Message.errorCode != 0 {
+		return nil, errors.New("response error:" + string(receipt.Message.errorCode))
+	}
+	var transactionReceipt types.Receipt
+	if err := json.Unmarshal(receipt.Message.body, &transactionReceipt); err != nil {
+		return nil, fmt.Errorf("parse receipt error %w", err)
+	}
+	if transactionReceipt.Status != "0x0" {
+		return nil, fmt.Errorf("receipt error code:%s", transactionReceipt.Status)
+	}
+	// fmt.Printf("sendTransaction reveived transactionReceipt:%+v\n ", transactionReceipt)
+	return receipt.Message.body, nil
+}
+
 func (hc *channelSession) doRequestNoResponse(msg *channelMessage) error {
 	msgBytes := msg.Encode()
 	_, err := hc.c.Write(msgBytes)
@@ -418,6 +497,8 @@ func (hc *channelSession) handshakeChannel() error {
 	if err = json.Unmarshal(response.body, &info); err != nil {
 		return fmt.Errorf("parse handshake channel protocol response failed %w", err)
 	}
+	hc.nodeInfo = info
+	// fmt.Printf("node info:%+v", info)
 	return nil
 }
 
@@ -511,18 +592,27 @@ func (hc *channelSession) processMessages() {
 				fmt.Printf("decode error:%v", err)
 				continue
 			}
+			// fmt.Printf("message %+v\n", msg)
 			hc.buf = hc.buf[msg.length:]
-			hc.mu.RLock()
+			hc.mu.Lock()
 			if response, ok := hc.responses[msg.uuid]; ok {
 				response.Message = msg
 				response.Notify <- struct{}{}
 			}
-			hc.mu.RUnlock()
+			hc.mu.Unlock()
 			switch msg.typeN {
 			case rpcMessage, clientHandshake:
 				// fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
+				hc.mu.Lock()
+				if receipt, ok := hc.receipts[msg.uuid]; ok {
+					receipt.Message = msg
+					receipt.Notify <- struct{}{}
+				} else {
+					fmt.Printf("error %+v", receipt)
+				}
+				hc.mu.Unlock()
 			case blockNotify:
 				hc.updateBlockNumber(msg)
 			case amopResponse:
@@ -543,23 +633,23 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 		response := strings.Split(string(topic.data), ",")
 		blockNumber, err = strconv.ParseInt(response[1], 10, 32)
 		if err != nil {
-			fmt.Print("block notify parse blockNumber failed")
+			fmt.Print("v1 block notify parse blockNumber failed")
 			return
 		}
 	} else {
 		var notify struct {
-			groupID     uint
-			blockNumber int64
+			GroupID     uint  `json:"groupID"`
+			BlockNumber int64 `json:"blockNumber"`
 		}
 		err = json.Unmarshal(topic.data, &notify)
 		if err != nil {
 			fmt.Print("block notify parse blockNumber failed")
 			return
 		}
-		blockNumber = notify.blockNumber
+		blockNumber = notify.BlockNumber
 	}
+	// fmt.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
 	hc.nodeInfo.blockNumber = blockNumber
-	fmt.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
 }
 
 // channelServerConn turns a Channel connection into a Conn.

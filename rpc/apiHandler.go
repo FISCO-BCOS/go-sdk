@@ -27,7 +27,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // APIHandler defines typed wrappers for the Ethereum RPC API.
@@ -368,7 +368,7 @@ func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txha
 	}
 	m, ok := raw.(map[string]interface{})
 	if ok != true {
-		return contractAddress, errors.New("GetContractAddress Json respond does not satisfy the type assertion: map[string]interface{}")
+		return contractAddress, fmt.Errorf("GetContractAddress Json respond does not satisfy the type assertion: map[string]interface{}, %+v", raw)
 	}
 	var temp interface{}
 	temp, ok = m["contractAddress"]

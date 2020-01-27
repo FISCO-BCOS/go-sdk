@@ -24,24 +24,24 @@ var (
 )
 
 // LoadECPrivateKeyFromPEM reads file, divides into key and certificates
-func LoadECPrivateKeyFromPEM(path string) (string, string, error) {
+func LoadECPrivateKeyFromPEM(path string) (string, string, string, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	block, _ := pem.Decode(raw)
 	if block == nil {
-		return "", "", fmt.Errorf("Failure reading pem from \"%s\": %s", path, err)
+		return "", "", "", fmt.Errorf("Failure reading pem from \"%s\": %s", path, err)
 	}
 	if block.Type != "PRIVATE KEY" {
-		return "", "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+		return "", "", "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
 	}
 	ecPirvateKey, curveName, err := parsePKCS8ECPrivateKey(block.Bytes)
 	if err != nil {
-		return "", "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+		return "", "", "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
 	}
-	return ecPirvateKey, curveName, nil
+	return ecPirvateKey, curveName, string(raw), nil
 }
 
 // parseECPrivateKey is a copy of x509.parseECPrivateKey, supported secp256k1 and sm2p256v1

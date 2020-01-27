@@ -21,13 +21,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"strconv"
 
+	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 	"github.com/FISCO-BCOS/go-sdk/rpc"
 )
 
@@ -37,6 +40,8 @@ type Client struct {
 	groupID           int
 	chainID           int64
 	compatibleVersion string
+	auth              *bind.TransactOpts
+	smCrypto          bool
 }
 
 // Dial connects a client to the given URL and groupID.
@@ -81,7 +86,16 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if config.ChainID != nodeChainID {
 		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	}
-	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID}
+	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
+	if config.IsSMCrypto {
+		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
+	} else {
+		privateKey, err := crypto.HexToECDSA(config.PrivateKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		client.auth = bind.NewKeyedTransactor(privateKey)
+	}
 	return &client, nil
 }
 
@@ -91,6 +105,16 @@ func (gc *Client) Close() {
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
+
+// GetTransactOpts return TransactOpts
+func (gc *Client) GetTransactOpts() *bind.TransactOpts {
+	return gc.auth
+}
+
+// SMCrypto returns true if use sm crypto
+func (gc *Client) SMCrypto() bool {
+	return gc.smCrypto
+}
 
 // CodeAt returns the contract code of the given account.
 // The block number can be nil, in which case the code is taken from the latest known block.

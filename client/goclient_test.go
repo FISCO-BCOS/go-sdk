@@ -1,15 +1,15 @@
 package client
 
 import (
-	"testing"
 	"context"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"testing"
 )
 
-func GetClient(t *testing.T) (*Client) {
-	config := &conf.Config{IsHTTP:true,ChainID:1,IsSMCrypto:false,ConnInfo:conf.Connection{GroupID:1,NodeURL:"http://localhost:8545"}}
-	// RPC API
-	c, err := Dial(config)  // change to your RPC and groupID
+func GetClient(t *testing.T) *Client {
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58", NodeURL: "http://localhost:8545"}
+	c, err := Dial(config)
 	if err != nil {
 		t.Fatalf("can not dial to the RPC API: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestClientVersion(t *testing.T) {
 }
 
 func TestBlockNumber(t *testing.T) {
-    c := GetClient(t)
+	c := GetClient(t)
 	// cannot use big.NewInt to construct json request
 	// TODO: analysis the ethereum's big.NewInt
 	bn, err := c.GetBlockNumber(context.Background())
@@ -112,7 +112,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestSyncStatus(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetSyncStatus(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("synchronization status not found: %v", err)
@@ -123,7 +123,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestPeers(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetPeers(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("peers not found: %v", err)
@@ -134,7 +134,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestGroupPeers(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetGroupPeers(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("group peers not found: %v", err)
@@ -145,12 +145,12 @@ func TestPBFTView(t *testing.T) {
 
 // func TestNodeIDList(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetNodeIDList(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("nodeID list not found: %v", err)
 // 	}
-    
+
 // 	t.Logf("nodeID list:\n %s", raw)
 // }
 
@@ -166,7 +166,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestBlockByHash(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	bhash := "0xc0b21d064b97bafda716e07785fe8bb20cc23506bb980f12c7f7a4f4ef50ce30"
 // 	includeTx := false
 // 	raw, err := c.GetBlockByHash(context.Background(), bhash, includeTx)
@@ -179,7 +179,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestBlockByNumber(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	bnum := "0x1"
 // 	includeTx := true
 // 	raw, err := c.GetBlockByNumber(context.Background(), bnum, includeTx)
@@ -192,7 +192,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestBlockHashByNumber(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	bnum := "0x1"
 // 	raw, err := c.GetBlockHashByNumber(context.Background(), bnum)
 // 	if err != nil {
@@ -204,7 +204,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestTransactionByHash(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	txhash := "0xed51827558939e8d103cbf8f6ff37f8a99582f09afa29e5636d0e54a073d0893"
 // 	raw, err := c.GetTransactionByHash(context.Background(), txhash)
 // 	if err != nil {
@@ -216,7 +216,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestTransactionByBlockHashAndIndex(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	bhash := "0xc0b21d064b97bafda716e07785fe8bb20cc23506bb980f12c7f7a4f4ef50ce30"
 // 	txindex := "0x0"
 // 	raw, err := c.GetTransactionByBlockHashAndIndex(context.Background(), bhash, txindex)
@@ -229,7 +229,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	bnum := "0x1"
 // 	txindex := "0x0"
 // 	raw, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), bnum, txindex)
@@ -242,7 +242,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestTransactionReceipt(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	txhash := "0x6613da911621248ffc2983a4553d44fb299887ae2d803eb81d9890465fbf29e5"
 // 	raw, err := c.GetTransactionReceipt(context.Background(), txhash)
 // 	if err != nil {
@@ -264,7 +264,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestPendingTransactions(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetPendingTransactions(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("pending transactions not found: %v", err)
@@ -275,7 +275,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestPendingTxSize(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetPendingTxSize(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("pending transactions not found: %v", err)
@@ -286,7 +286,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestGetCode(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	addr := "0x27c1b5d9fe3ab035c2e9db7199d4beb139e12292"
 // 	raw, err := c.GetCode(context.Background(), addr)
 // 	if err != nil {
@@ -298,7 +298,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestTotalTransactionCount(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	raw, err := c.GetTotalTransactionCount(context.Background())
 // 	if err != nil {
 // 		t.Fatalf("transactions not found: %v", err)
@@ -309,7 +309,7 @@ func TestPBFTView(t *testing.T) {
 
 // func TestSystemConfigByKey(t *testing.T) {
 // 	c := GetClient(t)
-	
+
 // 	findkey := "tx_count_limit"
 // 	raw, err := c.GetSystemConfigByKey(context.Background(), findkey)
 // 	if err != nil {

@@ -1,16 +1,19 @@
 package types
 
 import (
+	"bytes"
 	"container/heap"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 	"sync/atomic"
-	
+
 	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 	"github.com/FISCO-BCOS/go-sdk/crypto"
-	"github.com/FISCO-BCOS/go-sdk/rlp"
+	"github.com/FISCO-BCOS/go-sdk/crypto/smcrypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -23,23 +26,24 @@ var (
 type RawTransaction struct {
 	data rawtxdata
 	// caches
-	hash atomic.Value
-	size atomic.Value
-	from atomic.Value
+	hash     atomic.Value
+	size     atomic.Value
+	from     atomic.Value
+	smcrypto bool
 }
 
 type rawtxdata struct {
 	AccountNonce *big.Int        `json:"nonce"    gencodec:"required"`
 	Price        *big.Int        `json:"gasPrice"   gencodec:"required"`
-	GasLimit     *big.Int         `json:"gas"        gencodec:"required"`
-	BlockLimit   *big.Int        `json:"blocklimit" gencodec:"required"` 
+	GasLimit     *big.Int        `json:"gas"        gencodec:"required"`
+	BlockLimit   *big.Int        `json:"blocklimit" gencodec:"required"`
 	Recipient    *common.Address `json:"to"         rlp:"nil"` // nil means contract creation
 	Amount       *big.Int        `json:"value"      gencodec:"required"`
 	Payload      []byte          `json:"input"      gencodec:"required"`
 	// for fisco bcos 2.0
-	ChainId       *big.Int        `json:"chainId"    gencodec:"required"`
-	GroupId       *big.Int        `json:"groupId"    gencodec:"required"`
-	ExtraData      []byte         `json:"extraData"    rlp:"nil"` //gencodec:"required"`
+	ChainId   *big.Int `json:"chainId"    gencodec:"required"`
+	GroupId   *big.Int `json:"groupId"    gencodec:"required"`
+	ExtraData []byte   `json:"extraData"  gencodec:"required"` // rlp:"nil"
 
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"`
@@ -57,27 +61,25 @@ type rawtxdataMarshaling struct {
 	BlockLimit   *hexutil.Big
 	Amount       *hexutil.Big
 	Payload      hexutil.Bytes
-	// for fisco bcos 2.0
-	ChainId     *hexutil.Big
-	GroupId     *hexutil.Big
-	ExtraData   hexutil.Bytes
-
+	ChainId      *hexutil.Big
+	GroupId      *hexutil.Big
+	ExtraData    hexutil.Bytes
 	V            *hexutil.Big
 	R            *hexutil.Big
 	S            *hexutil.Big
 }
 
 // NewRawTransaction returns a new raw transaction
-func NewRawTransaction(nonce *big.Int, to common.Address, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int , groupId *big.Int, extraData []byte) *RawTransaction {
-	return newRawTransaction(nonce, &to, amount, gasLimit, gasPrice, blockLimit, data, chainId, groupId, extraData)
+func NewRawTransaction(nonce *big.Int, to common.Address, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int, groupId *big.Int, extraData []byte, smcrypto bool) *RawTransaction {
+	return newRawTransaction(nonce, &to, amount, gasLimit, gasPrice, blockLimit, data, chainId, groupId, extraData, smcrypto)
 }
 
 // NewRawContractCreation creates a contract transaction
-func NewRawContractCreation(nonce *big.Int, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int , groupId *big.Int, extraData []byte) *RawTransaction {
-	return newRawTransaction(nonce, nil, amount, gasLimit, gasPrice, blockLimit, data,chainId, groupId, extraData)
+func NewRawContractCreation(nonce *big.Int, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int, groupId *big.Int, extraData []byte, smcrypto bool) *RawTransaction {
+	return newRawTransaction(nonce, nil, amount, gasLimit, gasPrice, blockLimit, data, chainId, groupId, extraData, smcrypto)
 }
 
-func newRawTransaction(nonce *big.Int, to *common.Address, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int , groupId *big.Int, extraData []byte) *RawTransaction {
+func newRawTransaction(nonce *big.Int, to *common.Address, amount *big.Int, gasLimit *big.Int, gasPrice *big.Int, blockLimit *big.Int, data []byte, chainId *big.Int, groupId *big.Int, extraData []byte, smcrypto bool) *RawTransaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -89,9 +91,9 @@ func newRawTransaction(nonce *big.Int, to *common.Address, amount *big.Int, gasL
 		GasLimit:     gasLimit,
 		BlockLimit:   blockLimit,
 		Price:        new(big.Int),
-		ChainId:	  new(big.Int),
-		GroupId:	  new(big.Int),
-		ExtraData:	  extraData,
+		ChainId:      new(big.Int),
+		GroupId:      new(big.Int),
+		ExtraData:    extraData,
 		V:            new(big.Int),
 		R:            new(big.Int),
 		S:            new(big.Int),
@@ -112,8 +114,7 @@ func newRawTransaction(nonce *big.Int, to *common.Address, amount *big.Int, gasL
 		d.ExtraData = extraData
 	}
 
-
-	return &RawTransaction{data: d}
+	return &RawTransaction{data: d, smcrypto: smcrypto}
 }
 
 // ChainId returns which chain id this transaction was signed for (if at all)
@@ -185,10 +186,10 @@ func (tx *RawTransaction) UnmarshalJSON(input []byte) error {
 }
 
 func (tx *RawTransaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
-func (tx *RawTransaction) Gas() *big.Int        { return tx.data.GasLimit }
+func (tx *RawTransaction) Gas() *big.Int      { return tx.data.GasLimit }
 func (tx *RawTransaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
 func (tx *RawTransaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
-func (tx *RawTransaction) Nonce() *big.Int      { return tx.data.AccountNonce }
+func (tx *RawTransaction) Nonce() *big.Int    { return tx.data.AccountNonce }
 func (tx *RawTransaction) CheckNonce() bool   { return true }
 
 // To returns the recipient address of the transaction.
@@ -207,9 +208,45 @@ func (tx *RawTransaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
 		return hash.(common.Hash)
 	}
+	if tx.smcrypto {
+		return tx.sm3HashWithSig()
+	}
 	v := rlpHash(tx)
 	tx.hash.Store(v)
 	return v
+}
+
+// SM3HashNonSig hashes the RLP encoding of tx use sm3.
+// It uniquely identifies the transaction.
+func (tx *RawTransaction) SM3HashNonSig() (h common.Hash) {
+	var src []byte
+	buf := bytes.NewBuffer(src)
+	rlp.Encode(buf, []interface{}{
+		tx.data.AccountNonce,
+		tx.data.Price,
+		tx.data.GasLimit,
+		tx.data.BlockLimit,
+		tx.data.Recipient,
+		tx.data.Amount,
+		tx.data.Payload,
+		tx.data.ChainId,
+		tx.data.GroupId,
+		tx.data.ExtraData,
+	})
+	v := smcrypto.SM3Hash(buf.Bytes())
+	copy(h[:], v)
+	return h
+}
+
+func (tx *RawTransaction) sm3HashWithSig() (h common.Hash) {
+
+	var src []byte
+	buf := bytes.NewBuffer(src)
+	rlp.Encode(buf, tx)
+	v := smcrypto.SM3Hash(buf.Bytes())
+	copy(h[:], v)
+	tx.hash.Store(h)
+	return h
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
@@ -237,7 +274,6 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 	*c += writeCounter(len(b))
 	return len(b), nil
 }
-
 
 // AsMessage returns the transaction as a core.Message.
 //
@@ -270,6 +306,22 @@ func (tx *RawTransaction) WithSignature(signer RawSigner, sig []byte) (*RawTrans
 	}
 	cpy := &RawTransaction{data: tx.data}
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
+	cpy.smcrypto = tx.smcrypto
+	return cpy, nil
+}
+
+// WithSM2Signature returns a new transaction with the given signature.
+// This signature needs to be in the [R || S || V] format where V is 0 or 1.
+func (tx *RawTransaction) WithSM2Signature(signer RawSigner, sig []byte) (*RawTransaction, error) {
+	if len(sig) != 128 {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want 96", len(sig)))
+	}
+	r := new(big.Int).SetBytes(sig[:32])
+	s := new(big.Int).SetBytes(sig[32:64])
+	v := new(big.Int).SetBytes(sig[64:])
+	cpy := &RawTransaction{data: tx.data}
+	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
+	cpy.smcrypto = tx.smcrypto
 	return cpy, nil
 }
 
@@ -324,9 +376,11 @@ func RawTxDifference(a, b RawTransactions) RawTransactions {
 // single account, otherwise a nonce comparison doesn't make much sense.
 type RawTxByNonce RawTransactions
 
-func (s RawTxByNonce) Len() int           { return len(s) }
-func (s RawTxByNonce) Less(i, j int) bool { return s[i].data.AccountNonce.Cmp(s[j].data.AccountNonce) > 0} //{ return s[i].data.AccountNonce < s[j].data.AccountNonce }
-func (s RawTxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s RawTxByNonce) Len() int { return len(s) }
+func (s RawTxByNonce) Less(i, j int) bool {
+	return s[i].data.AccountNonce.Cmp(s[j].data.AccountNonce) > 0
+}                                    //{ return s[i].data.AccountNonce < s[j].data.AccountNonce }
+func (s RawTxByNonce) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // RawTxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
@@ -443,11 +497,10 @@ func (m RawMessage) From() common.Address { return m.from }
 func (m RawMessage) To() *common.Address  { return m.to }
 func (m RawMessage) GasPrice() *big.Int   { return m.gasPrice }
 func (m RawMessage) Value() *big.Int      { return m.amount }
-func (m RawMessage) Gas() *big.Int          { return m.gasLimit }
-func (m RawMessage) Nonce() *big.Int        { return m.nonce }
+func (m RawMessage) Gas() *big.Int        { return m.gasLimit }
+func (m RawMessage) Nonce() *big.Int      { return m.nonce }
 func (m RawMessage) Data() []byte         { return m.data }
 func (m RawMessage) CheckNonce() bool     { return m.checkNonce }
-
 
 // =================================== kasperliu ===============================
 type newRawTransactionStruct struct {
@@ -459,13 +512,13 @@ type newRawTransactionStruct struct {
 }
 
 type newrawtxdata struct {
-	AccountNonce *big.Int        `json:"nonce"    gencodec:"required"`
-	Price        *big.Int        `json:"gasPrice"   gencodec:"required"`
-	GasLimit     *big.Int        `json:"gas"        gencodec:"required"`
-	BlockLimit   *big.Int        `json:"blocklimit" gencodec:"required"`
-	Recipient    string          `json:"to"         rlp:"nil"` // nil means contract creation
-	Amount       *big.Int        `json:"value"      gencodec:"required"`
-	Payload      string          `json:"input"      gencodec:"required"`
+	AccountNonce *big.Int `json:"nonce"    gencodec:"required"`
+	Price        *big.Int `json:"gasPrice"   gencodec:"required"`
+	GasLimit     *big.Int `json:"gas"        gencodec:"required"`
+	BlockLimit   *big.Int `json:"blocklimit" gencodec:"required"`
+	Recipient    string   `json:"to"         rlp:"nil"` // nil means contract creation
+	Amount       *big.Int `json:"value"      gencodec:"required"`
+	Payload      string   `json:"input"      gencodec:"required"`
 
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"`
@@ -476,19 +529,19 @@ type newrawtxdata struct {
 	Hash *common.Hash `json:"hash" rlp:"-"`
 }
 
-func (tx *RawTransaction) ConverToNewRawTx() (*newRawTransactionStruct) {
+func (tx *RawTransaction) ConverToNewRawTx() *newRawTransactionStruct {
 	return &newRawTransactionStruct{
 		data: newrawtxdata{
 			AccountNonce: tx.data.AccountNonce,
-			Price       : tx.data.Price,
-			GasLimit    : tx.data.GasLimit,
-			BlockLimit  : tx.data.BlockLimit,
-			Recipient   : tx.data.Recipient.String(),
-			Amount      : tx.data.Amount,
-			Payload     : hexutil.Bytes(tx.data.Payload).String(),
-			V           : tx.data.V,
-			R           : tx.data.R,
-			S           : tx.data.S,
+			Price:        tx.data.Price,
+			GasLimit:     tx.data.GasLimit,
+			BlockLimit:   tx.data.BlockLimit,
+			Recipient:    tx.data.Recipient.String(),
+			Amount:       tx.data.Amount,
+			Payload:      hexutil.Bytes(tx.data.Payload).String(),
+			V:            tx.data.V,
+			R:            tx.data.R,
+			S:            tx.data.S,
 		},
 		hash: tx.hash,
 		size: tx.size,

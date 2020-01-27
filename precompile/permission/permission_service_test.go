@@ -1,32 +1,34 @@
 package permission
 
 import (
-	"testing"
 	"crypto/ecdsa"
+	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/crypto"
 )
 
 const (
-	success = "{\"code\":0,\"msg\":\"success\"}"
-	tableName = "t_test"
+	success        = "{\"code\":0,\"msg\":\"success\"}"
+	tableName      = "t_test"
 	permisstionAdd = "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 )
 
 func GetClient(t *testing.T) *client.Client {
-	groupID := uint(1)
-	rpc, err := client.Dial("http://localhost:8545", groupID)
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58", NodeURL: "http://localhost:8545"}
+	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("init rpc client failed: %+v", err)
+		t.Fatalf("can not dial to the RPC API: %v", err)
 	}
-	return rpc
+	return c
 }
 
 func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 	privateKey, err := crypto.HexToECDSA("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-    if err != nil {
-        t.Fatalf("init privateKey failed: %+v", err)
+	if err != nil {
+		t.Fatalf("init privateKey failed: %+v", err)
 	}
 	return privateKey
 }
@@ -68,7 +70,6 @@ func TestGrant(t *testing.T) {
 	}
 	t.Logf("ListPermissionManager: %v", listResult)
 }
-
 
 // func TestUserTableManager(t *testing.T) {
 // 	service := GetService(t)

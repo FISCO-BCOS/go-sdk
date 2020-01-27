@@ -2,6 +2,10 @@
 
 Golang SDK For FISCO BCOS 2.0.0
 
+[![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
+
+
+![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg) [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)  ![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)
 ____
 
 FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实现的功能有：
@@ -58,51 +62,6 @@ gobcos help
 
 ```go
 import "github.com/FISCO-BCOS/go-sdk/client"
-```
-
-## RPC API 测试
-
-此部分只对项目代码中的RPC API接口调用进行测试，以确定是否能顺利连接FISCO BCOS 2.0.0节点以获取区块链信息。
-
-首先需要拉取代码：
-
-```shell
-git clone https://github.com/FISCO-BCOS/go-sdk.git
-```
-
-进行代码测试前，请先按照实际部署节点的RPC URL更改`client/goclient_test.go`中的默认的FISCO BCOS RPC连接以及群组ID：
-```go
-func GetClient(t *testing.T) (*Client) {
-    // RPC API
-    groupID := uint(1)
-    c, err := Dial("http://localhost:8545", groupID) // change it to your RPC IP & port, groupID that you want to connect
-    if err != nil {
-        t.Fatalf("can not dial to the RPC API: %v", err)
-    }
-    return c
-}
-```
-测试代码默认开启的测试函数为`GetClientVersion, GetBlockNumber, GetPBFTView`，其余函数需去除注释并更改为实际存在的数据后才能执行。如：
-
-```go
-// GetBlockHashByNumber returns the block hash by its block number
-func TestBlockHshByNumber(t *testing.T) {
-    c := GetClient(t)
-    // provide a specific blocknumber
-    bnum := "0x1"
-    raw, err := c.GetBlockHashByNumber(context.Background(), bnum)
-    if err != nil {
-        t.Fatalf("block hash not found: %v", err)
-    }
-
-    t.Logf("block hash by number:\n%s", raw)
-}
-```
-
-执行RPC client的测试代码命令为：
-
-```shell
-go test -v -count=1 ./client
 ```
 
 ## JSON-RPC API调用
@@ -349,18 +308,14 @@ import (
 )
 
 func main(){
-    groupID := uint(1)
-    client, err := client.Dial("http://localhost:8545", groupID)
+    config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1, PrivateKey:"145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",NodeURL: "http://localhost:8545"}
+
+    client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
     }
-    privateKey, err := crypto.HexToECDSA("input your privateKey in hex without \"0x\"") // 145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58
-    if err != nil {
-        log.Fatal(err)
-    }
-    auth := bind.NewKeyedTransactor(privateKey) // input your privateKey
     input := "Store deployment 1.0"
-    address, tx, instance, err := store.DeployStore(auth, client, input)
+    address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
     if err != nil {
         log.Fatal(err)
     }

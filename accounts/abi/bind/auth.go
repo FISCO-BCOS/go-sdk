@@ -24,9 +24,10 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/accounts"
 	"github.com/FISCO-BCOS/go-sdk/accounts/keystore"
+	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/crypto"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/crypto/smcrypto"
 )
 
 // NewTransactor is a utility method to easily create a transaction signer from
@@ -76,6 +77,25 @@ func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
 				return nil, err
 			}
 			return tx.WithSignature(signer, signature)
+		},
+	}
+}
+
+// NewSMCryptoTransactor is a utility method to easily create a transaction signer
+// from a single sm2p256v1 private key.
+func NewSMCryptoTransactor(hexKey string) *TransactOpts {
+	keyAddr := smcrypto.HexKeyToAddress(hexKey)
+	return &TransactOpts{
+		From: keyAddr,
+		Signer: func(signer types.RawSigner, address common.Address, tx *types.RawTransaction) (*types.RawTransaction, error) {
+			if address != keyAddr {
+				return nil, errors.New("not authorized to sign this account")
+			}
+			signature, err := smcrypto.Sign(tx.SM3HashNonSig().Bytes(), hexKey)
+			if err != nil {
+				return nil, err
+			}
+			return tx.WithSM2Signature(signer, signature)
 		},
 	}
 }

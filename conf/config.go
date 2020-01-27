@@ -14,8 +14,8 @@ type Config struct {
 	IsHTTP     bool
 	ChainID    int64
 	CAFile     string
-	Cert       string
 	Key        string
+	Cert       string
 	IsSMCrypto bool
 	PrivateKey string
 	GroupID    int
@@ -61,7 +61,7 @@ func ParseConfig(cfgFile string) []Config {
 		}
 		if viper.IsSet("Account") {
 			accountKeyFile := viper.GetString("Account.KeyFile")
-			keyHex, curve, err := LoadECPrivateKeyFromPEM(accountKeyFile)
+			keyHex, curve, _, err := LoadECPrivateKeyFromPEM(accountKeyFile)
 			if err != nil {
 				fmt.Println("parse private key failed, err:", err)
 				os.Exit(1)

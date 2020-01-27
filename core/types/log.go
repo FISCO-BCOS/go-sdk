@@ -21,7 +21,7 @@ import (
 	
 	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
-	"github.com/FISCO-BCOS/go-sdk/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 //go:generate gencodec -type Log -field-override logMarshaling -out gen_log_json.go

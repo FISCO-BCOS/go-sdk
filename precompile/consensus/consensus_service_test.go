@@ -1,29 +1,30 @@
 package consensus
 
 import (
-	"testing"
 	"context"
 	"crypto/ecdsa"
+	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
 	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/crypto"
 )
 
-
 func GetClient(t *testing.T) *client.Client {
-	groupID := uint(1)
-	rpc, err := client.Dial("http://localhost:8545", groupID)
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58", NodeURL: "http://localhost:8545"}
+	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("init rpc client failed: %+v", err)
+		t.Fatalf("can not dial to the RPC API: %v", err)
 	}
-	return rpc
+	return c
 }
 
 func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 	privateKey, err := crypto.HexToECDSA("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-    if err != nil {
-        t.Fatalf("init privateKey failed: %+v", err)
+	if err != nil {
+		t.Fatalf("init privateKey failed: %+v", err)
 	}
 	return privateKey
 }
@@ -54,13 +55,13 @@ func TestAddObserver(t *testing.T) {
 		t.Fatalf("ConsensusService AddObserver failed: %+v\n", err)
 	}
 	// wait for the mining
-    receipt, err := bind.WaitMined(context.Background(), rpc, tx)
-    if err != nil {
-        t.Fatalf("tx mining error:%v\n", err)
+	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	if err != nil {
+		t.Fatalf("tx mining error:%v\n", err)
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-    observer, err = rpc.GetObserverList(context.Background())
+	observer, err = rpc.GetObserverList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetObserverList second time failed: %+v\n", err)
 	}
@@ -83,13 +84,13 @@ func TestAddSealer(t *testing.T) {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
 	}
 	// wait for the mining
-    receipt, err := bind.WaitMined(context.Background(), rpc, tx)
-    if err != nil {
-        t.Fatalf("tx mining error:%v\n", err)
+	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	if err != nil {
+		t.Fatalf("tx mining error:%v\n", err)
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-    observer, err = rpc.GetSealerList(context.Background())
+	observer, err = rpc.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
@@ -112,13 +113,13 @@ func TestRemove(t *testing.T) {
 		t.Fatalf("ConsensusService Remove failed: %+v\n", err)
 	}
 	// wait for the mining
-    receipt, err := bind.WaitMined(context.Background(), rpc, tx)
-    if err != nil {
-        t.Fatalf("tx mining error:%v\n", err)
+	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	if err != nil {
+		t.Fatalf("tx mining error:%v\n", err)
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-    observer, err = rpc.GetSealerList(context.Background())
+	observer, err = rpc.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}

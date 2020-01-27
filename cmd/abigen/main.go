@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	
+
 	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/cmd/utils"
 	"github.com/FISCO-BCOS/go-sdk/common/compiler"
@@ -44,7 +44,6 @@ OPTIONS:
 )
 
 var (
-
 	app *cli.App
 
 	// Flags needed by abigen
@@ -99,6 +98,11 @@ var (
 		Usage: "Destination language for the bindings (go, java, objc)",
 		Value: "go",
 	}
+	cryptoFlag = cli.StringFlag{
+		Name:  "smcrypto",
+		Usage: "If use sm crypto (true, false)",
+		Value: "false",
+	}
 )
 
 func init() {
@@ -116,6 +120,7 @@ func init() {
 		pkgFlag,
 		outFlag,
 		langFlag,
+		cryptoFlag,
 	}
 	app.Action = utils.MigrateFlags(abigen)
 	cli.CommandHelpTemplate = commandHelperTemplate
@@ -228,8 +233,12 @@ func abigen(c *cli.Context) error {
 			libs[libPattern] = nameParts[len(nameParts)-1]
 		}
 	}
+	smcrypto := false
+	if c.GlobalString(cryptoFlag.Name) == "true" {
+		smcrypto = true
+	}
 	// Generate the contract binding
-	code, err := bind.Bind(types, abis, bins, sigs, c.GlobalString(pkgFlag.Name), lang, libs)
+	code, err := bind.Bind(types, abis, bins, sigs, c.GlobalString(pkgFlag.Name), lang, libs, smcrypto)
 	if err != nil {
 		utils.Fatalf("Failed to generate ABI binding: %v", err)
 	}

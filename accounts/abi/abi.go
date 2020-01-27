@@ -32,6 +32,7 @@ type ABI struct {
 	Constructor Method
 	Methods     map[string]Method
 	Events      map[string]Event
+	SMCrypto    bool `"json:,omitempty"`
 }
 
 // JSON returns a parsed ABI interface and error if it failed.
@@ -143,10 +144,11 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 				_, ok = abi.Methods[name]
 			}
 			abi.Methods[name] = Method{
-				Name:    name,
-				Const:   field.Constant,
-				Inputs:  field.Inputs,
-				Outputs: field.Outputs,
+				Name:     name,
+				Const:    field.Constant,
+				Inputs:   field.Inputs,
+				Outputs:  field.Outputs,
+				SMCrypto: abi.SMCrypto,
 			}
 		case "event":
 			name := field.Name

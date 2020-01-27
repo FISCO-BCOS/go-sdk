@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/FISCO-BCOS/go-sdk/crypto/smcrypto"
 )
 
 // Method represents a callable given a `Name` and whether the method is a constant.
@@ -32,10 +33,11 @@ import (
 // be flagged `false`.
 // Input specifies the required input parameters for this gives method.
 type Method struct {
-	Name    string
-	Const   bool
-	Inputs  Arguments
-	Outputs Arguments
+	Name     string
+	Const    bool
+	Inputs   Arguments
+	Outputs  Arguments
+	SMCrypto bool
 }
 
 // Sig returns the methods string signature according to the ABI spec.
@@ -73,5 +75,8 @@ func (method Method) String() string {
 }
 
 func (method Method) Id() []byte {
+	if method.SMCrypto {
+		return smcrypto.SM3Hash([]byte(method.Sig()))[:4]
+	}
 	return crypto.Keccak256([]byte(method.Sig()))[:4]
 }

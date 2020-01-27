@@ -21,8 +21,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
 var (
@@ -73,11 +73,13 @@ type ContractTransactor interface {
 	// GetBlockLimit returns the blocklimit for current blocknumber
 	GetBlockLimit(ctx context.Context) (*big.Int, error)
 	// GetGroupID returns the groupID of the client
-	GetGroupID() (*big.Int)
+	GetGroupID() *big.Int
 	// GetChainID returns the chainID of the blockchain
 	GetChainID(ctx context.Context) (*big.Int, error)
 	// GetContractAddress returns the contract address once it was deployed
-    GetContractAddress(ctx context.Context, txhash string) (common.Address, error)
+	GetContractAddress(ctx context.Context, txhash string) (common.Address, error)
+	// SMCrypto returns true if use sm crypto
+	SMCrypto() bool
 }
 
 // ContractFilterer defines the methods needed to access log events using one-off
