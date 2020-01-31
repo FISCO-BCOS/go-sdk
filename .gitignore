@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-console
 
 # Test binary, built with `go test -c`
 *.test
@@ -17,3 +16,6 @@ console
 
 # macOS specific
 .DS_Store
+
+# golang
+go.sum

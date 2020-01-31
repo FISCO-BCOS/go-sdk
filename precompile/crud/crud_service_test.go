@@ -8,7 +8,7 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func GetClient(t *testing.T) *client.Client {

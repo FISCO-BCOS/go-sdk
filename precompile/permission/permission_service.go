@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompile/crud"
 )
@@ -183,12 +183,12 @@ func (service *PermissionService) list(tableName string) ([]PermissionInfo, erro
 
 func handleReceipt(receipt *types.Receipt) (string, error) {
 	status := receipt.GetStatus()
-	if common.Success != status {
-		return "", fmt.Errorf(common.GetStatusMessage(status))
+	if types.Success != status {
+		return "", fmt.Errorf(types.GetStatusMessage(status))
 	}
 	output := receipt.GetOutput()
 	if output != "" {
-		return common.GetJsonStr(output)
+		return types.GetJsonStr(output)
 	}
 	return "", fmt.Errorf("Transaction is handled failure")
 }

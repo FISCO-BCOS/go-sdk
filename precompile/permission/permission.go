@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_Permission *PermissionRaw) Call(opts *bind.CallOpts, result interface{}, 
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Permission *PermissionRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Permission *PermissionRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Permission.Contract.PermissionTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Permission *PermissionRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Permission *PermissionRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Permission.Contract.PermissionTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,12 +162,12 @@ func (_Permission *PermissionCallerRaw) Call(opts *bind.CallOpts, result interfa
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Permission *PermissionTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Permission.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Permission *PermissionTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Permission.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -200,41 +200,41 @@ func (_Permission *PermissionCallerSession) QueryByName(table_name string) (stri
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactor) Insert(opts *bind.TransactOpts, table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactor) Insert(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.contract.Transact(opts, "insert", table_name, addr)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionSession) Insert(table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionSession) Insert(table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.Contract.Insert(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactorSession) Insert(table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactorSession) Insert(table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.Contract.Insert(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactor) Remove(opts *bind.TransactOpts, table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactor) Remove(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.contract.Transact(opts, "remove", table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionSession) Remove(table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionSession) Remove(table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.Contract.Remove(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactorSession) Remove(table_name string, addr string) (*types.RawTransaction, error) {
+func (_Permission *PermissionTransactorSession) Remove(table_name string, addr string) (*types.Transaction, error) {
 	return _Permission.Contract.Remove(&_Permission.TransactOpts, table_name, addr)
 }

@@ -5,10 +5,10 @@ import (
 	"crypto/ecdsa"
 	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func GetClient(t *testing.T) *client.Client {

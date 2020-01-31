@@ -22,23 +22,38 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
-	ErrInvalidChainId = errors.New("invalid chain id for signer")
+	ErrInvalidChainID = errors.New("invalid chain id for signer")
 )
 
-// rawSigCache is used to cache the derived sender and contains
+// sigCache is used to cache the derived sender and contains
 // the signer used to derive it.
-type rawSigCache struct {
-	signer RawSigner
+type sigCache struct {
+	signer Signer
 	from   common.Address
 }
 
-// SignRawTx signs the transaction using the given signer and private key
-func SignRawTx(tx *RawTransaction, s RawSigner, prv *ecdsa.PrivateKey) (*RawTransaction, error) {
+// MakeSigner returns a Signer based on the given chain config and block number.
+func MakeSigner(config *params.ChainConfig, blockNumber *big.Int) Signer {
+	var signer Signer
+	switch {
+	case config.IsEIP155(blockNumber):
+		signer = NewEIP155Signer(config.ChainID)
+	case config.IsHomestead(blockNumber):
+		signer = HomesteadSigner{}
+	default:
+		signer = FrontierSigner{}
+	}
+	return signer
+}
+
+// SignTx signs the transaction using the given signer and private key
+func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, error) {
 	h := s.Hash(tx)
 	sig, err := crypto.Sign(h[:], prv)
 	if err != nil {
@@ -47,16 +62,16 @@ func SignRawTx(tx *RawTransaction, s RawSigner, prv *ecdsa.PrivateKey) (*RawTran
 	return tx.WithSignature(s, sig)
 }
 
-// RawSender returns the address derived from the signature (V, R, S) using secp256k1
+// Sender returns the address derived from the signature (V, R, S) using secp256k1
 // elliptic curve and an error if it failed deriving or upon an incorrect
 // signature.
 //
 // Sender may cache the address, allowing it to be used regardless of
 // signing method. The cache is invalidated if the cached signer does
 // not match the signer used in the current call.
-func RawSender(signer RawSigner, tx *RawTransaction) (common.Address, error) {
+func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 	if sc := tx.from.Load(); sc != nil {
-		sigCache := sc.(rawSigCache)
+		sigCache := sc.(sigCache)
 		// If the signer used to derive from in a previous
 		// call is not the same as used current, invalidate
 		// the cache.
@@ -69,52 +84,52 @@ func RawSender(signer RawSigner, tx *RawTransaction) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
-	tx.from.Store(rawSigCache{signer: signer, from: addr})
+	tx.from.Store(sigCache{signer: signer, from: addr})
 	return addr, nil
 }
 
-// RawSigner encapsulates raw transaction signature handling. Note that this interface is not a
+// Signer encapsulates transaction signature handling. Note that this interface is not a
 // stable API and may change at any time to accommodate new protocol rules.
-type RawSigner interface {
-    // Sender returns the sender address of the transaction.
-	Sender(tx *RawTransaction) (common.Address, error)
+type Signer interface {
+	// Sender returns the sender address of the transaction.
+	Sender(tx *Transaction) (common.Address, error)
 	// SignatureValues returns the raw R, S, V values corresponding to the
 	// given signature.
-	SignatureValues(tx *RawTransaction, sig []byte) (r, s, v *big.Int, err error)
+	SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error)
 	// Hash returns the hash to be signed.
-	Hash(tx *RawTransaction) common.Hash
+	Hash(tx *Transaction) common.Hash
 	// Equal returns true if the given signer is the same as the receiver.
-	Equal(RawSigner) bool
+	Equal(Signer) bool
 }
 
-// EIP155ERawSinger implements Signer using the EIP155 rules.
-type EIP155RawSigner struct {
+// EIP155Transaction implements Signer using the EIP155 rules.
+type EIP155Signer struct {
 	chainId, chainIdMul *big.Int
 }
 
-func NewEIP155RawSigner(chainId *big.Int) EIP155RawSigner {
+func NewEIP155Signer(chainId *big.Int) EIP155Signer {
 	if chainId == nil {
 		chainId = new(big.Int)
 	}
-	return EIP155RawSigner{
+	return EIP155Signer{
 		chainId:    chainId,
 		chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2)),
 	}
 }
 
-func (s EIP155RawSigner) Equal(s2 RawSigner) bool {
-	eip155, ok := s2.(EIP155RawSigner)
+func (s EIP155Signer) Equal(s2 Signer) bool {
+	eip155, ok := s2.(EIP155Signer)
 	return ok && eip155.chainId.Cmp(s.chainId) == 0
 }
 
 var big8 = big.NewInt(8)
 
-func (s EIP155RawSigner) Sender(tx *RawTransaction) (common.Address, error) {
+func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
 	if !tx.Protected() {
-		return HomesteadRawSigner{}.Sender(tx)
+		return HomesteadSigner{}.Sender(tx)
 	}
-	if tx.ChainId().Cmp(s.chainId) != 0 {
-		return common.Address{}, ErrInvalidChainId
+	if tx.ChainID().Cmp(s.chainId) != 0 {
+		return common.Address{}, ErrInvalidChainID
 	}
 	V := new(big.Int).Sub(tx.data.V, s.chainIdMul)
 	V.Sub(V, big8)
@@ -123,8 +138,8 @@ func (s EIP155RawSigner) Sender(tx *RawTransaction) (common.Address, error) {
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (s EIP155RawSigner) SignatureValues(tx *RawTransaction, sig []byte) (R, S, V *big.Int, err error) {
-	R, S, V, err = HomesteadRawSigner{}.SignatureValues(tx, sig)
+func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
+	R, S, V, err = HomesteadSigner{}.SignatureValues(tx, sig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -137,8 +152,7 @@ func (s EIP155RawSigner) SignatureValues(tx *RawTransaction, sig []byte) (R, S, 
 
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
-func (s EIP155RawSigner) Hash(tx *RawTransaction) common.Hash {
-	// fmt.Printf("EIP155RawSigner.Hash()\n")
+func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 	return rlpHash([]interface{}{
 		tx.data.AccountNonce,
 		tx.data.Price,
@@ -147,45 +161,44 @@ func (s EIP155RawSigner) Hash(tx *RawTransaction) common.Hash {
 		tx.data.Recipient,
 		tx.data.Amount,
 		tx.data.Payload,
-		tx.data.ChainId,
-		tx.data.GroupId,
+		tx.data.ChainID,
+		tx.data.GroupID,
 		tx.data.ExtraData,
 		s.chainId, uint(0), uint(0),
 	})
 }
 
-// HomesteadRawSigner implements TransactionInterface using the
+// HomesteadTransaction implements TransactionInterface using the
 // homestead rules.
-type HomesteadRawSigner struct { FrontierRawSigner }
+type HomesteadSigner struct{ FrontierSigner }
 
-func (s HomesteadRawSigner) Equal(s2 RawSigner) bool {
-	_, ok := s2.(HomesteadRawSigner)
+func (s HomesteadSigner) Equal(s2 Signer) bool {
+	_, ok := s2.(HomesteadSigner)
 	return ok
 }
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (hs HomesteadRawSigner) SignatureValues(tx *RawTransaction, sig []byte) (r, s, v *big.Int, err error) {
-	return hs.FrontierRawSigner.SignatureValues(tx, sig)
+func (hs HomesteadSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error) {
+	return hs.FrontierSigner.SignatureValues(tx, sig)
 }
 
-func (hs HomesteadRawSigner) Sender(tx *RawTransaction) (common.Address, error) {
+func (hs HomesteadSigner) Sender(tx *Transaction) (common.Address, error) {
 	return recoverPlain(hs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, true)
 }
 
-// ===================== kasperliu =======================
-type FrontierRawSigner struct{}
+type FrontierSigner struct{}
 
-func (s FrontierRawSigner) Equal(s2 RawSigner) bool {
-	_, ok := s2.(FrontierRawSigner)
+func (s FrontierSigner) Equal(s2 Signer) bool {
+	_, ok := s2.(FrontierSigner)
 	return ok
 }
 
 // SignatureValues returns signature values. This signature
 // needs to be in the [R || S || V] format where V is 0 or 1.
-func (fs FrontierRawSigner) SignatureValues(tx *RawTransaction, sig []byte) (r, s, v *big.Int, err error) {
-	if len(sig) != 65 {
-		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *big.Int, err error) {
+	if len(sig) != crypto.SignatureLength {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want %d", len(sig), crypto.SignatureLength))
 	}
 	r = new(big.Int).SetBytes(sig[:32])
 	s = new(big.Int).SetBytes(sig[32:64])
@@ -195,8 +208,7 @@ func (fs FrontierRawSigner) SignatureValues(tx *RawTransaction, sig []byte) (r, 
 
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
-func (fs FrontierRawSigner) Hash(tx *RawTransaction) common.Hash {
-	// fmt.Printf("FrontierRawSigner.Hash()\n")
+func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
 	return rlpHash([]interface{}{
 		tx.data.AccountNonce,
 		tx.data.Price,
@@ -205,27 +217,27 @@ func (fs FrontierRawSigner) Hash(tx *RawTransaction) common.Hash {
 		tx.data.Recipient,
 		tx.data.Amount,
 		tx.data.Payload,
-		tx.data.ChainId,
-		tx.data.GroupId,
+		tx.data.ChainID,
+		tx.data.GroupID,
 		tx.data.ExtraData,
 	})
 }
 
-func (fs FrontierRawSigner) Sender(tx *RawTransaction) (common.Address, error) {
+func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {
 	return recoverPlain(fs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, false)
 }
 
 func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (common.Address, error) {
 	if Vb.BitLen() > 8 {
-		return common.Address{}, ErrInvalidRawSig 
+		return common.Address{}, ErrInvalidSig
 	}
 	V := byte(Vb.Uint64() - 27)
 	if !crypto.ValidateSignatureValues(V, R, S, homestead) {
-		return common.Address{}, ErrInvalidRawSig
+		return common.Address{}, ErrInvalidSig
 	}
 	// encode the signature in uncompressed format
 	r, s := R.Bytes(), S.Bytes()
-	sig := make([]byte, 65)
+	sig := make([]byte, crypto.SignatureLength)
 	copy(sig[32-len(r):32], r)
 	copy(sig[64-len(s):64], s)
 	sig[64] = V
@@ -242,8 +254,8 @@ func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (commo
 	return addr, nil
 }
 
-// deriveChainId derives the chain id from the given v parameter
-func deriveChainId(v *big.Int) *big.Int {
+// deriveChainID derives the chain id from the given v parameter
+func deriveChainID(v *big.Int) *big.Int {
 	if v.BitLen() <= 64 {
 		v := v.Uint64()
 		if v == 27 || v == 28 {

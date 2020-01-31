@@ -9,20 +9,21 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
 	_ = big.NewInt
 	_ = strings.NewReader
-	_ = common.NotFound
+	_ = ethereum.NotFound
 	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
@@ -53,7 +54,7 @@ func main() {
 }
 
 // DeployHello deploys a new Ethereum contract, binding an instance of Hello to it.
-func DeployHello(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.RawTransaction, *Hello, error) {
+func DeployHello(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Hello, error) {
 	parsed, err := abi.JSON(strings.NewReader(HelloABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
@@ -180,12 +181,12 @@ func (_Hello *HelloRaw) Call(opts *bind.CallOpts, result interface{}, method str
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Hello *HelloRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Hello *HelloRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Hello.Contract.HelloTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Hello *HelloRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Hello *HelloRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Hello.Contract.HelloTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -199,12 +200,12 @@ func (_Hello *HelloCallerRaw) Call(opts *bind.CallOpts, result interface{}, meth
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Hello *HelloTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Hello *HelloTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Hello.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Hello *HelloTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Hello *HelloTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Hello.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -237,20 +238,20 @@ func (_Hello *HelloCallerSession) Get() (string, error) {
 // Set is a paid mutator transaction binding the contract method 0x4ed3885e.
 //
 // Solidity: function set(string n) returns()
-func (_Hello *HelloTransactor) Set(opts *bind.TransactOpts, n string) (*types.RawTransaction, error) {
+func (_Hello *HelloTransactor) Set(opts *bind.TransactOpts, n string) (*types.Transaction, error) {
 	return _Hello.contract.Transact(opts, "set", n)
 }
 
 // Set is a paid mutator transaction binding the contract method 0x4ed3885e.
 //
 // Solidity: function set(string n) returns()
-func (_Hello *HelloSession) Set(n string) (*types.RawTransaction, error) {
+func (_Hello *HelloSession) Set(n string) (*types.Transaction, error) {
 	return _Hello.Contract.Set(&_Hello.TransactOpts, n)
 }
 
 // Set is a paid mutator transaction binding the contract method 0x4ed3885e.
 //
 // Solidity: function set(string n) returns()
-func (_Hello *HelloTransactorSession) Set(n string) (*types.RawTransaction, error) {
+func (_Hello *HelloTransactorSession) Set(n string) (*types.Transaction, error) {
 	return _Hello.Contract.Set(&_Hello.TransactOpts, n)
 }

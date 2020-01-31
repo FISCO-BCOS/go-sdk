@@ -22,17 +22,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 )
 
-var info = ", you can type gobcos help for more information"
+var info = ", you can type console help for more information"
 
 // commands
 // var bashCompletionCmd = &cobra.Command{
 // 	Use:   "bashCompletion",
 // 	Short: "Generates bash completion scripts",
-// 	Long: `A script "gobcos.sh" will get you completions of the console commands.
+// 	Long: `A script "console.sh" will get you completions of the console commands.
 // Copy it to
 
 //     /etc/bash_completion.d/
@@ -43,15 +43,15 @@ var info = ", you can type gobcos help for more information"
 
 // and reset your terminal to use autocompletion.`,
 // 	Run: func(cmd *cobra.Command, args []string) {
-// 		rootCmd.GenBashCompletionFile("gobcos.sh");
-// 		fmt.Println("gobcos.sh created on your current diretory successfully.")
+// 		rootCmd.GenBashCompletionFile("console.sh");
+// 		fmt.Println("console.sh created on your current diretory successfully.")
 // 	},
 // }
 
 // var zshCompletionCmd = &cobra.Command{
 // 	Use:   "zshCompletion",
 // 	Short: "Generates zsh completion scripts",
-// 	Long: `A script "gobcos.zsh" will get you completions of the console commands.
+// 	Long: `A script "console.zsh" will get you completions of the console commands.
 // The recommended way to install this script is to copy to '~/.zsh/_console', and
 // then add the following to your ~/.zshrc file:
 

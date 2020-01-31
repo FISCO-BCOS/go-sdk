@@ -5,25 +5,25 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Receipt represents the results of a transaction.
 type Receipt struct {
-	TransactionHash  string    `json:"transactionHash"`
-	TransactionIndex string    `json:"transactionIndex"`
-	BlockHash        string    `json:"blockHash"`
-	BlockNumber      string    `json:"blockNumber"`
-	GasUsed          string    `json:"gasUsed"`
-	ContractAddress  string    `json:"contractAddress"`
-	Root             string    `json:"root"`
-	Status           string    `json:"status"`
-	From             string    `json:"from"`
-	To               string    `json:"to"`
-	Input            string    `json:"input"`
-	Output           string    `json:"output"`
-	Logs             []*NewLog `json:"logs"`
-	LogsBloom        string    `json:"logsBloom"`
+	TransactionHash  string         `json:"transactionHash"`
+	TransactionIndex string         `json:"transactionIndex"`
+	BlockHash        string         `json:"blockHash"`
+	BlockNumber      string         `json:"blockNumber"`
+	GasUsed          string         `json:"gasUsed"`
+	ContractAddress  common.Address `json:"contractAddress"`
+	Root             string         `json:"root"`
+	Status           string         `json:"status"`
+	From             string         `json:"from"`
+	To               string         `json:"to"`
+	Input            string         `json:"input"`
+	Output           string         `json:"output"`
+	Logs             []*NewLog      `json:"logs"`
+	LogsBloom        string         `json:"logsBloom"`
 }
 
 // GetTransactionHash returns the transaction hash string
@@ -53,7 +53,7 @@ func (r *Receipt) GetGasUsed() string {
 
 // GetContractAddress returns the contract address
 func (r *Receipt) GetContractAddress() common.Address {
-	return common.HexToAddress(r.ContractAddress)
+	return r.ContractAddress
 }
 
 // GetRoot returns the transactions root

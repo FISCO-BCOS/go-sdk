@@ -1,4 +1,6 @@
-# !/bin/bash
+#!/bin/bash
+
+set -e
 
 SHELL_FOLDER=$(
     cd $(dirname $0)
@@ -6,7 +8,7 @@ SHELL_FOLDER=$(
 )
 
 # check_script=gofmt -e -s -w 
-check_script=goimports -e -w 
+check_script="${GOPATH}/goimports -w"
 commit_limit=2
 file_limit=35
 insert_limit=300
@@ -16,12 +18,12 @@ skip_check_words="sync code"
 
 LOG_ERROR() {
     content=${1}
-    echo -e "\033[31m"${content}"\033[0m"
+    echo -e "\033[31m${content}\033[0m"
 }
 
 LOG_INFO() {
     content=${1}
-    echo -e "\033[32m"${content}"\033[0m"
+    echo -e "\033[32m${content}\033[0m"
 }
 
 execute_cmd() {

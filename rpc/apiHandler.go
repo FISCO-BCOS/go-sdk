@@ -24,9 +24,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -46,7 +47,7 @@ func NewAPIHandler(c *Connection) *APIHandler {
 	return &apiHandler
 }
 
-func toCallArg(msg common.CallMsg) interface{} {
+func toCallArg(msg ethereum.CallMsg) interface{} {
 	arg := map[string]interface{}{
 		"from": msg.From.String(),
 		"to":   msg.To.String(),
@@ -75,7 +76,7 @@ type callResult struct {
 }
 
 // Call invoke the call method of rpc api
-func (api *APIHandler) Call(ctx context.Context, groupID int, msg common.CallMsg) ([]byte, error) {
+func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
 	var hex hexutil.Bytes
 	var cr *callResult
 	err := api.CallContext(ctx, &cr, "call", groupID, toCallArg(msg))
@@ -90,7 +91,7 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg common.CallMsg
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.RawTransaction) error {
+func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
@@ -183,8 +183,8 @@ func (service *CRUDService) Desc(tableName string) (*Table, error) {
 
 func handleReceipt(receipt *types.Receipt) (int, error) {
 	status := receipt.GetStatus()
-	if common.Success != status {
-		return -1, fmt.Errorf(common.GetStatusMessage(status))
+	if types.Success != status {
+		return -1, fmt.Errorf(types.GetStatusMessage(status))
 	}
 	output := receipt.GetOutput()
 	if output != "0x" {
