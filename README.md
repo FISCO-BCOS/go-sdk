@@ -2,6 +2,10 @@
 
 Golang SDK For FISCO BCOS 2.0.0
 
+[![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
+
+
+![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg) [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)  ![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)
 ____
 
 FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实现的功能有：
@@ -20,13 +24,11 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
 # 控制台使用
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`gobcos_config.yaml`进行更改:
+在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.toml`进行更改:
 
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
-
-#nano gobcos_config.yaml
 ```
 
 本项目使用了`go module`的[特性](https://blog.golang.org/using-go-modules)，可以在旧版本的`$GOPATH`路径之外直接运行`go`命令，如果项目仍然在`$GOPATH`路径之下，则需要显示开启`GO111MODULE`以支持该特性:
@@ -38,7 +40,7 @@ export GO111MODULE=on
 编译代码后会在`$GOBIN`下生成控制台程序，请确保添加`$GOBIN`到系统路径`$PATH`中，关于`$GOBIN`等的设置可以[参考这里](https://www.cnblogs.com/zhaof/p/7906722.html)，以便能正常执行`go`生成的程序:
 
 ```go
-go install gobcos.go
+go build console.go
 ```
 
 如果不能访问外网，则可以设置开源代理进行依赖下载(需使用`go module`的特性)：
@@ -51,7 +53,7 @@ export GOPROXY=https://goproxy.io
 最后，运行控制台查看可用指令:
 
 ```bash
-gobcos help
+./console help
 ```
 
 # Package功能使用
@@ -60,96 +62,6 @@ gobcos help
 
 ```go
 import "github.com/FISCO-BCOS/go-sdk/client"
-```
-
-## RPC API 测试
-
-此部分只对项目代码中的RPC API接口调用进行测试，以确定是否能顺利连接FISCO BCOS 2.0.0节点以获取区块链信息。
-
-首先需要拉取代码：
-
-```shell
-git clone https://github.com/FISCO-BCOS/go-sdk.git
-```
-
-进行代码测试前，请先按照实际部署节点的RPC URL更改`client/goclient_test.go`中的默认的FISCO BCOS RPC连接以及群组ID：
-```go
-func GetClient(t *testing.T) (*Client) {
-    // RPC API
-    groupID := uint(1)
-    c, err := Dial("http://localhost:8545", groupID) // change it to your RPC IP & port, groupID that you want to connect
-    if err != nil {
-        t.Fatalf("can not dial to the RPC API: %v", err)
-    }
-    return c
-}
-```
-测试代码默认开启的测试函数为`GetClientVersion, GetBlockNumber, GetPBFTView`，其余函数需去除注释并更改为实际存在的数据后才能执行。如：
-
-```go
-// GetBlockHashByNumber returns the block hash by its block number
-func TestBlockHshByNumber(t *testing.T) {
-    c := GetClient(t)
-    // provide a specific blocknumber
-    bnum := "0x1"
-    raw, err := c.GetBlockHashByNumber(context.Background(), bnum)
-    if err != nil {
-        t.Fatalf("block hash not found: %v", err)
-    }
-
-    t.Logf("block hash by number:\n%s", raw)
-}
-```
-
-执行RPC client的测试代码命令为：
-
-```shell
-go test -v -count=1 ./client
-```
-
-## JSON-RPC API调用
-
-在测试成功后，可以在用户的工程项目中引用go-sdk的RPC客户端，以调用RPC方法，所有的方法返回的是`[]byte`，用户可根据实际需要做进一步的JSON解析：
-
-```go
-import "github.com/FISCO-BCOS/go-sdk/client"
-```
-
-下面假设有一个`block.go`文件需要获取FISCO BCOS 区块链的某一个区块的信息，则在引入客户端代码包后首先需要初始化客户端，提供需要连接的FISCO BCOS区块链的RPC URL及群组ID：
-
-```go
-package main
-import (
-    "context"
-    "github.com/FISCO-BCOS/go-sdk/client"
-)
-
-func main() {
-    groupID := uint(1)
-    client, err := client.Dial("http://localhost:8545", groupID) # change to your RPC URL and GroupID
-    if err != nil {
-    	// handle err
-    }
-}
-```
-
-然后可按照FISCO BCOS的[RPC API文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#)进行区块链信息查询，需要注意的是，go-sdk客服端的RPC方法调用需要将API文档里的方法首字母更改为大写字母`Get`：
-
-```go
-blockHash := "0xc0b21d064b97bafda716e07785fe8bb20cc23506bb980f12c7f7a4f4ef50ce30" # fake hash
-includeTx := false # only display the transaction hash
-block, err := client.GetBlockByHash(context.BackGround(), blockHash, includeTx) # invoke "getBlockByHash“
-if err != nil {
-    // handle err
-}
-```
-
-若要在代码的后续使用中获取其他群组的区块信息，则可以直接调用客户端的`SetGroupID`方法进行动态切换，如：
-
-```go
-// switch to other group
-client.SetGroupID(otherGroupID)
-client.GetBlockNumber(context.BackGround()) # get the lastest block number of the otherGroupID
 ```
 
 ## Solidity合约编译为Go文件
@@ -298,8 +210,8 @@ import (
     "fmt"
     "log"
     "os"
-    "github.com/FISCO-BCOS/go-sdk/crypto"
-    "github.com/FISCO-BCOS/go-sdk/common/hexutil"
+    "github.com/ethereum/go-ethereum/crypto"
+    "github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 func main() {
@@ -336,7 +248,7 @@ touch contract_run.go
 go mod init contract
 ```
 
-此时目录下会生成`go.mod`包管理文件。而在`contract_deploy.go`部署合约之前，需要先从`go-sdk`中导入`accounts/abi/bind`包，然后调用传入私钥的`NewKeyedTransactor`：
+此时目录下会生成`go.mod`包管理文件。而在`contract_deploy.go`部署合约之前，需要先从`go-sdk`中导入`accounts/abi/bind`包，然后调用传入`client.GetTransactOpts()`：
 
 ```go 
 package main
@@ -345,24 +257,20 @@ import (
     "fmt"
     "log"
     "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-    "github.com/FISCO-BCOS/go-sdk/crypto"
+    "github.com/FISCO-BCOS/go-sdk/abi/bind"
+    "github.com/ethereum/go-ethereum/crypto"
     store "contract/testfile" // import Store.go
 )
 
 func main(){
-    groupID := uint(1)
-    client, err := client.Dial("http://localhost:8545", groupID)
+    config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1, PrivateKey:"145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",NodeURL: "http://localhost:8545"}
+
+    client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
     }
-    privateKey, err := crypto.HexToECDSA("input your privateKey in hex without \"0x\"") // 145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58
-    if err != nil {
-        log.Fatal(err)
-    }
-    auth := bind.NewKeyedTransactor(privateKey) // input your privateKey
     input := "Store deployment 1.0"
-    address, tx, instance, err := store.DeployStore(auth, client, input)
+    address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
     if err != nil {
         log.Fatal(err)
     }
@@ -381,20 +289,20 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/ethereum/go-ethereum/common"
     "github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
     store "contract/testfile" // for demo
 )
 
 func main() {
-    groupID := uint(1)
-    client, err := client.Dial("http://localhost:8545", groupID)
+    config := &conf.ParseConfig("config.toml")[0]
+    client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
     }
 
-    address := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
-    instance, err := store.NewStore(address, client)
+    instance, err := store.NewStore(client.GetAddress(), client)
     if err != nil {
         log.Fatal(err)
     }
@@ -413,28 +321,27 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/ethereum/go-ethereum/common"
     "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+    "github.com/FISCO-BCOS/go-sdk/abi/bind"
     store "contract/testfile" // for demo
 )
 
 func main() {
-    groupID := uint(1)
-    client, err := client.Dial("http://localhost:8545", groupID)
+    config := &conf.ParseConfig("config.toml")[0]
+    client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
     }
 
     // load the contract
-    address := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
-    instance, err := store.NewStore(address, client)
+    instance, err := store.NewStore(client.GetAddress(), client)
     if err != nil {
         log.Fatal(err)
     }
 
-    opts := &bind.CallOpts{From: common.HexToAddress("account address")} //0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F
-    version, err := instance.Version(opts)
+    version, err := instance.Version(client.GetCallOpts())
     if err != nil {
         log.Fatal(err)
     }
@@ -454,39 +361,34 @@ import (
     "fmt"
     "log"
     "context"
-    "github.com/FISCO-BCOS/go-sdk/common"
+    "github.com/ethereum/go-ethereum/common"
     "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-    "github.com/FISCO-BCOS/go-sdk/crypto"
+    "github.com/FISCO-BCOS/go-sdk/abi/bind"
+    "github.com/ethereum/go-ethereum/crypto"
     store "contract/testfile" // for demo
 )
 
 func main() {
-    groupID := uint(8)
-    client, err := client.Dial("http://localhost:8545", groupID)
+    config := &conf.ParseConfig("config.toml")[0]
+    client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
     }
 
     // load the contract
-    address := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
-    instance, err := store.NewStore(address, client)
+    instance, err := store.NewStore(client.GetAddress(), client)
     if err != nil {
         log.Fatal(err)
     }
+
+	storeSession := &StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
     key := [32]byte{}
     value := [32]byte{}
     copy(key[:], []byte("foo"))
     copy(value[:], []byte("bar"))
 
-    privateKey, err := crypto.HexToECDSA("input your privateKey in hex") // 145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    auth := bind.NewKeyedTransactor(privateKey)
-    tx, err := instance.SetItem(auth, key, value)
+    tx, err := storeSession.SetItem(key, value)
     if err != nil {
         log.Fatal(err)
     }
@@ -494,15 +396,14 @@ func main() {
     fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 
     // wait for the mining
-    receipt, err := bind.WaitMined(context.Background(), client, tx)
+    receipt, err := client.WaitMined(tx)
     if err != nil {
         log.Fatalf("tx mining error:%v\n", err)
     }
     fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
-    
+
     // read the result
-    opts := &bind.CallOpts{From: common.HexToAddress("0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F")} // 0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F
-    result, err := instance.Items(opts, key)
+    result, err := storeSession.Items(key)
     if err != nil {
         log.Fatal(err)
     }

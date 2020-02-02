@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_Config *ConfigRaw) Call(opts *bind.CallOpts, result interface{}, method s
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Config *ConfigRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Config *ConfigRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Config.Contract.ConfigTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Config *ConfigRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Config *ConfigRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Config.Contract.ConfigTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,32 +162,32 @@ func (_Config *ConfigCallerRaw) Call(opts *bind.CallOpts, result interface{}, me
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Config *ConfigTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Config *ConfigTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Config.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Config *ConfigTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Config *ConfigTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Config.Contract.contract.Transact(opts, method, params...)
 }
 
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
 // Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigTransactor) SetValueByKey(opts *bind.TransactOpts, key string, value string) (*types.RawTransaction, error) {
+func (_Config *ConfigTransactor) SetValueByKey(opts *bind.TransactOpts, key string, value string) (*types.Transaction, error) {
 	return _Config.contract.Transact(opts, "setValueByKey", key, value)
 }
 
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
 // Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigSession) SetValueByKey(key string, value string) (*types.RawTransaction, error) {
+func (_Config *ConfigSession) SetValueByKey(key string, value string) (*types.Transaction, error) {
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
 }
 
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
 // Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigTransactorSession) SetValueByKey(key string, value string) (*types.RawTransaction, error) {
+func (_Config *ConfigTransactorSession) SetValueByKey(key string, value string) (*types.Transaction, error) {
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
 }

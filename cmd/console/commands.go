@@ -16,27 +16,26 @@ limitations under the License.
 package console
 
 import (
-	"fmt"
 	"context"
+	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
-	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
-	"github.com/FISCO-BCOS/go-sdk/common/hexutil"
 )
 
-
-var info = ", you can type gobcos help for more information"
+var info = ", you can type console help for more information"
 
 // commands
 // var bashCompletionCmd = &cobra.Command{
 // 	Use:   "bashCompletion",
 // 	Short: "Generates bash completion scripts",
-// 	Long: `A script "gobcos.sh" will get you completions of the console commands.
-// Copy it to 
+// 	Long: `A script "console.sh" will get you completions of the console commands.
+// Copy it to
 
-//     /etc/bash_completion.d/ 
+//     /etc/bash_completion.d/
 
 // as described here:
 
@@ -44,15 +43,15 @@ var info = ", you can type gobcos help for more information"
 
 // and reset your terminal to use autocompletion.`,
 // 	Run: func(cmd *cobra.Command, args []string) {
-// 		rootCmd.GenBashCompletionFile("gobcos.sh");
-// 		fmt.Println("gobcos.sh created on your current diretory successfully.")
+// 		rootCmd.GenBashCompletionFile("console.sh");
+// 		fmt.Println("console.sh created on your current diretory successfully.")
 // 	},
 // }
 
 // var zshCompletionCmd = &cobra.Command{
 // 	Use:   "zshCompletion",
 // 	Short: "Generates zsh completion scripts",
-// 	Long: `A script "gobcos.zsh" will get you completions of the console commands.
+// 	Long: `A script "console.zsh" will get you completions of the console commands.
 // The recommended way to install this script is to copy to '~/.zsh/_console', and
 // then add the following to your ~/.zshrc file:
 
@@ -73,44 +72,43 @@ var info = ", you can type gobcos help for more information"
 var newAccountCmd = &cobra.Command{
 	Use:   "newAccount",
 	Short: "Create a new account",
-	Long: `Create a new account and save the results to ./bin/account/yourAccountName.keystore in encrypted form.`,
-	Args: cobra.ExactArgs(2),
+	Long:  `Create a new account and save the results to ./bin/account/yourAccountName.keystore in encrypted form.`,
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		clientVer, err := RPC.GetClientVersion(context.Background())
 		if err != nil {
 			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Client Version: \n%s\n" , clientVer)
+		fmt.Printf("Client Version: \n%s\n", clientVer)
 	},
 }
-
 
 // ======= node =======
 
 var getClientVersionCmd = &cobra.Command{
 	Use:   "getClientVersion",
 	Short: "                                 Get the blockchain version",
-	Long: `Returns the specific FISCO BCOS version that runs on the node you connected.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns the specific FISCO BCOS version that runs on the node you connected.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		clientVer, err := RPC.GetClientVersion(context.Background())
 		if err != nil {
 			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Client Version: \n%s\n" , clientVer)
+		fmt.Printf("Client Version: \n%s\n", clientVer)
 	},
 }
 
 var getGroupIDCmd = &cobra.Command{
 	Use:   "getGroupID",
 	Short: "                                 Get the group ID of the client",
-	Long: `Returns the group ID that the console had connected to.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns the group ID that the console had connected to.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		groupID := RPC.GetGroupID()
-		fmt.Printf("Group ID: \n%s\n" , groupID)
+		fmt.Printf("Group ID: \n%s\n", groupID)
 	},
 }
 
@@ -121,19 +119,19 @@ var getBlockNumberCmd = &cobra.Command{
 The block height is encoded in hex`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		blockNumber,err := RPC.GetBlockNumber(context.Background())
+		blockNumber, err := RPC.GetBlockNumber(context.Background())
 		if err != nil {
 			fmt.Printf("block number not found: %v\n", err)
 			return
 		}
 		fmt.Printf("blocknumber: \n    hex: %s\n", blockNumber)
 		strNum := string(blockNumber)
-		bnum, err := toDecimal(strNum[3:len(strNum)-1])
+		bnum, err := toDecimal(strNum[3 : len(strNum)-1])
 		if err != nil {
 			fmt.Println("The block Number is tot a valid hex string")
 			return
 		}
-		fmt.Println("decimal: ",bnum)
+		fmt.Println("decimal: ", bnum)
 	},
 }
 
@@ -144,132 +142,132 @@ var getPbftViewCmd = &cobra.Command{
 The PBFT view is encoded in hex`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		pbft,err := RPC.GetPBFTView(context.Background())
+		pbft, err := RPC.GetPBFTView(context.Background())
 		if err != nil {
 			fmt.Printf("PBFT view not found: %v\n", err)
 			return
 		}
-		fmt.Printf("PBFT view: \n%s\n" , pbft)
+		fmt.Printf("PBFT view: \n%s\n", pbft)
 	},
 }
 
 var getSealerListCmd = &cobra.Command{
 	Use:   "getSealerList",
 	Short: "                                 Get the sealers' ID list",
-	Long: `Returns an ID list of the sealer nodes within the specified group.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns an ID list of the sealer nodes within the specified group.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		sealerList,err := RPC.GetSealerList(context.Background())
+		sealerList, err := RPC.GetSealerList(context.Background())
 		if err != nil {
 			fmt.Printf("sealer list not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Sealer List: \n%s\n" , sealerList)
+		fmt.Printf("Sealer List: \n%s\n", sealerList)
 	},
 }
 
 var getObserverListCmd = &cobra.Command{
 	Use:   "getObserverList",
 	Short: "                                 Get the observers' ID list",
-	Long: `Returns an ID list of observer nodes within the specified group.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns an ID list of observer nodes within the specified group.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		observerList,err := RPC.GetObserverList(context.Background())
+		observerList, err := RPC.GetObserverList(context.Background())
 		if err != nil {
 			fmt.Printf("observer list not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Observer List: \n%s\n" , observerList)
+		fmt.Printf("Observer List: \n%s\n", observerList)
 	},
 }
 
 var getConsensusStatusCmd = &cobra.Command{
 	Use:   "getConsensusStatus",
 	Short: "                                 Get consensus status of nodes",
-	Long: `Returns consensus status information within the specified group.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns consensus status information within the specified group.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		consensusStatus,err := RPC.GetConsensusStatus(context.Background())
+		consensusStatus, err := RPC.GetConsensusStatus(context.Background())
 		if err != nil {
 			fmt.Printf("consensus status not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Consensus Status: \n%s\n" , consensusStatus)
+		fmt.Printf("Consensus Status: \n%s\n", consensusStatus)
 	},
 }
 
 var getSyncStatusCmd = &cobra.Command{
 	Use:   "getSyncStatus",
 	Short: "                                 Get synchronization status of nodes",
-	Long: `Returns synchronization status information within the specified group.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns synchronization status information within the specified group.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		syncStatus,err := RPC.GetSyncStatus(context.Background())
+		syncStatus, err := RPC.GetSyncStatus(context.Background())
 		if err != nil {
 			fmt.Printf("synchronization status not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Synchronization Status: \n%s\n" , syncStatus)
+		fmt.Printf("Synchronization Status: \n%s\n", syncStatus)
 	},
 }
 
 var getPeersCmd = &cobra.Command{
 	Use:   "getPeers",
 	Short: "                                 Get the connected peers' information",
-	Long: `Returns the information of connected p2p nodes.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns the information of connected p2p nodes.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		peers,err := RPC.GetPeers(context.Background())
+		peers, err := RPC.GetPeers(context.Background())
 		if err != nil {
 			fmt.Printf("peers not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Peers: \n%s\n" , peers)
+		fmt.Printf("Peers: \n%s\n", peers)
 	},
 }
 
 var getGroupPeersCmd = &cobra.Command{
 	Use:   "getGroupPeers",
 	Short: "                                 Get all peers' ID within the group",
-	Long: `Returns an ID list of consensus nodes and observer nodes within the specified group.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns an ID list of consensus nodes and observer nodes within the specified group.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		peers,err := RPC.GetGroupPeers(context.Background())
+		peers, err := RPC.GetGroupPeers(context.Background())
 		if err != nil {
 			fmt.Printf("peers not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Peers: \n%s\n" , peers)
+		fmt.Printf("Peers: \n%s\n", peers)
 	},
 }
 
 var getNodeIDListCmd = &cobra.Command{
 	Use:   "getNodeIDList",
 	Short: "                                 Get ID list of nodes",
-	Long: `Returns an ID list of the node itself and the connected p2p nodes.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		peers,err := RPC.GetNodeIDList(context.Background())
+		peers, err := RPC.GetNodeIDList(context.Background())
 		if err != nil {
 			fmt.Printf("node ID list not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Node ID list: \n%s\n" , peers)
+		fmt.Printf("Node ID list: \n%s\n", peers)
 	},
 }
 
 var getGroupListCmd = &cobra.Command{
 	Use:   "getGroupList",
 	Short: "                                 Get ID list of groups that the node belongs",
-	Long: `Returns an ID list of groups that the node belongs.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns an ID list of groups that the node belongs.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		peers,err := RPC.GetGroupList(context.Background())
+		peers, err := RPC.GetGroupList(context.Background())
 		if err != nil {
 			fmt.Printf("group IDs list not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Group ID List: \n%s\n" , peers)
+		fmt.Printf("Group ID List: \n%s\n", peers)
 	},
 }
 
@@ -290,7 +288,7 @@ For example:
 For more information please refer:
 
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.RangeArgs(1,2),
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		var bhash string
 		var includeTx bool
@@ -301,7 +299,7 @@ For more information please refer:
 			return
 		}
 
-        if(len(args) == 1) {
+		if len(args) == 1 {
 			bhash = args[0]
 			includeTx = true
 		} else {
@@ -313,12 +311,12 @@ For more information please refer:
 			}
 			includeTx = _includeTx
 		}
-		peers,err := RPC.GetBlockByHash(context.Background(), bhash, includeTx)
+		peers, err := RPC.GetBlockByHash(context.Background(), bhash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Block: \n%s\n" , peers)
+		fmt.Printf("Block: \n%s\n", peers)
 	},
 }
 
@@ -337,7 +335,7 @@ For example:
 For more information please refer:
 
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.RangeArgs(1,2),
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		var bnumber string
 		var includeTx bool
@@ -348,7 +346,7 @@ For more information please refer:
 			return
 		}
 
-        if(len(args) == 1) {
+		if len(args) == 1 {
 			bnumber = args[0]
 			includeTx = true
 		} else {
@@ -360,7 +358,7 @@ For more information please refer:
 			}
 			includeTx = _includeTx
 		}
-		
+
 		_, err = isOutOfRange(bnum)
 		if err != nil {
 			fmt.Println(err)
@@ -372,7 +370,7 @@ For more information please refer:
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Block: \n%s\n" , block)
+		fmt.Printf("Block: \n%s\n", block)
 	},
 }
 
@@ -392,8 +390,8 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-        bnum, err := isValidNumber(args[0])
-        if err != nil {
+		bnum, err := isValidNumber(args[0])
+		if err != nil {
 			fmt.Println(err)
 			return
 		}
@@ -405,12 +403,12 @@ For more information please refer:
 		}
 
 		bnumber := args[0]
-		bhash,err := RPC.GetBlockHashByNumber(context.Background(), bnumber)
+		bhash, err := RPC.GetBlockHashByNumber(context.Background(), bnumber)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Block Hash: \n%s\n" , bhash)
+		fmt.Printf("Block Hash: \n%s\n", bhash)
 	},
 }
 
@@ -439,12 +437,12 @@ For more information please refer:
 		}
 
 		txHash := args[0]
-		tx,err := RPC.GetTransactionByHash(context.Background(), txHash)
+		tx, err := RPC.GetTransactionByHash(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Transaction: \n%s\n" , tx)
+		fmt.Printf("Transaction: \n%s\n", tx)
 	},
 }
 
@@ -472,7 +470,7 @@ For more information please refer:
 		}
 
 		// starts with "0x"
-	    if(!strings.HasPrefix(args[1], "0x")) {
+		if !strings.HasPrefix(args[1], "0x") {
 			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
 			return
 		}
@@ -485,12 +483,12 @@ For more information please refer:
 
 		bhash := args[0]
 		txIndex := args[1]
-		tx,err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), bhash, txIndex)
+		tx, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), bhash, txIndex)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Transaction: \n%s\n" , tx)
+		fmt.Printf("Transaction: \n%s\n", tx)
 	},
 }
 
@@ -518,7 +516,7 @@ For more information please refer:
 		}
 
 		// starts with "0x"
-	    if(!strings.HasPrefix(args[1], "0x")) {
+		if !strings.HasPrefix(args[1], "0x") {
 			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
 			return
 		}
@@ -531,12 +529,12 @@ For more information please refer:
 
 		bnumber := args[0]
 		txIndex := args[1]
-		tx,err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), bnumber, txIndex)
+		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), bnumber, txIndex)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Transaction: \n%s\n" , tx)
+		fmt.Printf("Transaction: \n%s\n", tx)
 	},
 }
 
@@ -563,49 +561,49 @@ For more information please refer:
 		}
 
 		txHash := args[0]
-		tx,err := RPC.GetTransactionReceipt(context.Background(), txHash)
+		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction receipt not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Transaction Receipt: \n%s\n" , tx)
+		fmt.Printf("Transaction Receipt: \n%s\n", tx)
 	},
 }
 
 var getPendingTransactionsCmd = &cobra.Command{
 	Use:   "getPendingTransactions",
 	Short: "                                 Get the pending transactions",
-	Long: `Return the transactions that are pending for packaging.`,
-	Args: cobra.NoArgs,
+	Long:  `Return the transactions that are pending for packaging.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		tx, err := RPC.GetPendingTransactions(context.Background())
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Pending Transactions: \n%s\n" , tx)
+		fmt.Printf("Pending Transactions: \n%s\n", tx)
 	},
 }
 
 var getPendingTxSizeCmd = &cobra.Command{
 	Use:   "getPendingTxSize",
 	Short: "                                 Get the count of pending transactions",
-	Long: `Return the total count of pending transactions.`,
-	Args: cobra.NoArgs,
+	Long:  `Return the total count of pending transactions.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		tx, err := RPC.GetPendingTxSize(context.Background())
 		if err != nil {
 			fmt.Printf("transactions not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Pending Transactions Count: \n    hex: %s\n" , tx)
+		fmt.Printf("Pending Transactions Count: \n    hex: %s\n", tx)
 		strNum := string(tx)
-		bnum, err := toDecimal(strNum[3:len(strNum)-1])
+		bnum, err := toDecimal(strNum[3 : len(strNum)-1])
 		if err != nil {
 			fmt.Println("The Pending Transactions Count is tot a valid hex string")
 			return
 		}
-		fmt.Println("decimal: ",bnum)
+		fmt.Println("decimal: ", bnum)
 	},
 }
 
@@ -633,34 +631,34 @@ For more information please refer:
 			return
 		}
 
-        contractAdd := args[0]
+		contractAdd := args[0]
 		code, err := RPC.GetCode(context.Background(), contractAdd)
 		if err != nil {
 			fmt.Printf("This address does not exist: %v\n", err)
 			return
 		}
 
-		if(len(string(code)) < 5) {
-			fmt.Println("This address does not exist: " , args[0])
+		if len(string(code)) < 5 {
+			fmt.Println("This address does not exist: ", args[0])
 			return
 		}
 
-		fmt.Printf("Contract Code: \n%s\n" , code)
+		fmt.Printf("Contract Code: \n%s\n", code)
 	},
 }
 
 var getTotalTransactionCountCmd = &cobra.Command{
 	Use:   "getTotalTransactionCount",
 	Short: "                                 Get the totoal transactions and the latest block height",
-	Long: `Returns the current total number of transactions and block height.`,
-	Args: cobra.NoArgs,
+	Long:  `Returns the current total number of transactions and block height.`,
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		counts, err := RPC.GetTotalTransactionCount(context.Background())
 		if err != nil {
 			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Latest Statistics on Transaction and Block Height: \n%s\n" , counts)
+		fmt.Printf("Latest Statistics on Transaction and Block Height: \n%s\n", counts)
 	},
 }
 
@@ -680,7 +678,7 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-        if(args[0] != "tx_count_limit" && args[0] != "tx_gas_limit") {
+		if args[0] != "tx_count_limit" && args[0] != "tx_gas_limit" {
 			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit] and [tx_gas_limit]")
 			return
 		}
@@ -690,12 +688,11 @@ For more information please refer:
 			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Result: \n%s\n" , value)
+		fmt.Printf("Result: \n%s\n", value)
 	},
 }
 
 // ======= contract operation =====
-
 
 func init() {
 	// add common command
@@ -728,21 +725,21 @@ func toDecimal(hex string) (int, error) {
 	i := new(big.Int)
 	var flag bool
 	i, flag = i.SetString(hex, 16) // octal
-	if(flag != true) {
+	if flag != true {
 		return -1, fmt.Errorf("Cannot parse hex string to Int")
 	}
 	return int(i.Uint64()), nil
 }
 
-func isValidNumber(str string) (int, error){
+func isValidNumber(str string) (int, error) {
 	var bnum int
 	var err error
 	// whether contains "." as the float type
-	if(strings.Contains(str, ".")) {
+	if strings.Contains(str, ".") {
 		return -1, fmt.Errorf("Arguments error: please check your inpunt: %s%s", str, info)
 	}
 	// starts with "0x"
-	if(strings.HasPrefix(str, "0x")) {
+	if strings.HasPrefix(str, "0x") {
 		// is hex string
 		_, err = strconv.ParseInt(str[2:len(str)], 16, 64)
 		if err != nil {
@@ -763,8 +760,8 @@ func isValidNumber(str string) (int, error){
 
 func isValidHex(str string) (bool, error) {
 	// starts with "0x"
-	if(strings.HasPrefix(str, "0x")) {
-		if(len(str) == 2){
+	if strings.HasPrefix(str, "0x") {
+		if len(str) == 2 {
 			return false, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
 		}
 		// is hex string
@@ -784,11 +781,11 @@ func isOutOfRange(bnum int) (bool, error) {
 		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
 	}
 	currStr := string(curr)
-	currInt, err := toDecimal(currStr[3:len(currStr)-1])
-	if(err != nil) {
+	currInt, err := toDecimal(currStr[3 : len(currStr)-1])
+	if err != nil {
 		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
 	}
-	if(currInt < bnum) {
+	if currInt < bnum {
 		return false, fmt.Errorf("BlockNumber does not exist")
 	}
 	return true, nil

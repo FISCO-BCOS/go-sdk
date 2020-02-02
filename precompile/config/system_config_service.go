@@ -6,8 +6,8 @@ import (
 	"math/big"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
@@ -32,7 +32,7 @@ func NewSystemConfigService(client *client.Client, privateKey *ecdsa.PrivateKey)
 }
 
 // SetValueByKey returns a raw transaction if there is no error occured.
-func (service *SystemConfigService) SetValueByKey(key string ,value string) (*types.RawTransaction, error) {
+func (service *SystemConfigService) SetValueByKey(key string ,value string) (*types.Transaction, error) {
 	tx, err := service.systemConfig.SetValueByKey(service.systemConfigAuth, key, value)
     if err != nil {
         return nil, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)

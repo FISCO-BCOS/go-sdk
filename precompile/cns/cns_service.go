@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
@@ -100,7 +100,7 @@ func (service *CnsService) GetAddressByContractNameAndVersion(contractNameAndVer
 }
 
 // RegisterCns registers a contract for its CNS.
-func (service *CnsService) RegisterCns(name string, version string, addr string, abi string) (*types.RawTransaction, error) {
+func (service *CnsService) RegisterCns(name string, version string, addr string, abi string) (*types.Transaction, error) {
 	if len(version) > maxVersionLength {
 		return nil, fmt.Errorf("version string length exceeds the maximum limit")
 	}
