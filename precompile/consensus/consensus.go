@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_Consensus *ConsensusRaw) Call(opts *bind.CallOpts, result interface{}, me
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Consensus *ConsensusRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Consensus.Contract.ConsensusTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Consensus *ConsensusRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Consensus.Contract.ConsensusTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,74 +162,74 @@ func (_Consensus *ConsensusCallerRaw) Call(opts *bind.CallOpts, result interface
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Consensus *ConsensusTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Consensus.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Consensus *ConsensusTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Consensus.Contract.contract.Transact(opts, method, params...)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
 // Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) AddObserver(opts *bind.TransactOpts, nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactor) AddObserver(opts *bind.TransactOpts, nodeID string) (*types.Transaction, error) {
 	return _Consensus.contract.Transact(opts, "addObserver", nodeID)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
 // Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) AddObserver(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusSession) AddObserver(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, nodeID)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
 // Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) AddObserver(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactorSession) AddObserver(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, nodeID)
 }
 
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, nodeID string) (*types.Transaction, error) {
 	return _Consensus.contract.Transact(opts, "addSealer", nodeID)
 }
 
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) AddSealer(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusSession) AddSealer(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID)
 }
 
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) AddSealer(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactorSession) AddSealer(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) Remove(opts *bind.TransactOpts, nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactor) Remove(opts *bind.TransactOpts, nodeID string) (*types.Transaction, error) {
 	return _Consensus.contract.Transact(opts, "remove", nodeID)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) Remove(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusSession) Remove(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, nodeID)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) Remove(nodeID string) (*types.RawTransaction, error) {
+func (_Consensus *ConsensusTransactorSession) Remove(nodeID string) (*types.Transaction, error) {
 	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, nodeID)
 }

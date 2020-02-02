@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_Crud *CrudRaw) Call(opts *bind.CallOpts, result interface{}, method strin
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Crud *CrudRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Crud *CrudRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Crud.Contract.CrudTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Crud *CrudRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Crud *CrudRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Crud.Contract.CrudTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,12 +162,12 @@ func (_Crud *CrudCallerRaw) Call(opts *bind.CallOpts, result interface{}, method
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Crud *CrudTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Crud.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Crud *CrudTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Crud.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -200,62 +200,62 @@ func (_Crud *CrudCallerSession) Select(tableName string, key string, condition s
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string tableName, string key, string entry, string optional) returns(int256)
-func (_Crud *CrudTransactor) Insert(opts *bind.TransactOpts, tableName string, key string, entry string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactor) Insert(opts *bind.TransactOpts, tableName string, key string, entry string, optional string) (*types.Transaction, error) {
 	return _Crud.contract.Transact(opts, "insert", tableName, key, entry, optional)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string tableName, string key, string entry, string optional) returns(int256)
-func (_Crud *CrudSession) Insert(tableName string, key string, entry string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudSession) Insert(tableName string, key string, entry string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Insert(&_Crud.TransactOpts, tableName, key, entry, optional)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string tableName, string key, string entry, string optional) returns(int256)
-func (_Crud *CrudTransactorSession) Insert(tableName string, key string, entry string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactorSession) Insert(tableName string, key string, entry string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Insert(&_Crud.TransactOpts, tableName, key, entry, optional)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
 //
 // Solidity: function remove(string tableName, string key, string condition, string optional) returns(int256)
-func (_Crud *CrudTransactor) Remove(opts *bind.TransactOpts, tableName string, key string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactor) Remove(opts *bind.TransactOpts, tableName string, key string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.contract.Transact(opts, "remove", tableName, key, condition, optional)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
 //
 // Solidity: function remove(string tableName, string key, string condition, string optional) returns(int256)
-func (_Crud *CrudSession) Remove(tableName string, key string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudSession) Remove(tableName string, key string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Remove(&_Crud.TransactOpts, tableName, key, condition, optional)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
 //
 // Solidity: function remove(string tableName, string key, string condition, string optional) returns(int256)
-func (_Crud *CrudTransactorSession) Remove(tableName string, key string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactorSession) Remove(tableName string, key string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Remove(&_Crud.TransactOpts, tableName, key, condition, optional)
 }
 
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
 //
 // Solidity: function update(string tableName, string key, string entry, string condition, string optional) returns(int256)
-func (_Crud *CrudTransactor) Update(opts *bind.TransactOpts, tableName string, key string, entry string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactor) Update(opts *bind.TransactOpts, tableName string, key string, entry string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.contract.Transact(opts, "update", tableName, key, entry, condition, optional)
 }
 
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
 //
 // Solidity: function update(string tableName, string key, string entry, string condition, string optional) returns(int256)
-func (_Crud *CrudSession) Update(tableName string, key string, entry string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudSession) Update(tableName string, key string, entry string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Update(&_Crud.TransactOpts, tableName, key, entry, condition, optional)
 }
 
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
 //
 // Solidity: function update(string tableName, string key, string entry, string condition, string optional) returns(int256)
-func (_Crud *CrudTransactorSession) Update(tableName string, key string, entry string, condition string, optional string) (*types.RawTransaction, error) {
+func (_Crud *CrudTransactorSession) Update(tableName string, key string, entry string, condition string, optional string) (*types.Transaction, error) {
 	return _Crud.Contract.Update(&_Crud.TransactOpts, tableName, key, entry, condition, optional)
 }

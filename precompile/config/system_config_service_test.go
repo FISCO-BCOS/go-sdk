@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 )
 
 func TestSetValueByKey(t *testing.T) {

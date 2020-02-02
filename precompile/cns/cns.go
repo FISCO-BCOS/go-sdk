@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_Cns *CnsRaw) Call(opts *bind.CallOpts, result interface{}, method string,
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Cns *CnsRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Cns *CnsRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Cns.Contract.CnsTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Cns *CnsRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Cns *CnsRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Cns.Contract.CnsTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,12 +162,12 @@ func (_Cns *CnsCallerRaw) Call(opts *bind.CallOpts, result interface{}, method s
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Cns *CnsTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_Cns *CnsTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Cns.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Cns *CnsTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_Cns *CnsTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Cns.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -226,20 +226,20 @@ func (_Cns *CnsCallerSession) SelectByNameAndVersion(name string, version string
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
-func (_Cns *CnsTransactor) Insert(opts *bind.TransactOpts, name string, version string, addr string, abi string) (*types.RawTransaction, error) {
+func (_Cns *CnsTransactor) Insert(opts *bind.TransactOpts, name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.contract.Transact(opts, "insert", name, version, addr, abi)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
-func (_Cns *CnsSession) Insert(name string, version string, addr string, abi string) (*types.RawTransaction, error) {
+func (_Cns *CnsSession) Insert(name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.Contract.Insert(&_Cns.TransactOpts, name, version, addr, abi)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
-func (_Cns *CnsTransactorSession) Insert(name string, version string, addr string, abi string) (*types.RawTransaction, error) {
+func (_Cns *CnsTransactorSession) Insert(name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.Contract.Insert(&_Cns.TransactOpts, name, version, addr, abi)
 }

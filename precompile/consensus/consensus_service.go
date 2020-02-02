@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/common"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
@@ -35,7 +35,7 @@ func NewConsensusService(client *client.Client, privateKey *ecdsa.PrivateKey) (*
 }
 
 // AddObserver add a new observe node according to the node ID
-func (service *ConsensusService) AddObserver(nodeID string) (*types.RawTransaction, error) {
+func (service *ConsensusService) AddObserver(nodeID string) (*types.Transaction, error) {
 	flag, err := service.isValidNodeID(nodeID)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (service *ConsensusService) AddObserver(nodeID string) (*types.RawTransacti
 }
 
 // AddSealer add a new sealer node according to the node ID
-func (service *ConsensusService) AddSealer(nodeID string) (*types.RawTransaction, error) {
+func (service *ConsensusService) AddSealer(nodeID string) (*types.Transaction, error) {
 	flag, err := service.isValidNodeID(nodeID)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (service *ConsensusService) AddSealer(nodeID string) (*types.RawTransaction
 }
 
 // RemoveNode remove a sealer node according to the node ID
-func (service *ConsensusService) RemoveNode(nodeID string) (*types.RawTransaction, error) {
+func (service *ConsensusService) RemoveNode(nodeID string) (*types.Transaction, error) {
 	peersRaw, err := service.client.GetGroupPeers(context.Background())
 	if err != nil {
         return nil, fmt.Errorf("get the group peers failed: %v", err)

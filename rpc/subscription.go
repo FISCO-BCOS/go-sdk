@@ -197,10 +197,10 @@ func (s *Subscription) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.ID)
 }
 
-// ClientSubscription is a subscription established through the Client's Subscribe or
+// ClientSubscription is a subscription established through the Connection's Subscribe or
 // EthSubscribe methods.
 type ClientSubscription struct {
-	client    *Client
+	client    *Connection
 	etype     reflect.Type
 	channel   reflect.Value
 	namespace string
@@ -213,7 +213,7 @@ type ClientSubscription struct {
 	err      chan error
 }
 
-func newClientSubscription(c *Client, namespace string, channel reflect.Value) *ClientSubscription {
+func newClientSubscription(c *Connection, namespace string, channel reflect.Value) *ClientSubscription {
 	sub := &ClientSubscription{
 		client:    c,
 		namespace: namespace,

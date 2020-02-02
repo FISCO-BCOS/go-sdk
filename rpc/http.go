@@ -44,7 +44,7 @@ type httpConn struct {
 	closed    chan interface{}
 }
 
-// httpConn is treated specially by Client.
+// httpConn is treated specially by Connection.
 func (hc *httpConn) Write(context.Context, interface{}) error {
 	panic("Write called on httpConn")
 }
@@ -100,7 +100,7 @@ var DefaultHTTPTimeouts = HTTPTimeouts{
 
 // DialHTTPWithClient creates a new RPC client that connects to an RPC server over HTTP
 // using the provided HTTP Client.
-func DialHTTPWithClient(endpoint string, client *http.Client) (*Client, error) {
+func DialHTTPWithClient(endpoint string, client *http.Client) (*Connection, error) {
 	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -115,11 +115,11 @@ func DialHTTPWithClient(endpoint string, client *http.Client) (*Client, error) {
 }
 
 // DialHTTP creates a new RPC client that connects to an RPC server over HTTP.
-func DialHTTP(endpoint string) (*Client, error) {
+func DialHTTP(endpoint string) (*Connection, error) {
 	return DialHTTPWithClient(endpoint, new(http.Client))
 }
 
-func (c *Client) sendHTTP(ctx context.Context, op *requestOp, msg interface{}) error {
+func (c *Connection) sendHTTP(ctx context.Context, op *requestOp, msg interface{}) error {
 	hc := c.writeConn.(*httpConn)
 	respBody, err := hc.doRequest(ctx, msg)
 	if respBody != nil {
@@ -143,7 +143,7 @@ func (c *Client) sendHTTP(ctx context.Context, op *requestOp, msg interface{}) e
 	return nil
 }
 
-func (c *Client) sendBatchHTTP(ctx context.Context, op *requestOp, msgs []*jsonrpcMessage) error {
+func (c *Connection) sendBatchHTTP(ctx context.Context, op *requestOp, msgs []*jsonrpcMessage) error {
 	hc := c.writeConn.(*httpConn)
 	respBody, err := hc.doRequest(ctx, msgs)
 	if err != nil {

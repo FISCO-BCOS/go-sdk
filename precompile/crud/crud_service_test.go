@@ -1,28 +1,30 @@
 package crud
 
 import (
-	"testing"
 	"crypto/ecdsa"
 	"math/rand"
 	"strconv"
+	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/crypto"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func GetClient(t *testing.T) *client.Client {
-	groupID := uint(1)
-	rpc, err := client.Dial("http://localhost:8545", groupID)
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58", NodeURL: "http://localhost:8545"}
+	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("init rpc client failed: %+v", err)
+		t.Fatalf("can not dial to the RPC API: %v", err)
 	}
-	return rpc
+	return c
 }
 
 func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 	privateKey, err := crypto.HexToECDSA("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-    if err != nil {
-        t.Fatalf("init privateKey failed: %+v", err)
+	if err != nil {
+		t.Fatalf("init privateKey failed: %+v", err)
 	}
 	return privateKey
 }
@@ -39,9 +41,9 @@ func GetService(t *testing.T) *CRUDService {
 
 func TestCRUD(t *testing.T) {
 	tableName := "t_test" + strconv.Itoa(rand.Intn(100000))
-  	key := "name"
-  	valueFields  := "item_id, item_name"
-	table :=  &Table{TableName:tableName, Key:key, ValueFields:valueFields}
+	key := "name"
+	valueFields := "item_id, item_name"
+	table := &Table{TableName: tableName, Key: key, ValueFields: valueFields}
 
 	service := GetService(t)
 
@@ -54,10 +56,10 @@ func TestCRUD(t *testing.T) {
 
 	// insert records
 	var insertResults int
-	for i:=1; i <= 5; i++ {
+	for i := 1; i <= 5; i++ {
 		insertEnrty := table.GetEntry()
 		insertEnrty.Put("item_id", "1")
-		insertEnrty.Put("item_name", "apple" + strconv.Itoa(i))
+		insertEnrty.Put("item_name", "apple"+strconv.Itoa(i))
 		table.SetKey("fruit")
 		insertResult, err := service.Insert(table, insertEnrty)
 		if err != nil {
@@ -71,7 +73,7 @@ func TestCRUD(t *testing.T) {
 	condition1 := table.GetCondition()
 	condition1.EQ("item_id", "1")
 	condition1.Limit(1)
-		
+
 	resultSelect1, err := service.Select(table, condition1)
 	if err != nil {
 		t.Fatalf("select table faied: %v", err)
@@ -97,7 +99,7 @@ func TestCRUD(t *testing.T) {
 	condition2 := table.GetCondition()
 	condition2.EQ("item_id", "1")
 	condition2.Limit(1)
-		
+
 	resultSelect2, err := service.Select(table, condition2)
 	if err != nil {
 		t.Fatalf("select table faied: %v", err)
@@ -110,7 +112,7 @@ func TestCRUD(t *testing.T) {
 	// remove records
 	removeCondition := table.GetCondition()
 	removeCondition.EQ("item_id", "1")
-	removeResult,err := service.Remove(table, removeCondition)
+	removeResult, err := service.Remove(table, removeCondition)
 	if err != nil {
 		t.Fatalf("remove table faied: %v", err)
 	}

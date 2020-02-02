@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi"
-	"github.com/FISCO-BCOS/go-sdk/accounts/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/common"
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
 )
@@ -143,12 +143,12 @@ func (_TableFactory *TableFactoryRaw) Call(opts *bind.CallOpts, result interface
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_TableFactory *TableFactoryRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _TableFactory.Contract.TableFactoryTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_TableFactory *TableFactoryRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _TableFactory.Contract.TableFactoryTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -162,32 +162,32 @@ func (_TableFactory *TableFactoryCallerRaw) Call(opts *bind.CallOpts, result int
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_TableFactory *TableFactoryTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _TableFactory.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_TableFactory *TableFactoryTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _TableFactory.Contract.contract.Transact(opts, method, params...)
 }
 
 // CreateTable is a paid mutator transaction binding the contract method 0x56004b6a.
 //
 // Solidity: function createTable(string tableName, string key, string valueField) returns(int256)
-func (_TableFactory *TableFactoryTransactor) CreateTable(opts *bind.TransactOpts, tableName string, key string, valueField string) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryTransactor) CreateTable(opts *bind.TransactOpts, tableName string, key string, valueField string) (*types.Transaction, error) {
 	return _TableFactory.contract.Transact(opts, "createTable", tableName, key, valueField)
 }
 
 // CreateTable is a paid mutator transaction binding the contract method 0x56004b6a.
 //
 // Solidity: function createTable(string tableName, string key, string valueField) returns(int256)
-func (_TableFactory *TableFactorySession) CreateTable(tableName string, key string, valueField string) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactorySession) CreateTable(tableName string, key string, valueField string) (*types.Transaction, error) {
 	return _TableFactory.Contract.CreateTable(&_TableFactory.TransactOpts, tableName, key, valueField)
 }
 
 // CreateTable is a paid mutator transaction binding the contract method 0x56004b6a.
 //
 // Solidity: function createTable(string tableName, string key, string valueField) returns(int256)
-func (_TableFactory *TableFactoryTransactorSession) CreateTable(tableName string, key string, valueField string) (*types.RawTransaction, error) {
+func (_TableFactory *TableFactoryTransactorSession) CreateTable(tableName string, key string, valueField string) (*types.Transaction, error) {
 	return _TableFactory.Contract.CreateTable(&_TableFactory.TransactOpts, tableName, key, valueField)
 }
