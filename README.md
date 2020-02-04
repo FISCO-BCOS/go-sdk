@@ -5,7 +5,7 @@ Golang SDK For FISCO BCOS 2.0.0
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
 
 
-![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg) [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)  ![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)
+![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg)  [![Build Status](https://travis-ci.org/FISCO-BCOS/go-sdk.svg?branch=master)](https://travis-ci.org/FISCO-BCOS/go-sdk)  [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)  ![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)
 ____
 
 FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实现的功能有：
@@ -19,7 +19,7 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 
 # 环境准备
 
-- [Golang](https://golang.org/), 版本需不低于`1.12`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
+- [Golang](https://golang.org/), 版本需不低于`1.13.6`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
 - [FISCO BCOS 2.0.0](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
@@ -40,7 +40,7 @@ export GO111MODULE=on
 编译代码后会在`$GOBIN`下生成控制台程序，请确保添加`$GOBIN`到系统路径`$PATH`中，关于`$GOBIN`等的设置可以[参考这里](https://www.cnblogs.com/zhaof/p/7906722.html)，以便能正常执行`go`生成的程序:
 
 ```go
-go build console.go
+go build cmd/console.go
 ```
 
 如果不能访问外网，则可以设置开源代理进行依赖下载(需使用`go module`的特性)：

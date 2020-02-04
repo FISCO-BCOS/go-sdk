@@ -89,8 +89,17 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "\"v2\.[0-9]\.[0-9]\"" | sort -u | tail -n 1 | cut -d \" -f 4)
-    curl -LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh && chmod u+x build_chain.sh
+    # latest_version=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "\"v2\.[0-9]\.[0-9]\"" | sort -u | tail -n 1 | cut -d \" -f 4)
+    # curl -LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh && chmod u+x build_chain.sh
+    curl -LO https://raw.githubusercontent.com/FISCO-BCOS/FISCO-BCOS/master/tools/build_chain.sh && chmod u+x build_chain.sh
+}
+
+precompiled_test(){
+    if [ -z "$(go test -v ./precompiled/cns| grep FAIL)";then LOG_ERROR "test precompiled/cns failed" && exit 1; fi
+    if [ -z "$(go test -v ./precompiled/config| grep FAIL)";then LOG_ERROR "test precompiled/config failed" && exit 1; fi
+    if [ -z "$(go test -v ./precompiled/consensus| grep FAIL)";then LOG_ERROR "test precompiled/consensus failed" && exit 1; fi
+    if [ -z "$(go test -v ./precompiled/crud| grep FAIL)";then LOG_ERROR "test precompiled/crud failed" && exit 1; fi
+    if [ -z "$(go test -v ./precompiled/permission| grep FAIL)";then LOG_ERROR "test precompiled/permission failed" && exit 1; fi
 }
 
 integration_std()
@@ -108,6 +117,7 @@ integration_std()
     bash nodes/127.0.0.1/start_all.sh
     if [ -z "$(./hello | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call contract interface failed." && exit 1;fi
+    precompiled_test
     bash nodes/127.0.0.1/stop_all.sh
     LOG_INFO "integration_std testing pass."
 
@@ -130,6 +140,7 @@ integration_gm()
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
     if [ ! -z "$(./hello_gm | grep failed)" ];then LOG_ERROR "gm call contract interface failed." && exit 1;fi
+    precompiled_test
     bash nodes_gm/127.0.0.1/stop_all.sh
     LOG_INFO "integration_gm testing pass."
 
