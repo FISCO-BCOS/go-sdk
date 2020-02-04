@@ -1,19 +1,19 @@
 package config
 
 import (
-	"fmt"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // SystemConfigService is a precompile contract service.
 type SystemConfigService struct {
-	systemConfig *Config
+	systemConfig     *Config
 	systemConfigAuth *bind.TransactOpts
 }
 
@@ -28,14 +28,14 @@ func NewSystemConfigService(client *client.Client, privateKey *ecdsa.PrivateKey)
 	}
 	auth := bind.NewKeyedTransactor(privateKey)
 	auth.GasLimit = big.NewInt(30000000)
-    return &SystemConfigService{systemConfig:instance, systemConfigAuth:auth}, nil
+	return &SystemConfigService{systemConfig: instance, systemConfigAuth: auth}, nil
 }
 
-// SetValueByKey returns a raw transaction if there is no error occured.
-func (service *SystemConfigService) SetValueByKey(key string ,value string) (*types.Transaction, error) {
+// SetValueByKey returns a raw transaction if there is no error occurred.
+func (service *SystemConfigService) SetValueByKey(key string, value string) (*types.Transaction, error) {
 	tx, err := service.systemConfig.SetValueByKey(service.systemConfigAuth, key, value)
-    if err != nil {
-        return nil, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
+	if err != nil {
+		return nil, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
 	}
 	return tx, nil
 }

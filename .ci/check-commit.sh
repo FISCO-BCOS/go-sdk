@@ -54,15 +54,15 @@ function check_codeFormat() {
 }
 
 function check_PR_limit() {
-    if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
-        local skip=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/pulls/${TRAVIS_PULL_REQUEST} | grep "title\"" | grep "${skip_check_words}")
-        if [ ! -z "${skip}" ]; then
-            LOG_INFO "sync code PR, skip PR limit check!"
-            exit 0
-        else
-            LOG_INFO "PR-${TRAVIS_PULL_REQUEST}, checking PR limit..."
-        fi
-    fi
+    # if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+    #     local skip=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/pulls/${TRAVIS_PULL_REQUEST} | grep "title\"" | grep "${skip_check_words}")
+    #     if [ ! -z "${skip}" ]; then
+    #         LOG_INFO "sync code PR, skip PR limit check!"
+    #         exit 0
+    #     else
+    #         LOG_INFO "PR-${TRAVIS_PULL_REQUEST}, checking PR limit..."
+    #     fi
+    # fi
     local files=$(git diff --shortstat HEAD^ | awk -F ' ' '{print $1}')
     # if [ ${file_limit} -lt ${files} ]; then
     #     LOG_ERROR "modify ${files} files, limit is ${file_limit}"
