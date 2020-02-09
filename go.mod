@@ -9,4 +9,5 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.2
 	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d
+	gopkg.in/urfave/cli.v1 v1.20.0
 )

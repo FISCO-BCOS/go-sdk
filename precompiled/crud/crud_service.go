@@ -9,14 +9,15 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
 	TableKeyMaxLength int    = 255
 	SysTable          string = "_sys_tables_"
-	UserTablePrefix   string = "_user_"
+	UserTablePrefix   string = "u_"
+	// UserTablePrefixOld   string = "_user_"
 )
 
 // CRUDService is a precompile contract service.
