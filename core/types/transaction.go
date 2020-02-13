@@ -502,7 +502,6 @@ func (m Message) Nonce() *big.Int      { return m.nonce }
 func (m Message) Data() []byte         { return m.data }
 func (m Message) CheckNonce() bool     { return m.checkNonce }
 
-// =================================== kasperliu ===============================
 type newTransactionStruct struct {
 	data newrawtxdata
 	// caches

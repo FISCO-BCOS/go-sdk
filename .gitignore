@@ -4,6 +4,14 @@
 *.dll
 *.so
 *.dylib
+main
+console
+/abigen
+
+# config files
+sdk.crt
+sdk.key
+ca.crt
 
 # Test binary, built with `go test -c`
 *.test

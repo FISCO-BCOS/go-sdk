@@ -10,7 +10,7 @@ ____
 
 FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实现的功能有：
 
-- FISCO BCOS 2.0.0 JSON-RPC的Golang API 服务
+- [FISCO BCOS 2.0 JSON-RPC服务](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html)
 - `Solidity`合约编译为Go文件
 - 部署、查询、写入智能合约
 - 控制台
@@ -20,7 +20,7 @@ FISCO BCOS Go语言版本的SDK，借助以太坊代码进行改进，主要实�
 # 环境准备
 
 - [Golang](https://golang.org/), 版本需不低于`1.13.6`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
-- [FISCO BCOS 2.0.0](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
 # 控制台使用
@@ -124,13 +124,13 @@ mkdir ../newdir && cp ./abigen ../newdir && cd ../newdir
 4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`Store.sol`为例：
 
 ```bash
-solc --bin -o ./ Store.sol && solc --abi -o ./ Store.sol
+solc --bin --abi -o ./ Store.sol
 ```
 
 `Store.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
 
 ```bash
-./abigen --bin=Store.bin --abi=Store.abi --pkg=store --out=Store.go
+./abigen --bin Store.bin --abi Store.abi --pkg store --out Store.go
 ```
 
 最后目录下面存在以下文件：
@@ -301,8 +301,8 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-
-    instance, err := store.NewStore(client.GetAddress(), client)
+    contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
+    instance, err := store.NewStore(contractAddress, client)
     if err != nil {
         log.Fatal(err)
     }
@@ -336,12 +336,15 @@ func main() {
     }
 
     // load the contract
-    instance, err := store.NewStore(client.GetAddress(), client)
+    contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
+    instance, err := store.NewStore(contractAddress, client)
     if err != nil {
         log.Fatal(err)
     }
 
-    version, err := instance.Version(client.GetCallOpts())
+	storeSession := &StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+
+    version, err := storeSession.Version()
     if err != nil {
         log.Fatal(err)
     }
@@ -376,7 +379,8 @@ func main() {
     }
 
     // load the contract
-    instance, err := store.NewStore(client.GetAddress(), client)
+    contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
+    instance, err := store.NewStore(contractAddress, client)
     if err != nil {
         log.Fatal(err)
     }
