@@ -46,6 +46,13 @@ type Client struct {
 	smCrypto          bool
 }
 
+const (
+	//V210 is node version v2.1.0
+	V210 = "2.1.0"
+	//V220 is node version v2.2.0
+	V220 = "2.2.0"
+)
+
 // Dial connects a client to the given URL and groupID.
 func Dial(config *conf.Config) (*Client, error) {
 	return DialContext(context.Background(), config)
@@ -98,6 +105,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 		}
 		client.auth = bind.NewKeyedTransactor(privateKey)
 	}
+	client.auth.GasLimit = big.NewInt(30000000)
 	client.callOpts = &bind.CallOpts{From: client.auth.From}
 	return &client, nil
 }
@@ -117,11 +125,6 @@ func (c *Client) GetTransactOpts() *bind.TransactOpts {
 // GetCallOpts return *bind.CallOpts
 func (c *Client) GetCallOpts() *bind.CallOpts {
 	return c.callOpts
-}
-
-// GetAddress return *bind.CallOpts
-func (c *Client) GetAddress() common.Address {
-	return c.auth.From
 }
 
 // WaitMined is wrapper of bind.WaitMined

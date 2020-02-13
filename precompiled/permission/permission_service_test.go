@@ -16,7 +16,10 @@ const (
 )
 
 func GetClient(t *testing.T) *client.Client {
-	config := &conf.ParseConfig("config.toml")[0]
+	// config := &conf.ParseConfig("config.toml")[0]
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
+		NodeURL:    "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("can not dial to the RPC API: %v", err)

@@ -13,7 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package console
+
+//Package commandline is implement of console
+package commandline
 
 import (
 	"context"
@@ -22,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/FISCO-BCOS/go-sdk/precompiled/config"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 )
@@ -694,6 +697,43 @@ For more information please refer:
 
 // ======= contract operation =====
 
+var setSystemConfigByKeyCmd = &cobra.Command{
+	Use:   "setSystemConfigByKey",
+	Short: "[tx_count_limit/tx_gas_limit]    Set the system configuration through key-value",
+	Long: `Returns the system configuration through key-value.
+Arguments:
+	  [key]: currently only support two key: "tx_count_limit" and "tx_gas_limit".
+[key value]: the value of corresponding key.
+
+For example:
+
+    [setSystemConfigByKey] [tx_count_limit] 10000
+
+For more information please refer:
+
+    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
+	Args: cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		if args[0] != "tx_count_limit" && args[0] != "tx_gas_limit" {
+			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit] and [tx_gas_limit]")
+			return
+		}
+		key := args[0]
+		value := args[1]
+		sysConfig, err := config.NewSystemConfigService(RPC)
+		if err != nil {
+			fmt.Printf("init systemConfigPrecompiled failed: %v\n", err)
+			return
+		}
+		_, err = sysConfig.SetValueByKey(key, value)
+		if err != nil {
+			fmt.Printf("SetValueByKey failed: %v\n", err)
+			return
+		}
+		fmt.Printf("Result: \n%s\n", value)
+	},
+}
+
 func init() {
 	// add common command
 	// TODO: test the bash scripts
@@ -709,7 +749,8 @@ func init() {
 	rootCmd.AddCommand(getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
-
+	// add contract command
+	rootCmd.AddCommand(setSystemConfigByKeyCmd)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
