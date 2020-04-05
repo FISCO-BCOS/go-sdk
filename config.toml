@@ -3,8 +3,8 @@
 #type rpc or channel
 Type="channel"
 CAFile="ca.crt"
-Key="sdk.key"
 Cert="sdk.crt"
+Key="sdk.key"
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
 GroupID=1

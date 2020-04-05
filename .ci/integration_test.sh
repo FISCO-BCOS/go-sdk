@@ -3,7 +3,7 @@
 set -e
 
 macOS=
-
+GOPATH_BIN=$(go env GOPATH)/bin
 SHELL_FOLDER=$(
     cd $(dirname $0)
     pwd
@@ -36,6 +36,7 @@ check_env(){
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
         macOS="macOS"
     fi
+    go get -u github.com/sqs/goreturns
 }
 
 compile_and_ut()
@@ -95,7 +96,7 @@ cat << EOF >> "${output}"
 	fmt.Printf("Get: %s\n", ret)
 }
 EOF
-
+    "${GOPATH_BIN}"/goreturns -w  "${output}"
 }
 
 generate_counter() {
@@ -152,7 +153,7 @@ cat << EOF >> "${output}"
 }
 
 EOF
-
+    "${GOPATH_BIN}"/goreturns -w  "${output}"
 }
 
 get_build_chain()
