@@ -6,10 +6,10 @@ go:
 env:
   - GO111MODULE=on
 
-install: |
-  if [[ $TRAVIS_OS_NAME == linux && "$TRAVIS_BRANCH" != "master" ]]; then
-    go mod tidy && bash .ci/check-commit.sh;
-  fi
+# install: |
+# if [[ $TRAVIS_OS_NAME == linux && "$TRAVIS_BRANCH" != "master" ]]; then
+#   go mod tidy && bash -x .ci/check-commit.sh;
+# fi
 
 script: bash .ci/ci_check.sh
 
