@@ -1,6 +1,6 @@
 # go-sdk
 
-Golang SDK For FISCO BCOS 2.0.0
+Golang SDK For FISCO BCOS 2.2.0+
 
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
 
@@ -215,39 +215,7 @@ func main(){
 }
 ```
 
-## 加载智能合约
-在部署完智能合约后，可以获取到合约的地址，但在进行合约查询以及写入时，需要先加载智能合约，此时需要导入`common`包以获取正确的合约地址，新建`contract_load.go`以加载智能合约：
-
-```go
-package main
-
-import (
-	"fmt"
-	"log"
-
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/store"
-	"github.com/ethereum/go-ethereum/common"
-)
-
-func main() {
-	config := &conf.ParseConfig("config.toml")[0]
-	client, err := client.Dial(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-	contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
-	instance, err := store.NewStore(contractAddress, client)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("contract is loaded")
-	_ = instance
-}
-```
-
-## 查询智能合约
+## 加载智能合约并调用查询接口
 
 在部署过程中设置的`Store.sol`合约中有一个名为`version`的全局变量。 因为它是公开的，这意味着它们将成为我们自动创建的`getter`函数。 常量和`view`函数也接受`bind.CallOpts`作为第一个参数，新建`contract_read.go`文件以查询合约：
 
@@ -290,7 +258,7 @@ func main() {
 
 ```
 
-## 写入智能合约
+## 调用智能合约写接口
 
 写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。新建`contract_write.go`来测试写入智能合约：
 
