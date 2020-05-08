@@ -158,6 +158,7 @@ mv Store.sol ./store
 4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`Store.sol`为例：
 
 ```bash
+# 国密请使用 solc-0.4.25-gm
 ./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
 ```
 
@@ -184,21 +185,20 @@ abigen  Store.abi  Store.bin  Store.go  Store.sol
 touch store_main.go
 ```
 
-```go 
+```go
 package main
 
 import (
-	"fmt"
+    "fmt"
     "log"
-    
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+
     "github.com/FISCO-BCOS/go-sdk/client"
-    
-	"github.com/FISCO-BCOS/go-sdk/store" // import store
+    "github.com/FISCO-BCOS/go-sdk/conf"
+    "github.com/FISCO-BCOS/go-sdk/store" // import store
 )
 
 func main(){
-    config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1, PrivateKey:"145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",NodeURL: "http://localhost:8545"}
+    config := &conf.ParseConfig("config.toml")[0]
 
     client, err := client.Dial(config)
     if err != nil {
