@@ -61,7 +61,9 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 	for i := 0; i < len(types); i++ {
 		// Parse the actual ABI to generate the binding for
 		evmABI, err := abi.JSON(strings.NewReader(abis[i]))
-		evmABI.SMCrypto = smcrypto
+		if smcrypto {
+			evmABI.SetSMCrypto()
+		}
 		if err != nil {
 			return "", err
 		}
@@ -89,7 +91,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 		)
 		for _, original := range evmABI.Methods {
 			// Normalize the method for capital cases and non-anonymous inputs/outputs
-			normalized := original
+			normalized := *original
 			normalizedName := methodNormalizer[lang](alias(aliases, original.Name))
 			// Ensure there is no duplicated identifier
 			var identifiers = callIdentifiers
@@ -123,9 +125,9 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			}
 			// Append the methods to the call or transact lists
 			if original.Const {
-				calls[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
+				calls[original.Name] = &tmplMethod{Original: *original, Normalized: normalized, Structured: structured(original.Outputs)}
 			} else {
-				transacts[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
+				transacts[original.Name] = &tmplMethod{Original: *original, Normalized: normalized, Structured: structured(original.Outputs)}
 			}
 		}
 		for _, original := range evmABI.Events {
@@ -134,7 +136,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 				continue
 			}
 			// Normalize the event for capital cases and non-anonymous outputs
-			normalized := original
+			normalized := *original
 
 			// Ensure there is no duplicated identifier
 			normalizedName := methodNormalizer[lang](alias(aliases, original.Name))
@@ -155,7 +157,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 				}
 			}
 			// Append the event to the accumulator list
-			events[original.Name] = &tmplEvent{Original: original, Normalized: normalized}
+			events[original.Name] = &tmplEvent{Original: *original, Normalized: normalized}
 		}
 
 		// There is no easy way to pass arbitrary java objects to the Go side.

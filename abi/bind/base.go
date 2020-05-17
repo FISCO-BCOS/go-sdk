@@ -86,7 +86,9 @@ type BoundContract struct {
 // NewBoundContract creates a low level contract interface through which calls
 // and transactions may be made through.
 func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller, transactor ContractTransactor, filterer ContractFilterer) *BoundContract {
-	abi.SMCrypto = transactor.SMCrypto()
+	if transactor.SMCrypto() {
+		abi.SetSMCrypto()
+	}
 	return &BoundContract{
 		address:    address,
 		abi:        abi,

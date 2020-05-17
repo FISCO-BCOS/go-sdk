@@ -2,10 +2,7 @@ package config
 
 import (
 	"fmt"
-	"math/big"
-	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +12,6 @@ import (
 type SystemConfigService struct {
 	systemConfig *Config
 	client       *client.Client
-	abi          abi.ABI
 }
 
 const methodSetValueByKey = "setValueByKey"
@@ -29,13 +25,9 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 	if err != nil {
 		return nil, fmt.Errorf("construct SystemConfigService failed: %+v", err)
 	}
-	abi, err := abi.JSON(strings.NewReader(ConfigABI))
-	if err != nil {
-		return nil, err
-	}
-	abi.SMCrypto = client.SMCrypto()
+	fmt.Printf("sm crypto  = %v\n", client.SMCrypto())
 
-	return &SystemConfigService{systemConfig: instance, client: client, abi: abi}, nil
+	return &SystemConfigService{systemConfig: instance, client: client}, nil
 }
 
 // SetValueByKey returns nil if there is no error occurred.
@@ -44,15 +36,13 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (*types.Tr
 	if err != nil {
 		return tx, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
 	}
-	receipt, _ := s.client.WaitMined(tx)
-	output := common.FromHex(receipt.Output)
-	// var ret int
-	ret := new(*big.Int)
-	// ret := new(int64)
-	err = s.abi.Unpack(ret, methodSetValueByKey, output)
-	if err != nil {
-		return tx, fmt.Errorf("SystemConfigService setValueByKey failed,ret:%d, err:%+v", ret, err)
-	}
-
+	// receipt, _ := s.client.WaitMined(tx)
+	// output := common.FromHex(receipt.Output)
+	// ret := new(*big.Int)
+	// err = s.abi.Unpack(ret, methodSetValueByKey, output)
+	// if err != nil {
+	// 	return tx, fmt.Errorf("SystemConfigService setValueByKey failed,ret:%d, err:%+v", ret, err)
+	// }
+	// fmt.Printf("return value:%v", ret)
 	return tx, nil
 }
