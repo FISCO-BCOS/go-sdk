@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/crypto/ecdsa"
 	"github.com/FISCO-BCOS/crypto/elliptic"
 	"github.com/FISCO-BCOS/crypto/x509"
+	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const publicKeyLength = 64
@@ -34,7 +35,7 @@ func ECDSAPubBytes(pub *ecdsa.PublicKey) []byte {
 // PubkeyToAddress calculate address from sm2p256v1 private key
 func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	pubBytes := ECDSAPubBytes(&p)
-	sm3digest := SM3Hash(pubBytes)
+	sm3digest := sm3.Hash(pubBytes)
 	return common.BytesToAddress(sm3digest[12:])
 }
 
@@ -42,7 +43,7 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 func HexKeyToAddress(hexKey string) common.Address {
 	key, _ := HexToECDSA(hexKey)
 	pubBytes := ECDSAPubBytes(&key.PublicKey)
-	sm3digest := SM3Hash(pubBytes)
+	sm3digest := sm3.Hash(pubBytes)
 	return common.BytesToAddress(sm3digest[12:])
 }
 
@@ -111,15 +112,6 @@ func ECDSAToPem(key *ecdsa.PrivateKey) (string, error) {
 		},
 	)
 	return string(pemdata), nil
-}
-
-// SM3Hash hash implement
-func SM3Hash(b []byte) []byte {
-	var sm3 SM3Context
-	sm3.Reset()
-	sm3.Append(b)
-	hash := sm3.Final()
-	return hash
 }
 
 // Sign calculates an sm2 signature.

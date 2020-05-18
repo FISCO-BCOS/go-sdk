@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/FISCO-BCOS/go-sdk/smcrypto"
+	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -233,7 +233,7 @@ func (tx *Transaction) SM3HashNonSig() (h common.Hash) {
 		tx.data.GroupID,
 		tx.data.ExtraData,
 	})
-	v := smcrypto.SM3Hash(buf.Bytes())
+	v := sm3.Hash(buf.Bytes())
 	copy(h[:], v)
 	return h
 }
@@ -243,7 +243,7 @@ func (tx *Transaction) sm3HashWithSig() (h common.Hash) {
 	var src []byte
 	buf := bytes.NewBuffer(src)
 	rlp.Encode(buf, tx)
-	v := smcrypto.SM3Hash(buf.Bytes())
+	v := sm3.Hash(buf.Bytes())
 	copy(h[:], v)
 	tx.hash.Store(h)
 	return h
