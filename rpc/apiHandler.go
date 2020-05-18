@@ -83,6 +83,9 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 	if err != nil {
 		return nil, err
 	}
+	if cr.Status != "0x0" {
+		return nil, fmt.Errorf("call error of status %s", cr.Status)
+	}
 	hex = common.FromHex(cr.Output)
 	return hex, nil
 }

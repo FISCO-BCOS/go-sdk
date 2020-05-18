@@ -8,6 +8,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/ecdsa"
 	"github.com/FISCO-BCOS/crypto/elliptic"
+	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 )
 
 const defaultSM2ID = "1234567812345678"
@@ -26,7 +27,7 @@ func SM2PreProcess(src []byte, id string, priv *ecdsa.PrivateKey) ([]byte, error
 	buf.Write(priv.X.Bytes())
 	buf.Write(priv.Y.Bytes())
 
-	z := SM3Hash(buf.Bytes())
+	z := sm3.Hash(buf.Bytes())
 	// fmt.Printf("digest sm3 hash :%x\n", z)
 	return append(z, src...), nil
 }
@@ -37,7 +38,7 @@ func SM2Sign(src []byte, priv *ecdsa.PrivateKey) (r, s *big.Int, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	e := SM3Hash(data)
+	e := sm3.Hash(data)
 	// fmt.Printf("message sm3 hash :%x\n", e)
 	eInt := new(big.Int).SetBytes(e)
 	n := elliptic.Sm2p256v1().Params().N

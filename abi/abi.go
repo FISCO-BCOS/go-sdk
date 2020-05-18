@@ -30,8 +30,8 @@ import (
 // packs data accordingly.
 type ABI struct {
 	Constructor Method
-	Methods     map[string]Method
-	Events      map[string]Event
+	Methods     map[string]*Method
+	Events      map[string]*Event
 	SMCrypto    bool `json:",omitempty"`
 }
 
@@ -43,8 +43,18 @@ func JSON(reader io.Reader) (ABI, error) {
 	if err := dec.Decode(&abi); err != nil {
 		return ABI{}, err
 	}
-
 	return abi, nil
+}
+
+// SetSMCrypto set abi use sm3 as hash algorithm
+func (abi *ABI) SetSMCrypto() {
+	for _, method := range abi.Methods {
+		method.SMCrypto = true
+	}
+	for _, event := range abi.Events {
+		event.SMCrypto = true
+	}
+	abi.SMCrypto = true
 }
 
 // Pack the given method name to conform the ABI. Method call's data
@@ -120,8 +130,8 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return err
 	}
-	abi.Methods = make(map[string]Method)
-	abi.Events = make(map[string]Event)
+	abi.Methods = make(map[string]*Method)
+	abi.Events = make(map[string]*Event)
 	for _, field := range fields {
 		switch field.Type {
 		case "constructor":
@@ -137,7 +147,7 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 				_, ok = abi.Methods[name]
 			}
 			isConst := field.Constant || field.StateMutability == "pure" || field.StateMutability == "view"
-			abi.Methods[name] = Method{
+			abi.Methods[name] = &Method{
 				Name:     name,
 				RawName:  field.Name,
 				Const:    isConst,
@@ -152,11 +162,12 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 				name = fmt.Sprintf("%s%d", field.Name, idx)
 				_, ok = abi.Events[name]
 			}
-			abi.Events[name] = Event{
+			abi.Events[name] = &Event{
 				Name:      name,
 				RawName:   field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    field.Inputs,
+				SMCrypto:  abi.SMCrypto,
 			}
 		}
 	}
@@ -172,7 +183,7 @@ func (abi *ABI) MethodByID(sigdata []byte) (*Method, error) {
 	}
 	for _, method := range abi.Methods {
 		if bytes.Equal(method.ID(), sigdata[:4]) {
-			return &method, nil
+			return method, nil
 		}
 	}
 	return nil, fmt.Errorf("no method with id: %#x", sigdata[:4])
@@ -183,7 +194,7 @@ func (abi *ABI) MethodByID(sigdata []byte) (*Method, error) {
 func (abi *ABI) EventByID(topic common.Hash) (*Event, error) {
 	for _, event := range abi.Events {
 		if bytes.Equal(event.ID().Bytes(), topic.Bytes()) {
-			return &event, nil
+			return event, nil
 		}
 	}
 	return nil, fmt.Errorf("no event with id: %#x", topic.Hex())

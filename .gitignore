@@ -25,5 +25,8 @@ ca.crt
 # macOS specific
 .DS_Store
 
+# solc
+solc*
+
 # golang
 go.sum

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/smcrypto"
+	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -89,7 +89,7 @@ func (method Method) String() string {
 // abi definition to identify method names and types.
 func (method Method) ID() []byte {
 	if method.SMCrypto {
-		return smcrypto.SM3Hash([]byte(method.Sig()))[:4]
+		return sm3.Hash([]byte(method.Sig()))[:4]
 	}
 	return crypto.Keccak256([]byte(method.Sig()))[:4]
 }

@@ -158,20 +158,21 @@ mv Store.sol ./store
 4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`Store.sol`为例：
 
 ```bash
-# 国密请使用 solc-0.4.25-gm
+# 国密请使用 ./solc-0.4.25-gm --bin --abi -o ./store ./store/Store.sol
 ./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
 ```
 
 `Store.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
 
 ```bash
+# 国密请使用 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go --smcrypto=true
 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go
 ```
 
 最后store目录下面存在以下文件：
 
 ```bash
-abigen  Store.abi  Store.bin  Store.go  Store.sol
+Store.abi  Store.bin  Store.go  Store.sol
 ```
 
 5.调用生成的`Store.go`文件进行合约调用

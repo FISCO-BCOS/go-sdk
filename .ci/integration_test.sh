@@ -167,9 +167,9 @@ precompiled_test(){
 # TODO: consensus test use getSealer first
     precompileds=(config cns crud permission)
     for pkg in ${precompileds[*]}; do
-        if [ ! -z "$(go test -v ./precompiled/${pkg}| grep FAIL)" ];then 
+        if [ ! -z "$(go test -v ./precompiled/${pkg}| grep FAIL)" ];then
             LOG_ERROR "test precompiled/${pkg} failed"
-            exit 1; 
+            exit 1;
         fi
     done
 }
@@ -206,8 +206,8 @@ integration_gm()
 {
     LOG_INFO "integration_gm testing..."
 
-    # abigen gm 
-    execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
+    # abigen gm
+    execute_cmd "./abigen --bin .ci/hello/HelloWorld_gm.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
     execute_cmd "go build -o hello_gm hello_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
