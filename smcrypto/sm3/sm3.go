@@ -1,4 +1,4 @@
-package smcrypto
+package sm3
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 
 const paddingHeader = 128
 
-// SM3Context is the SM3 context
-type SM3Context struct {
+// Context is the SM3 context
+type Context struct {
 	data []byte
 	a    uint32
 	b    uint32
@@ -24,25 +24,25 @@ type SM3Context struct {
 	h    uint32
 }
 
-// NewSM3Context create a SM3Context
-func NewSM3Context() *SM3Context {
-	sm3 := new(SM3Context)
+// NewContext create a Context
+func NewContext() *Context {
+	sm3 := new(Context)
 	sm3.Reset()
 	return sm3
 }
 
 // Reset clear data and reset state
-func (sm3 *SM3Context) Reset() {
+func (sm3 *Context) Reset() {
 	sm3.data = []byte{}
 }
 
 // Append add new data for sm3 hash
-func (sm3 *SM3Context) Append(data []byte) {
+func (sm3 *Context) Append(data []byte) {
 	sm3.data = append(sm3.data, data...)
 }
 
 // Final calculate sm3 hash algorithm
-func (sm3 *SM3Context) Final() []byte {
+func (sm3 *Context) Final() []byte {
 	data := pad(sm3.data)
 	buf := bytes.NewBuffer(data)
 	b := make([]byte, 64)
@@ -58,7 +58,7 @@ func (sm3 *SM3Context) Final() []byte {
 	return v
 }
 
-func (sm3 *SM3Context) cf(v []byte, b []byte) []byte {
+func (sm3 *Context) cf(v, b []byte) []byte {
 	// update a-h
 	buf := bytes.NewBuffer(v)
 	binary.Read(buf, binary.BigEndian, &sm3.a)
@@ -171,8 +171,17 @@ func gg0(x, y, z uint32) uint32 { return x ^ y ^ z }
 
 func gg1(x, y, z uint32) uint32 { return (x & y) | (^x & z) }
 
-func cycleLeftRotate(x uint32, i uint32) uint32 { return (x<<(i%32) | x>>(32-i%32)) }
+func cycleLeftRotate(x, i uint32) uint32 { return (x<<(i%32) | x>>(32-i%32)) }
 
 func p0(x uint32) uint32 { return x ^ cycleLeftRotate(x, 9) ^ cycleLeftRotate(x, 17) }
 
 func p1(x uint32) uint32 { return x ^ cycleLeftRotate(x, 15) ^ cycleLeftRotate(x, 23) }
+
+// Hash hash implement
+func Hash(b []byte) []byte {
+	var sm3 Context
+	sm3.Reset()
+	sm3.Append(b)
+	hash := sm3.Final()
+	return hash
+}

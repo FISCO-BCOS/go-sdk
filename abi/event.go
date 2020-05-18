@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -42,6 +43,7 @@ type Event struct {
 	RawName   string
 	Anonymous bool
 	Inputs    Arguments
+	SMCrypto  bool
 }
 
 func (e Event) String() string {
@@ -73,5 +75,8 @@ func (e Event) Sig() string {
 // ID returns the canonical representation of the event's signature used by the
 // abi definition to identify event names and types.
 func (e Event) ID() common.Hash {
+	if e.SMCrypto {
+		return common.BytesToHash(sm3.Hash([]byte(e.Sig()))[:4])
+	}
 	return common.BytesToHash(crypto.Keccak256([]byte(e.Sig())))
 }
