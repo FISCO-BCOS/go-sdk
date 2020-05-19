@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/FISCO-BCOS/go-sdk/core/types"
 	tls "github.com/FISCO-BCOS/crypto/tls"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/google/uuid"
 )
 
@@ -585,11 +585,12 @@ func (hc *channelSession) processMessages() {
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
 				fmt.Printf("decode error:%v", err)
+				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
 			msg, err := decodeChannelMessage(hc.buf)
 			if err != nil {
-				fmt.Printf("decode error:%v", err)
+				// fmt.Printf("decode error:%v", err)
 				continue
 			}
 			// fmt.Printf("message %+v\n", msg)
