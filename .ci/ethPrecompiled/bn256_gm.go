@@ -412,9 +412,9 @@ func main() {
 	exponent := generateBigInt()
 	modulus := generateBigInt()
 	var b, e, m [32]byte
-	copy(b[:], base.Bytes())
-	copy(e[:], exponent.Bytes())
-	copy(m[:], modulus.Bytes())
+	copy(b[32-len(base.Bytes()):], base.Bytes())
+	copy(e[32-len(exponent.Bytes()):], exponent.Bytes())
+	copy(m[32-len(modulus.Bytes()):], modulus.Bytes())
 	tx, err = bn256Precompiled.BigModExp(b, e, m)
 	receipt, err = client.WaitMined(tx)
 	if err != nil {
@@ -429,8 +429,8 @@ func main() {
 	}
 	r := new(big.Int).Exp(base, exponent, modulus)
 	if bytes.Compare(ret4[:], r.Bytes()) != 0 {
-		fmt.Printf("precompiled Bn256ScalarMul not equal\n")
-		fmt.Printf("local=%v\nBn256ScalarMul=%v\n", retBytes, precompiledResult)
+		fmt.Printf("precompiled BigModExp not equal\n")
+		fmt.Printf("local=%v\nBigModExp=%v\n", retBytes, precompiledResult)
 		return
 	}
 	fmt.Printf("BigModExp success\n")
