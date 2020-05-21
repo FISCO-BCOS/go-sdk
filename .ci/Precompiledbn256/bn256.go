@@ -349,9 +349,8 @@ func main() {
 		return
 	}
 	fmt.Printf("Bn256Add success\n")
-
 	var k32 [32]byte
-	copy(k32[:], k.Bytes())
+	copy(k32[32-len(k.Bytes()):], k.Bytes())
 	_, g1z, err := bn256.RandomG1(rand.Reader)
 	if err != nil {
 		fmt.Printf("bn256.RandomG1 failed of :%v", err)
@@ -383,7 +382,7 @@ func main() {
 	retBytes = p.Marshal()
 	if bytes.Compare(retBytes, precompiledResult2) != 0 {
 		fmt.Printf("precompiled Bn256ScalarMul not equal\n")
-		fmt.Printf("local=%v\nBn256ScalarMul=%v\n", retBytes, precompiledResult)
+		fmt.Printf("local=%v\nprecompiled=%v\n k=%x\n p=%x", retBytes, precompiledResult, k.Bytes(), g1zBytes)
 		return
 	}
 	fmt.Printf("Bn256ScalarMul success\n")

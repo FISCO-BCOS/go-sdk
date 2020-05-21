@@ -25,8 +25,6 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 	if err != nil {
 		return nil, fmt.Errorf("construct SystemConfigService failed: %+v", err)
 	}
-	fmt.Printf("sm crypto  = %v\n", client.SMCrypto())
-
 	return &SystemConfigService{systemConfig: instance, client: client}, nil
 }
 
