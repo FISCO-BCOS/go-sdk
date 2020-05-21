@@ -314,7 +314,7 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 // This signature needs to be in the [R || S || V] format where V is 0 or 1.
 func (tx *Transaction) WithSM2Signature(signer Signer, sig []byte) (*Transaction, error) {
 	if len(sig) != 128 {
-		panic(fmt.Sprintf("wrong size for SM2Signature: got %d, want 96", len(sig)))
+		panic(fmt.Sprintf("wrong size for SM2Signature: got %d, want 128", len(sig)))
 	}
 	r := new(big.Int).SetBytes(sig[:32])
 	s := new(big.Int).SetBytes(sig[32:64])

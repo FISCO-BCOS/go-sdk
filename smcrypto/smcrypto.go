@@ -126,7 +126,7 @@ func Sign(hash []byte, hexKey string) (sig []byte, err error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
 	}
-	if len(hexKey) < 64 {
+	if len(hexKey) != 64 {
 		return nil, fmt.Errorf("hex private key is required to be exactly 64 bytes (%d)", len(hexKey))
 	}
 	key, err := HexToECDSA(hexKey)
@@ -136,9 +136,10 @@ func Sign(hash []byte, hexKey string) (sig []byte, err error) {
 	pubBytes := ECDSAPubBytes(&key.PublicKey)
 
 	r, s, err := SM2Sign(hash, key)
-	sig = r.Bytes()
-	sig = append(sig, s.Bytes()...)
-	sig = append(sig, pubBytes...)
+	sig = make([]byte, 128)
+	copy(sig[32-len(r.Bytes()):], r.Bytes())
+	copy(sig[64-len(s.Bytes()):], s.Bytes())
+	copy(sig[128-len(pubBytes):], pubBytes)
 
 	return sig, nil
 }
