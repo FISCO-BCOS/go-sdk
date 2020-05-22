@@ -584,13 +584,13 @@ func (hc *channelSession) processMessages() {
 			receiveBuf := make([]byte, 4096)
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				fmt.Printf("decode error:%v", err)
-				continue
+				// fmt.Printf("channel Read error:%v", err)
+				hc.Close()
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
 			msg, err := decodeChannelMessage(hc.buf)
 			if err != nil {
-				// fmt.Printf("decode error:%v", err)
+				// fmt.Printf("decodeChannelMessage error:%v", err)
 				continue
 			}
 			// fmt.Printf("message %+v\n", msg)

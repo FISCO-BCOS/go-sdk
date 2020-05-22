@@ -28,5 +28,9 @@ ca.crt
 # solc
 solc*
 
+# ci and config files
+.ci
+config.toml
+
 # golang
 go.sum

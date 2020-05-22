@@ -1,17 +1,21 @@
 pragma solidity ^0.4.24;
 
+
 contract HelloWorld {
-    string name;
+    string value;
+    event setValue(string);
+    string public version = "1";
 
     constructor() public {
-        name = "Hello, World!";
+        value = "Hello, World!";
     }
 
     function get() public view returns (string) {
-        return name;
+        return value;
     }
 
-    function set(string n) public {
-        name = n;
+    function set(string v) public {
+        value = v;
+        emit setValue(v);
     }
 }
