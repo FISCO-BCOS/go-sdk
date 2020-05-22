@@ -30,29 +30,29 @@ var (
 // CnsABI is the input ABI used to generate the binding from.
 const CnsABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"selectByName\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"name\":\"selectByNameAndVersion\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"addr\",\"type\":\"string\"},{\"name\":\"abi\",\"type\":\"string\"}],\"name\":\"insert\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// Cns is an auto generated Go binding around an Ethereum contract.
+// Cns is an auto generated Go binding around a Solidity contract.
 type Cns struct {
 	CnsCaller     // Read-only binding to the contract
 	CnsTransactor // Write-only binding to the contract
 	CnsFilterer   // Log filterer for contract events
 }
 
-// CnsCaller is an auto generated read-only Go binding around an Ethereum contract.
+// CnsCaller is an auto generated read-only Go binding around a Solidity contract.
 type CnsCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CnsTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// CnsTransactor is an auto generated write-only Go binding around a Solidity contract.
 type CnsTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CnsFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// CnsFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type CnsFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CnsSession is an auto generated Go binding around an Ethereum contract,
+// CnsSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type CnsSession struct {
 	Contract     *Cns              // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type CnsSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// CnsCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// CnsCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type CnsCallerSession struct {
 	Contract *CnsCaller    // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts // Call options to use throughout this session
 }
 
-// CnsTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// CnsTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type CnsTransactorSession struct {
 	Contract     *CnsTransactor    // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// CnsRaw is an auto generated low-level Go binding around an Ethereum contract.
+// CnsRaw is an auto generated low-level Go binding around a Solidity contract.
 type CnsRaw struct {
 	Contract *Cns // Generic contract binding to access the raw methods on
 }
 
-// CnsCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// CnsCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type CnsCallerRaw struct {
 	Contract *CnsCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// CnsTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// CnsTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type CnsTransactorRaw struct {
 	Contract *CnsTransactor // Generic write-only contract binding to access the raw methods on
 }

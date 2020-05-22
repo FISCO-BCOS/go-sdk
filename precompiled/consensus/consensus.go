@@ -30,29 +30,29 @@ var (
 // ConsensusABI is the input ABI used to generate the binding from.
 const ConsensusABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"addObserver\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"addSealer\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// Consensus is an auto generated Go binding around an Ethereum contract.
+// Consensus is an auto generated Go binding around a Solidity contract.
 type Consensus struct {
 	ConsensusCaller     // Read-only binding to the contract
 	ConsensusTransactor // Write-only binding to the contract
 	ConsensusFilterer   // Log filterer for contract events
 }
 
-// ConsensusCaller is an auto generated read-only Go binding around an Ethereum contract.
+// ConsensusCaller is an auto generated read-only Go binding around a Solidity contract.
 type ConsensusCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConsensusTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// ConsensusTransactor is an auto generated write-only Go binding around a Solidity contract.
 type ConsensusTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConsensusFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// ConsensusFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type ConsensusFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConsensusSession is an auto generated Go binding around an Ethereum contract,
+// ConsensusSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type ConsensusSession struct {
 	Contract     *Consensus        // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type ConsensusSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// ConsensusCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// ConsensusCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type ConsensusCallerSession struct {
 	Contract *ConsensusCaller // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts    // Call options to use throughout this session
 }
 
-// ConsensusTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// ConsensusTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type ConsensusTransactorSession struct {
 	Contract     *ConsensusTransactor // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts    // Transaction auth options to use throughout this session
 }
 
-// ConsensusRaw is an auto generated low-level Go binding around an Ethereum contract.
+// ConsensusRaw is an auto generated low-level Go binding around a Solidity contract.
 type ConsensusRaw struct {
 	Contract *Consensus // Generic contract binding to access the raw methods on
 }
 
-// ConsensusCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// ConsensusCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type ConsensusCallerRaw struct {
 	Contract *ConsensusCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// ConsensusTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// ConsensusTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type ConsensusTransactorRaw struct {
 	Contract *ConsensusTransactor // Generic write-only contract binding to access the raw methods on
 }

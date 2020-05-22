@@ -1,17 +1,15 @@
-// @CopyRight:
-// FISCO-BCOS go-sdk is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// FISCO-BCOS go-sdk is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with FISCO-BCOS go-sdk.  If not, see <http://www.gnu.org/licenses/>
-// (c) 2016-2018 fisco-dev contributors.
+// Copyright FISCO-BCOS go-sdk
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // Package client provides a client for the FISCO BCOS RPC API.
 package client
@@ -27,8 +25,8 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/rpc"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -37,7 +35,7 @@ import (
 
 // Client defines typed wrappers for the Ethereum RPC API.
 type Client struct {
-	apiHandler        *rpc.APIHandler
+	apiHandler        *APIHandler
 	groupID           int
 	chainID           int64
 	compatibleVersion string
@@ -60,17 +58,17 @@ func Dial(config *conf.Config) (*Client, error) {
 
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
-	var c *rpc.Connection
+	var c *conn.Connection
 	var err error
 	if config.IsHTTP {
-		c, err = rpc.DialContextHTTP(config.NodeURL)
+		c, err = conn.DialContextHTTP(config.NodeURL)
 	} else {
-		c, err = rpc.DialContextChannel(config.NodeURL, config.CAFile, config.Cert, config.Key, config.GroupID)
+		c, err = conn.DialContextChannel(config.NodeURL, config.CAFile, config.Cert, config.Key, config.GroupID)
 	}
 	if err != nil {
 		return nil, err
 	}
-	apiHandler := rpc.NewAPIHandler(c)
+	apiHandler := NewAPIHandler(c)
 	var response []byte
 	response, err = apiHandler.GetClientVersion(ctx)
 	if err != nil {
