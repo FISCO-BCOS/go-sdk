@@ -13,12 +13,12 @@ func TestSetValueByKey(t *testing.T) {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
 		NodeURL:    "http://localhost:8545"}
-	rpc, err := client.Dial(config)
+	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("init rpc client failed: %+v", err)
+		t.Fatalf("init client failed: %+v", err)
 	}
 
-	service, err := NewSystemConfigService(rpc)
+	service, err := NewSystemConfigService(c)
 	if err != nil {
 		t.Fatalf("init SystemConfigService failed: %+v", err)
 	}
@@ -30,12 +30,12 @@ func TestSetValueByKey(t *testing.T) {
 		t.Fatalf("SystemConfigService SetValueByKey failed: %+v", err)
 	}
 	// wait for the mining
-	_, err = bind.WaitMined(context.Background(), rpc, tx)
+	_, err = bind.WaitMined(context.Background(), c, tx)
 	if err != nil {
 		t.Fatalf("tx mining error:%v\n", err)
 	}
 
-	result, err := rpc.GetSystemConfigByKey(context.Background(), key)
+	result, err := c.GetSystemConfigByKey(context.Background(), key)
 	if err != nil {
 		t.Fatalf("GetSystemConfigByKey failed: %v", err)
 	}

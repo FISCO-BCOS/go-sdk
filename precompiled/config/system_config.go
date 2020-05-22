@@ -30,29 +30,29 @@ var (
 // ConfigABI is the input ABI used to generate the binding from.
 const ConfigABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"setValueByKey\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// Config is an auto generated Go binding around an Ethereum contract.
+// Config is an auto generated Go binding around a Solidity contract.
 type Config struct {
 	ConfigCaller     // Read-only binding to the contract
 	ConfigTransactor // Write-only binding to the contract
 	ConfigFilterer   // Log filterer for contract events
 }
 
-// ConfigCaller is an auto generated read-only Go binding around an Ethereum contract.
+// ConfigCaller is an auto generated read-only Go binding around a Solidity contract.
 type ConfigCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConfigTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// ConfigTransactor is an auto generated write-only Go binding around a Solidity contract.
 type ConfigTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConfigFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// ConfigFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type ConfigFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// ConfigSession is an auto generated Go binding around an Ethereum contract,
+// ConfigSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type ConfigSession struct {
 	Contract     *Config           // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type ConfigSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// ConfigCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// ConfigCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type ConfigCallerSession struct {
 	Contract *ConfigCaller // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts // Call options to use throughout this session
 }
 
-// ConfigTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// ConfigTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type ConfigTransactorSession struct {
 	Contract     *ConfigTransactor // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// ConfigRaw is an auto generated low-level Go binding around an Ethereum contract.
+// ConfigRaw is an auto generated low-level Go binding around a Solidity contract.
 type ConfigRaw struct {
 	Contract *Config // Generic contract binding to access the raw methods on
 }
 
-// ConfigCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// ConfigCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type ConfigCallerRaw struct {
 	Contract *ConfigCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// ConfigTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// ConfigTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type ConfigTransactorRaw struct {
 	Contract *ConfigTransactor // Generic write-only contract binding to access the raw methods on
 }
