@@ -177,8 +177,10 @@ precompiled_test(){
 integration_std()
 {
     LOG_INFO "integration_std testing..."
+    execute_cmd "bash tools/download_solc.sh -v 0.4.25"
 
     # abigen std
+    execute_cmd "./solc-0.4.25 --bin --abi -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
     execute_cmd "go build -o hello hello.go"
@@ -193,6 +195,7 @@ integration_std()
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
     precompiled_test
 
+    execute_cmd "./solc-0.4.25 --bin --abi -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
     execute_cmd "go build -o counter counter.go"
@@ -207,9 +210,11 @@ integration_std()
 integration_gm()
 {
     LOG_INFO "integration_gm testing..."
+    execute_cmd "bash tools/download_solc.sh -v 0.4.25 -g"
 
     # abigen gm
-    execute_cmd "./abigen --bin .ci/hello/HelloWorld_gm.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
+    execute_cmd "./solc-0.4.25-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
+    execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
     execute_cmd "go build -o hello_gm hello_gm.go"
     execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
@@ -226,7 +231,6 @@ integration_gm()
     # precompiled_test
     bash nodes_gm/127.0.0.1/stop_all.sh
     LOG_INFO "integration_gm testing pass."
-
 }
 
 check_env

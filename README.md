@@ -143,9 +143,8 @@ bash tools/download_solc.sh -v 0.4.25
 3.构建`go-sdk`的代码生成工具`abigen`
 
 ```bash
-git clone https://github.com/FISCO-BCOS/go-sdk.git # 下载go-sdk代码，如已下载请跳过
-cd go-sdk # 进入代码目录
-go build ./cmd/abigen # 编译生成abigen工具
+# 下面指令在go-sdk目录下操作，编译生成abigen工具
+go build ./cmd/abigen
 ```
 
 执行命令后，检查根目录下是否存在`abigen`，并将生成的`abigen`以及所准备的智能合约`Store.sol`放置在一个新的目录下：

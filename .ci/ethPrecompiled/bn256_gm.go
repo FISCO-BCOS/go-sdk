@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"os"
 	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
@@ -421,17 +422,19 @@ func main() {
 		fmt.Printf("BigModExp WaitMined failed of :%v", err)
 		return
 	}
-	var ret4 [32]byte
+	var ret4, local4 [32]byte
 	err = parsed.Unpack(&ret4, "BigModExp", common.FromHex(receipt.Output))
 	if err != nil {
 		fmt.Printf("Unpack BigModExp failed of :%v", err)
 		return
 	}
 	r := new(big.Int).Exp(base, exponent, modulus)
-	if bytes.Compare(ret4[:], r.Bytes()) != 0 {
+	copy(local4[32-len(r.Bytes()):], r.Bytes())
+	if bytes.Compare(ret4[:], local4[:]) != 0 {
 		fmt.Printf("precompiled BigModExp not equal\n")
-		fmt.Printf("local=%v\nBigModExp=%v\n", retBytes, precompiledResult)
-		return
+		fmt.Printf("local=%x\nBigModExp=%x\n", ret4, r.Bytes())
+		fmt.Printf("b=%x\ne=%x\nm=%x\n", base, exponent, modulus)
+		os.Exit(1)
 	}
 	fmt.Printf("BigModExp success\n")
 }
