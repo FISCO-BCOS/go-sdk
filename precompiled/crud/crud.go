@@ -30,29 +30,29 @@ var (
 // CrudABI is the input ABI used to generate the binding from.
 const CrudABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"tableName\",\"type\":\"string\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"entry\",\"type\":\"string\"},{\"name\":\"condition\",\"type\":\"string\"},{\"name\":\"optional\",\"type\":\"string\"}],\"name\":\"update\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"tableName\",\"type\":\"string\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"condition\",\"type\":\"string\"},{\"name\":\"optional\",\"type\":\"string\"}],\"name\":\"select\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"tableName\",\"type\":\"string\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"entry\",\"type\":\"string\"},{\"name\":\"optional\",\"type\":\"string\"}],\"name\":\"insert\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"tableName\",\"type\":\"string\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"condition\",\"type\":\"string\"},{\"name\":\"optional\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// Crud is an auto generated Go binding around an Ethereum contract.
+// Crud is an auto generated Go binding around a Solidity contract.
 type Crud struct {
 	CrudCaller     // Read-only binding to the contract
 	CrudTransactor // Write-only binding to the contract
 	CrudFilterer   // Log filterer for contract events
 }
 
-// CrudCaller is an auto generated read-only Go binding around an Ethereum contract.
+// CrudCaller is an auto generated read-only Go binding around a Solidity contract.
 type CrudCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CrudTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// CrudTransactor is an auto generated write-only Go binding around a Solidity contract.
 type CrudTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CrudFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// CrudFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type CrudFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// CrudSession is an auto generated Go binding around an Ethereum contract,
+// CrudSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type CrudSession struct {
 	Contract     *Crud             // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type CrudSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// CrudCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// CrudCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type CrudCallerSession struct {
 	Contract *CrudCaller   // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts // Call options to use throughout this session
 }
 
-// CrudTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// CrudTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type CrudTransactorSession struct {
 	Contract     *CrudTransactor   // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// CrudRaw is an auto generated low-level Go binding around an Ethereum contract.
+// CrudRaw is an auto generated low-level Go binding around a Solidity contract.
 type CrudRaw struct {
 	Contract *Crud // Generic contract binding to access the raw methods on
 }
 
-// CrudCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// CrudCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type CrudCallerRaw struct {
 	Contract *CrudCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// CrudTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// CrudTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type CrudTransactorRaw struct {
 	Contract *CrudTransactor // Generic write-only contract binding to access the raw methods on
 }

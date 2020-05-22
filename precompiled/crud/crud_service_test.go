@@ -32,9 +32,9 @@ func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 func GetService(t *testing.T) *CRUDService {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	privateKey := GenerateKey(t)
-	service, err := NewCRUDService(rpc, privateKey)
+	service, err := NewCRUDService(c, privateKey)
 	if err != nil {
 		t.Fatalf("init CRUDService failed: %+v", err)
 	}

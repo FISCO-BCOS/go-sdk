@@ -36,9 +36,9 @@ func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 func GetService(t *testing.T) *PermissionService {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	privateKey := GenerateKey(t)
-	service, err := NewPermissionService(rpc, privateKey)
+	service, err := NewPermissionService(c, privateKey)
 	if err != nil {
 		t.Fatalf("init PermissionService failed: %+v", err)
 	}

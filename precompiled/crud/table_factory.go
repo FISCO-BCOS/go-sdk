@@ -30,29 +30,29 @@ var (
 // TableFactoryABI is the input ABI used to generate the binding from.
 const TableFactoryABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"tableName\",\"type\":\"string\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"valueField\",\"type\":\"string\"}],\"name\":\"createTable\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// TableFactory is an auto generated Go binding around an Ethereum contract.
+// TableFactory is an auto generated Go binding around a Solidity contract.
 type TableFactory struct {
 	TableFactoryCaller     // Read-only binding to the contract
 	TableFactoryTransactor // Write-only binding to the contract
 	TableFactoryFilterer   // Log filterer for contract events
 }
 
-// TableFactoryCaller is an auto generated read-only Go binding around an Ethereum contract.
+// TableFactoryCaller is an auto generated read-only Go binding around a Solidity contract.
 type TableFactoryCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// TableFactoryTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// TableFactoryTransactor is an auto generated write-only Go binding around a Solidity contract.
 type TableFactoryTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// TableFactoryFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// TableFactoryFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type TableFactoryFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// TableFactorySession is an auto generated Go binding around an Ethereum contract,
+// TableFactorySession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type TableFactorySession struct {
 	Contract     *TableFactory     // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type TableFactorySession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// TableFactoryCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// TableFactoryCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type TableFactoryCallerSession struct {
 	Contract *TableFactoryCaller // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts       // Call options to use throughout this session
 }
 
-// TableFactoryTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// TableFactoryTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type TableFactoryTransactorSession struct {
 	Contract     *TableFactoryTransactor // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts       // Transaction auth options to use throughout this session
 }
 
-// TableFactoryRaw is an auto generated low-level Go binding around an Ethereum contract.
+// TableFactoryRaw is an auto generated low-level Go binding around a Solidity contract.
 type TableFactoryRaw struct {
 	Contract *TableFactory // Generic contract binding to access the raw methods on
 }
 
-// TableFactoryCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// TableFactoryCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type TableFactoryCallerRaw struct {
 	Contract *TableFactoryCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// TableFactoryTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// TableFactoryTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type TableFactoryTransactorRaw struct {
 	Contract *TableFactoryTransactor // Generic write-only contract binding to access the raw methods on
 }

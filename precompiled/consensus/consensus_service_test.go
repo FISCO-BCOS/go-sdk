@@ -32,9 +32,9 @@ func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 func GetService(t *testing.T) *ConsensusService {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	privateKey := GenerateKey(t)
-	service, err := NewConsensusService(rpc, privateKey)
+	service, err := NewConsensusService(c, privateKey)
 	if err != nil {
 		t.Fatalf("init ConsensusService failed: %+v", err)
 	}
@@ -42,7 +42,7 @@ func GetService(t *testing.T) *ConsensusService {
 }
 
 func TestAddObserver(t *testing.T) {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	service := GetService(t)
 
 	observer, err := rpc.GetObserverList(context.Background())
@@ -57,7 +57,7 @@ func TestAddObserver(t *testing.T) {
 		t.Fatalf("ConsensusService AddObserver failed: %+v\n", err)
 	}
 	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	receipt, err := bind.WaitMined(context.Background(), c, tx)
 	if err != nil {
 		t.Fatalf("tx mining error:%v\n", err)
 	}
@@ -71,7 +71,7 @@ func TestAddObserver(t *testing.T) {
 }
 
 func TestAddSealer(t *testing.T) {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	service := GetService(t)
 
 	observer, err := rpc.GetSealerList(context.Background())
@@ -86,7 +86,7 @@ func TestAddSealer(t *testing.T) {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
 	}
 	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	receipt, err := bind.WaitMined(context.Background(), c, tx)
 	if err != nil {
 		t.Fatalf("tx mining error:%v\n", err)
 	}
@@ -100,7 +100,7 @@ func TestAddSealer(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	service := GetService(t)
 
 	observer, err := rpc.GetSealerList(context.Background())
@@ -115,7 +115,7 @@ func TestRemove(t *testing.T) {
 		t.Fatalf("ConsensusService Remove failed: %+v\n", err)
 	}
 	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	receipt, err := bind.WaitMined(context.Background(), c, tx)
 	if err != nil {
 		t.Fatalf("tx mining error:%v\n", err)
 	}

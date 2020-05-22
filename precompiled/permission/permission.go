@@ -30,29 +30,29 @@ var (
 // PermissionABI is the input ABI used to generate the binding from.
 const PermissionABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"table_name\",\"type\":\"string\"},{\"name\":\"addr\",\"type\":\"string\"}],\"name\":\"insert\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"table_name\",\"type\":\"string\"}],\"name\":\"queryByName\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"table_name\",\"type\":\"string\"},{\"name\":\"addr\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
-// Permission is an auto generated Go binding around an Ethereum contract.
+// Permission is an auto generated Go binding around a Solidity contract.
 type Permission struct {
 	PermissionCaller     // Read-only binding to the contract
 	PermissionTransactor // Write-only binding to the contract
 	PermissionFilterer   // Log filterer for contract events
 }
 
-// PermissionCaller is an auto generated read-only Go binding around an Ethereum contract.
+// PermissionCaller is an auto generated read-only Go binding around a Solidity contract.
 type PermissionCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// PermissionTransactor is an auto generated write-only Go binding around an Ethereum contract.
+// PermissionTransactor is an auto generated write-only Go binding around a Solidity contract.
 type PermissionTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// PermissionFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+// PermissionFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type PermissionFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// PermissionSession is an auto generated Go binding around an Ethereum contract,
+// PermissionSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type PermissionSession struct {
 	Contract     *Permission       // Generic contract binding to set the session for
@@ -60,31 +60,31 @@ type PermissionSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// PermissionCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// PermissionCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type PermissionCallerSession struct {
 	Contract *PermissionCaller // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts     // Call options to use throughout this session
 }
 
-// PermissionTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// PermissionTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type PermissionTransactorSession struct {
 	Contract     *PermissionTransactor // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts     // Transaction auth options to use throughout this session
 }
 
-// PermissionRaw is an auto generated low-level Go binding around an Ethereum contract.
+// PermissionRaw is an auto generated low-level Go binding around a Solidity contract.
 type PermissionRaw struct {
 	Contract *Permission // Generic contract binding to access the raw methods on
 }
 
-// PermissionCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+// PermissionCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type PermissionCallerRaw struct {
 	Contract *PermissionCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// PermissionTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+// PermissionTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type PermissionTransactorRaw struct {
 	Contract *PermissionTransactor // Generic write-only contract binding to access the raw methods on
 }

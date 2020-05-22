@@ -32,9 +32,9 @@ func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 func GetService(t *testing.T) *CnsService {
-	rpc := GetClient(t)
+	c := GetClient(t)
 	privateKey := GenerateKey(t)
-	service, err := NewCnsService(rpc, privateKey)
+	service, err := NewCnsService(c, privateKey)
 	if err != nil {
 		t.Fatalf("init CnsService failed: %+v", err)
 	}
@@ -126,7 +126,7 @@ func TestAll(t *testing.T) {
 			"type": "event"
 		}
 	]`
-	rpc := GetClient(t)
+	c := GetClient(t)
 	service := GetService(t)
 
 	// test RegisterCns
@@ -135,7 +135,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("CnsService RegisterCns failed: %+v\n", err)
 	}
 	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), rpc, tx)
+	receipt, err := bind.WaitMined(context.Background(), c, tx)
 	if err != nil {
 		t.Fatalf("tx mining error:%v\n", err)
 	}
