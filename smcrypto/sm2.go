@@ -32,7 +32,7 @@ func SM2PreProcess(src []byte, id string, priv *ecdsa.PrivateKey) ([]byte, error
 	return append(z, src...), nil
 }
 
-// SM2Sign return esdsa signature
+// SM2Sign return sm2 signature
 func SM2Sign(src []byte, priv *ecdsa.PrivateKey) (r, s *big.Int, err error) {
 	data, err := SM2PreProcess(src, defaultSM2ID, priv)
 	if err != nil {

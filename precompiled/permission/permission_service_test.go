@@ -22,7 +22,7 @@ func GetClient(t *testing.T) *client.Client {
 		NodeURL:    "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("can not dial to the RPC API: %v", err)
+		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
 	}
 	return c
 }

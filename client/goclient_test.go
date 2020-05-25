@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"testing"
+
+	"github.com/FISCO-BCOS/go-sdk/conf"
 )
 
 func GetClient(t *testing.T) *Client {
@@ -11,7 +12,7 @@ func GetClient(t *testing.T) *Client {
 		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58", NodeURL: "http://localhost:8545"}
 	c, err := Dial(config)
 	if err != nil {
-		t.Fatalf("can not dial to the RPC API: %v", err)
+		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
 	}
 	return c
 }

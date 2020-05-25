@@ -18,7 +18,7 @@ func GetClient(t *testing.T) *client.Client {
 		NodeURL:    "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("can not dial to the RPC API: %v", err)
+		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
 	}
 	return c
 }
@@ -45,7 +45,7 @@ func TestAddObserver(t *testing.T) {
 	c := GetClient(t)
 	service := GetService(t)
 
-	observer, err := rpc.GetObserverList(context.Background())
+	observer, err := c.GetObserverList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetObserverList failed: %+v\n", err)
 	}
@@ -63,7 +63,7 @@ func TestAddObserver(t *testing.T) {
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = rpc.GetObserverList(context.Background())
+	observer, err = c.GetObserverList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetObserverList second time failed: %+v\n", err)
 	}
@@ -74,7 +74,7 @@ func TestAddSealer(t *testing.T) {
 	c := GetClient(t)
 	service := GetService(t)
 
-	observer, err := rpc.GetSealerList(context.Background())
+	observer, err := c.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetSealerList failed: %+v\n", err)
 	}
@@ -92,7 +92,7 @@ func TestAddSealer(t *testing.T) {
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = rpc.GetSealerList(context.Background())
+	observer, err = c.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
@@ -103,7 +103,7 @@ func TestRemove(t *testing.T) {
 	c := GetClient(t)
 	service := GetService(t)
 
-	observer, err := rpc.GetSealerList(context.Background())
+	observer, err := c.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetSealerList failed: %+v\n", err)
 	}
@@ -121,7 +121,7 @@ func TestRemove(t *testing.T) {
 	}
 	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = rpc.GetSealerList(context.Background())
+	observer, err = c.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
