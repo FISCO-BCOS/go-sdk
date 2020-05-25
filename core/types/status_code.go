@@ -220,7 +220,7 @@ func GetJsonStr(output string) (string, error) {
 	var code int
 	i := new(big.Int)
 	var flag bool
-	i, flag = i.SetString(output[2:len(output)], 16)
+	i, flag = i.SetString(output[2:], 16)
 	if flag == false {
 		return "", fmt.Errorf("handleOutput: convert output to Int failed")
 	}

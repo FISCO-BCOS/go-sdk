@@ -2,59 +2,59 @@ package cns
 
 import "encoding/json"
 
-// CnsInfo is used for the CNSService
-type CnsInfo struct {
-	Name      string  `json:"name"`
-	Version   string  `json:"version"`
-	Address   string  `json:"address"`
-	Abi       string  `json:"abi"`
+// Info is used for the CNSService
+type Info struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Address string `json:"address"`
+	Abi     string `json:"abi"`
 }
 
 // GetName returns the name of the CNS
-func (cns *CnsInfo) GetName() string {
+func (cns *Info) GetName() string {
 	return cns.Name
 }
 
 // GetVersion returns the version of the CNS
-func (cns *CnsInfo) GetVersion() string {
+func (cns *Info) GetVersion() string {
 	return cns.Version
 }
 
 // GetAddress returns the address of the CNS
-func (cns *CnsInfo) GetAddress() string {
+func (cns *Info) GetAddress() string {
 	return cns.Address
 }
 
 // GetAbi returns the abi of the CNS
-func (cns *CnsInfo) GetAbi() string {
+func (cns *Info) GetAbi() string {
 	return cns.Abi
 }
 
 // SetName modified the name of CNS
-func (cns *CnsInfo) SetName(newName string) {
+func (cns *Info) SetName(newName string) {
 	cns.Name = newName
 }
 
 // SetVersion modified the version of CNS
-func (cns *CnsInfo) SetVersion(newVersion string) {
-	cns.Version =  newVersion
+func (cns *Info) SetVersion(newVersion string) {
+	cns.Version = newVersion
 }
 
 // SetAddress modified the address of CNS
-func (cns *CnsInfo) SetAddress(newAddress string)  {
+func (cns *Info) SetAddress(newAddress string) {
 	cns.Address = newAddress
 }
 
 // SetAbi modified the abi of CNS
-func (cns *CnsInfo) SetAbi(newAbi string)  {
+func (cns *Info) SetAbi(newAbi string) {
 	cns.Abi = newAbi
 }
 
-// String method of CnsInfo
-func (cns *CnsInfo) String() string {
+// String method of Info
+func (cns *Info) String() string {
 	out, err := json.MarshalIndent(cns, "", "\t")
 	if err != nil {
-		return "get string of CnsInfo failed"
+		return "get string of Info failed"
 	}
 	return string(out)
 }

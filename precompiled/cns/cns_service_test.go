@@ -18,7 +18,7 @@ func GetClient(t *testing.T) *client.Client {
 		NodeURL:    "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("can not dial to the RPC API: %v", err)
+		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
 	}
 	return c
 }
@@ -31,12 +31,12 @@ func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
 	return privateKey
 }
 
-func GetService(t *testing.T) *CnsService {
+func GetService(t *testing.T) *Service {
 	c := GetClient(t)
 	privateKey := GenerateKey(t)
 	service, err := NewCnsService(c, privateKey)
 	if err != nil {
-		t.Fatalf("init CnsService failed: %+v", err)
+		t.Fatalf("init Service failed: %+v", err)
 	}
 	return service
 }
@@ -132,7 +132,7 @@ func TestAll(t *testing.T) {
 	// test RegisterCns
 	tx, err := service.RegisterCns(name, version, address, abi)
 	if err != nil {
-		t.Fatalf("CnsService RegisterCns failed: %+v\n", err)
+		t.Fatalf("Service RegisterCns failed: %+v\n", err)
 	}
 	// wait for the mining
 	receipt, err := bind.WaitMined(context.Background(), c, tx)
