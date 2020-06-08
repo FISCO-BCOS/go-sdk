@@ -147,7 +147,7 @@ bash tools/download_solc.sh -v 0.4.25
 go build ./cmd/abigen
 ```
 
-执行命令后，检查根目录下是否存在`abigen`，并将生成的`abigen`以及所准备的智能合约`Store.sol`放置在一个新的目录下：
+执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`Store.sol`放置在一个新的目录下：
 
 ```
 mkdir ./store
