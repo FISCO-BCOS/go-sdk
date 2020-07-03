@@ -4,6 +4,7 @@ install_path="${HOME}/.fisco"
 version="0.4.25"
 OS="linux"
 crypto=
+extension=
 
 LOG_WARN()
 {
@@ -33,10 +34,14 @@ exit 0
 check_env() {
     if [ "$(uname)" == "Darwin" ];then
         OS="mac"
-    fi
-    if [ "$(uname -m)" != "x86_64" ];then
+    elif [ "$(uname -s)" == "Linux" ];then
+        OS="linux"
+    elif [ "$(uname -m)" != "x86_64" ];then
         LOG_WARN "We only offer x86_64 precompiled solc binary, your OS architecture is not x86_64. Please compile from source."
         exit 1
+    else
+        OS="win"
+        extension=".exe"
     fi
 }
 
@@ -61,17 +66,18 @@ main()
 
     if [ ! -f "${install_path}/solc-${version}${crypto}" ];then
         if curl -LO "${download_link}" ;then
-            tar -zxf "${package_name}" 
+            tar -zxf "${package_name}"
             rm -rf "${package_name}"
             mkdir -p "${install_path}"
-            mv solc "${install_path}/solc-${version}${crypto}"
         else
             LOG_WARN "Download from ${download_link} failed, please retry."
             exit 1
         fi
+        mv "solc${extension}" "${install_path}/solc-${version}${crypto}${extension}"
     fi
-    ln -s "${install_path}/solc-${version}${crypto}" "./solc-${version}${crypto}"
-
+    if [ ! -f "./solc-${version}${crypto}" ];then
+        ln -s "${install_path}/solc-${version}${crypto}${extension}" "./solc-${version}${crypto}"
+    fi
 }
 
 print_result()
