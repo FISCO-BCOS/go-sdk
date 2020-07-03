@@ -91,6 +91,17 @@ go build cmd/console.go
 ./console help
 ```
 
+5. 开启命令行支持：
+
+```shell
+# bash 命令行自动补全，请在 bash 环境下执行此步骤
+./console completion bash > go_sdk_completion && sudo mv go_sdk_completion /etc/bash_completion.d/
+# zsh 命令行自动补全，请在 zsh 环境下执行此步骤
+./console completion zsh > ~/.go-sdk-completion.sh && echo 'source ~/.go-sdk-completion.sh' >> ~/.zshrc
+```
+
+## 
+
 # Package功能使用
 
 以下的示例是通过`import`的方式来使用`go-sdk`，如引入RPC控制台库:
