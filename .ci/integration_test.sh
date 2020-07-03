@@ -221,7 +221,7 @@ integration_gm()
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
     bash build_chain.sh -l 127.0.0.1:4 -g -o nodes_gm
-    cp nodes_gm/127.0.0.1/sdk/* ./
+    cp -r nodes_gm/127.0.0.1/sdk/* ./
     bash nodes_gm/127.0.0.1/start_all.sh
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
