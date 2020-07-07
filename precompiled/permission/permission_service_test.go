@@ -2,10 +2,12 @@ package permission
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -14,6 +16,28 @@ const (
 	tableName      = "t_test"
 	permisstionAdd = "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 )
+
+func createUserTable(t *testing.T) error {
+	tableName := "t_test"
+	key := "name"
+	valueFields := "item_id, item_name"
+	table := &crud.Table{TableName: tableName, Key: key, ValueFields: valueFields}
+
+	c := GetClient(t)
+	privateKey := GenerateKey(t)
+	service, err := crud.NewCRUDService(c, privateKey)
+	if err != nil {
+		return fmt.Errorf("init CRUDService failed: %+v", err)
+	}
+
+	// create table
+	resultCreate, err := service.CreateTable(table)
+	if err != nil {
+		return fmt.Errorf("create table %v failed: %+v", tableName, err)
+	}
+	t.Logf("resultCreate: %d\n", resultCreate)
+	return nil
+}
 
 func GetClient(t *testing.T) *client.Client {
 	// config := &conf.ParseConfig("config.toml")[0]
@@ -73,92 +97,118 @@ func TestGrant(t *testing.T) {
 	t.Logf("ListPermissionManager: %v", listResult)
 }
 
-// func TestUserTableManager(t *testing.T) {
-// 	service := GetService(t)
+func TestUserTableManager(t *testing.T) {
+	err := createUserTable(t)
+	if err != nil {
+		t.Logf("TestUserTableManager failed: %v", err)
+	}
 
-// 	result, err := service.GrantUserTableManager(tableName, permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestUserTableManager failed: %v", err)
-// 	}
-// 	t.Logf("TestUserTableManager: %v", result)
-// 	revokeResult, err := service.RevokeUserTableManager(tableName, permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestUserTableManager failed: %v", err)
-// 	}
-// 	t.Logf("TestUserTableManager revoke result: %v", revokeResult)
-// }
+	service := GetService(t)
 
-// func TestDeployAndCreateManager(t *testing.T) {
-// 	service := GetService(t)
+	result, err := service.GrantUserTableManager(tableName, permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestUserTableManager failed: %v", err)
+	}
+	t.Logf("TestUserTableManager: %v", result)
 
-// 	result, err := service.GrantDeployAndCreateManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestDeployAndCreateManager failed: %v", err)
-// 	}
-// 	t.Logf("TestDeployAndCreateManager: %v", result)
+	revokeResult, err := service.RevokeUserTableManager(tableName, permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestUserTableManager failed: %v", err)
+	}
+	t.Logf("TestUserTableManager revoke result: %v", revokeResult)
 
-// 	revokeResult, err := service.RevokeDeployAndCreateManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestDeployAndCreateManager failed: %v", err)
-// 	}
-// 	t.Logf("TestDeployAndCreateManager revoke result: %v", revokeResult)
-// }
+	listResult, err := service.ListUserTableManager(tableName)
+	if err != nil {
+		t.Fatalf("ListUserTableManager failed: %v", err)
+	}
+	t.Logf("ListUserTableManager: %v", listResult)
+}
 
-// func TestNodeManager(t *testing.T) {
-// 	service := GetService(t)
+func TestDeployAndCreateManager(t *testing.T) {
+	service := GetService(t)
 
-// 	result, err := service.GrantNodeManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestNodeManager failed: %v", err)
-// 	}
-// 	t.Logf("TestNodeManager: %v", result)
+	result, err := service.GrantDeployAndCreateManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestDeployAndCreateManager failed: %v", err)
+	}
+	t.Logf("TestDeployAndCreateManager: %v", result)
 
-// 	revokeResult, err := service.RevokeNodeManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestNodeManager failed: %v", err)
-// 	}
-// 	t.Logf("TestNodeManager revoke result: %v", revokeResult)
-// }
+	revokeResult, err := service.RevokeDeployAndCreateManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestDeployAndCreateManager failed: %v", err)
+	}
+	t.Logf("TestDeployAndCreateManager revoke result: %v", revokeResult)
 
-// func TestCNSManager(t *testing.T) {
-// 	service := GetService(t)
+	listResult, err := service.ListDeployAndCreateManager()
+	if err != nil {
+		t.Fatalf("ListDeployAndCreateManager failed: %v", err)
+	}
+	t.Logf("ListDeployAndCreateManager: %v", listResult)
+}
 
-// 	result, err := service.GrantCNSManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestCNSManager failed: %v", err)
-// 	}
-// 	t.Logf("TestCNSManager: %v", result)
+func TestNodeManager(t *testing.T) {
+	service := GetService(t)
 
-// 	revokeResult, err := service.RevokeCNSManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestCNSManager failed: %v", err)
-// 	}
-// 	t.Logf("TestCNSManager revoke result: %v", revokeResult)
-// }
+	result, err := service.GrantNodeManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestNodeManager failed: %v", err)
+	}
+	t.Logf("TestNodeManager: %v", result)
 
-// func TestSysConfigManager(t *testing.T) {
-// 	service := GetService(t)
+	revokeResult, err := service.RevokeNodeManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestNodeManager failed: %v", err)
+	}
+	t.Logf("TestNodeManager revoke result: %v", revokeResult)
 
-// 	result, err := service.GrantSysConfigManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestSysConfigManager failed: %v", err)
-// 	}
-// 	t.Logf("TestSysConfigManager: %v", result)
+	listResult, err := service.ListNodeManager()
+	if err != nil {
+		t.Fatalf("ListNodeManager failed: %v", err)
+	}
+	t.Logf("ListNodeManager: %v", listResult)
+}
 
-// 	revokeResult, err := service.RevokeSysConfigManager(permisstionAdd)
-// 	if err != nil {
-// 		t.Fatalf("TestSysConfigManager failed: %v", err)
-// 	}
-// 	t.Logf("TestSysConfigManager revoke result: %v", revokeResult)
-// 	t.Logf("Success result: %s", success)
-// }
+func TestCNSManager(t *testing.T) {
+	service := GetService(t)
 
-// func TestListUser(t *testing.T) {
-// 	service := GetService(t)
+	result, err := service.GrantCNSManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestCNSManager failed: %v", err)
+	}
+	t.Logf("TestCNSManager: %v", result)
 
-// 	result, err := service.ListUserTableManager(tableName)
-// 	if err != nil {
-// 		t.Fatalf("ListUserTableManager failed: %v", err)
-// 	}
-// 	t.Logf("ListUserTableManager: %v", result)
-// }
+	revokeResult, err := service.RevokeCNSManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestCNSManager failed: %v", err)
+	}
+	t.Logf("TestCNSManager revoke result: %v", revokeResult)
+
+	listResult, err := service.ListCNSManager()
+	if err != nil {
+		t.Fatalf("ListCNSManager failed: %v", err)
+	}
+	t.Logf("ListCNSManager: %v", listResult)
+}
+
+func TestSysConfigManager(t *testing.T) {
+	service := GetService(t)
+
+	result, err := service.GrantSysConfigManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestSysConfigManager failed: %v", err)
+	}
+	t.Logf("TestSysConfigManager: %v", result)
+
+	revokeResult, err := service.RevokeSysConfigManager(permisstionAdd)
+	if err != nil {
+		t.Fatalf("TestSysConfigManager failed: %v", err)
+	}
+	t.Logf("TestSysConfigManager revoke result: %v", revokeResult)
+	t.Logf("Success result: %s", success)
+
+	listResult, err := service.ListSysConfigManager()
+	if err != nil {
+		t.Fatalf("ListSysConfigManager failed: %v", err)
+	}
+	t.Logf("ListSysConfigManager: %v", listResult)
+}

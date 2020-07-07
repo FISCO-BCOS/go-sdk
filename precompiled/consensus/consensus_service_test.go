@@ -3,12 +3,17 @@ package consensus
 import (
 	"context"
 	"crypto/ecdsa"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"regexp"
 	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/crypto"
+)
+
+var (
+	nodeID = ""
 )
 
 func GetClient(t *testing.T) *client.Client {
@@ -41,6 +46,22 @@ func GetService(t *testing.T) *ConsensusService {
 	return service
 }
 
+// Get nodeID
+// TODO: try to use TestMain function to init before excute test case
+func TestGetNodeID(t *testing.T) {
+	c := GetClient(t)
+	sealerList, err := c.GetNodeIDList(context.Background())
+	if err != nil {
+		t.Fatalf("sealer list not found: %v", err)
+	}
+	reg := regexp.MustCompile(`[\w]+`)
+	nodeList := reg.FindAllString(string(sealerList), -1)
+	if len(nodeList) < 4 {   // pbft consensus needs 2f+1
+		t.Fatalf("the number of nodes does not exceed 4")
+	}
+	nodeID = nodeList[1]
+}
+
 func TestAddObserver(t *testing.T) {
 	c := GetClient(t)
 	service := GetService(t)
@@ -51,7 +72,6 @@ func TestAddObserver(t *testing.T) {
 	}
 	t.Logf("Observer list: %s\n", observer)
 
-	nodeID := "da72d42af7228b7fcbd0c2ca1128a9cf5b1a3a648c64878ebba4177a751507a0e1d686c2a6ccdfdadcfc60c1d6ec6d5d07797880f2f6a1f176d480b98ed5a13c"
 	tx, err := service.AddObserver(nodeID)
 	if err != nil {
 		t.Fatalf("ConsensusService AddObserver failed: %+v\n", err)
@@ -80,7 +100,6 @@ func TestAddSealer(t *testing.T) {
 	}
 	t.Logf("Sealer list: %s\n", observer)
 
-	nodeID := "da72d42af7228b7fcbd0c2ca1128a9cf5b1a3a648c64878ebba4177a751507a0e1d686c2a6ccdfdadcfc60c1d6ec6d5d07797880f2f6a1f176d480b98ed5a13c"
 	tx, err := service.AddSealer(nodeID)
 	if err != nil {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
@@ -109,8 +128,8 @@ func TestRemove(t *testing.T) {
 	}
 	t.Logf("Sealer list: %s\n", observer)
 
-	nodeID := "da72d42af7228b7fcbd0c2ca1128a9cf5b1a3a648c64878ebba4177a751507a0e1d686c2a6ccdfdadcfc60c1d6ec6d5d07797880f2f6a1f176d480b98ed5a13c"
 	tx, err := service.RemoveNode(nodeID)
+
 	if err != nil {
 		t.Fatalf("ConsensusService Remove failed: %+v\n", err)
 	}
