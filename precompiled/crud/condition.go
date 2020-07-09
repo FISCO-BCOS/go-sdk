@@ -6,6 +6,10 @@ type Condition struct {
 	conditions map[string]map[EnumOP]string
 }
 
+func NewCondition() *Condition {
+	return &Condition{conditions: make(map[string]map[EnumOP]string)}
+}
+
 func (c *Condition) EQ(key string, value string) {
 	newMap := make(map[EnumOP]string)
 	newMap[EQ] = value

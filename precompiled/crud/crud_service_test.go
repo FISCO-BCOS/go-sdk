@@ -2,13 +2,18 @@ package crud
 
 import (
 	"crypto/ecdsa"
-	"math/rand"
 	"strconv"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/crypto"
+)
+
+const (
+	tableName   = "t_test"
+	key         = "name"
+	valueFields = "item_id, item_name"
 )
 
 func GetClient(t *testing.T) *client.Client {
@@ -41,82 +46,87 @@ func GetService(t *testing.T) *CRUDService {
 	return service
 }
 
-func TestCRUD(t *testing.T) {
-	tableName := "t_test" + strconv.Itoa(rand.Intn(100000))
-	key := "name"
-	valueFields := "item_id, item_name"
-	table := &Table{TableName: tableName, Key: key, ValueFields: valueFields}
-
+func TestCreateTable(t *testing.T) {
 	service := GetService(t)
 
-	// create table
-	resultCreate, err := service.CreateTable(table)
+	resultCreate, err := service.CreateTable(tableName, key, valueFields)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
 	t.Logf("resultCreate: %d\n", resultCreate)
+}
 
-	// insert records
+func TestInsert(t *testing.T) {
+	service := GetService(t)
+
 	var insertResults int
+	insertEntry := NewEntry()
 	for i := 1; i <= 5; i++ {
-		insertEnrty := table.GetEntry()
-		insertEnrty.Put("item_id", "1")
-		insertEnrty.Put("item_name", "apple"+strconv.Itoa(i))
-		table.SetKey("fruit")
-		insertResult, err := service.Insert(table, insertEnrty)
+		insertEntry.Put("item_id", "1")
+		insertEntry.Put("item_name", "apple"+strconv.Itoa(i))
+		insertResult, err := service.Insert(tableName, "fruit", insertEntry)
 		if err != nil {
-			t.Fatalf("insert table faied: %v", err)
+			t.Fatalf("insert table failed: %v", err)
 		}
 		insertResults += insertResult
 	}
 	t.Logf("insertResults: %d\n", insertResults)
+}
 
-	// select records
-	condition1 := table.GetCondition()
-	condition1.EQ("item_id", "1")
-	condition1.Limit(1)
+func TestSelect(t *testing.T) {
+	service := GetService(t)
 
-	resultSelect1, err := service.Select(table, condition1)
+	condition := NewCondition()
+	condition.EQ("item_id", "1")
+	condition.Limit(5)
+
+	resultSelect, err := service.Select(tableName, "fruit", condition)
 	if err != nil {
-		t.Fatalf("select table faied: %v", err)
+		t.Fatalf("select table failed: %v", err)
 	}
-	t.Logf("resultSelect1 :\n")
-	t.Logf("%s\n", resultSelect1[0]["name"])
-	t.Logf("%s\n", resultSelect1[0]["item_id"])
-	t.Logf("%s\n", resultSelect1[0]["item_name"])
+	t.Logf("resultSelect :\n")
+	t.Logf("%d", len(resultSelect))
+	for i := 0; i < len(resultSelect); i++ {
+		t.Logf("resultSelect[%d]'s name is：%s\n", i, resultSelect[i]["name"])
+		t.Logf("resultSelect[%d]'s item_id is：%s\n", i, resultSelect[i]["item_id"])
+		t.Logf("resultSelect[%d]'s item_name is：%s\n", i, resultSelect[i]["item_name"])
+	}
+}
 
-	// update records
-	updateEntry := table.GetEntry()
+func TestUpdate(t *testing.T) {
+	service := GetService(t)
+
+	updateEntry := NewEntry()
 	updateEntry.Put("item_id", "1")
 	updateEntry.Put("item_name", "orange")
-	updateCondition := table.GetCondition()
+	updateCondition := NewCondition()
 	updateCondition.EQ("item_id", "1")
-	updateResult, err := service.Update(table, updateEntry, updateCondition)
+	updateResult, err := service.Update(tableName, "fruit", updateEntry, updateCondition)
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
 	t.Logf("updateResult: %d", updateResult)
+}
 
-	// select records
-	condition2 := table.GetCondition()
-	condition2.EQ("item_id", "1")
-	condition2.Limit(1)
+func TestRemove(t *testing.T) {
+	service := GetService(t)
 
-	resultSelect2, err := service.Select(table, condition2)
-	if err != nil {
-		t.Fatalf("select table faied: %v", err)
-	}
-	t.Logf("resultSelect2 :\n")
-	t.Logf("%s\n", resultSelect2[0]["name"])
-	t.Logf("%s\n", resultSelect2[0]["item_id"])
-	t.Logf("%s\n", resultSelect2[0]["item_name"])
-
-	// remove records
-	removeCondition := table.GetCondition()
+	removeCondition := NewCondition()
 	removeCondition.EQ("item_id", "1")
-	removeResult, err := service.Remove(table, removeCondition)
+	removeResult, err := service.Remove(tableName, "fruit", removeCondition)
 	if err != nil {
-		t.Fatalf("remove table faied: %v", err)
+		t.Fatalf("remove table failed: %v", err)
 	}
 	t.Logf("removeResult: %d\n", removeResult)
+}
+
+func TestDesc(t *testing.T) {
+	service := GetService(t)
+
+	keyField, valueField, err := service.Desc(tableName)
+	if err != nil {
+		t.Fatalf("query table info by tableName failed: %v", err)
+	}
+	t.Logf("keyFiled is：%s\n", keyField)
+	t.Logf("valueField is：%s\n", valueField)
 }
