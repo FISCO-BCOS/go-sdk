@@ -3,9 +3,9 @@ package cns
 import (
 	"context"
 	"crypto/ecdsa"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -41,11 +41,11 @@ func GetService(t *testing.T) *Service {
 	return service
 }
 
-func TestAll(t *testing.T) {
-	name := "store"
-	version := "5.0"
-	address := "0x0626918C51A1F36c7ad4354BB1197460A533a2B9"
-	abi := `[
+const (
+	name = "store"
+	version = "5.0"
+	address = "0x0626918C51A1F36c7ad4354BB1197460A533a2B9"
+	testABI = `[
 		{
 			"constant": true,
 			"inputs": [
@@ -126,11 +126,13 @@ func TestAll(t *testing.T) {
 			"type": "event"
 		}
 	]`
+)
+
+func TestRegisterCns(t *testing.T)  {
 	c := GetClient(t)
 	service := GetService(t)
-
 	// test RegisterCns
-	tx, err := service.RegisterCns(name, version, address, abi)
+	tx, err := service.RegisterCns(name, version, address, testABI)
 	if err != nil {
 		t.Fatalf("Service RegisterCns failed: %+v\n", err)
 	}
@@ -140,6 +142,10 @@ func TestAll(t *testing.T) {
 		t.Fatalf("tx mining error:%v\n", err)
 	}
 	t.Logf("transaction hash: %s\n", receipt.GetTransactionHash())
+}
+
+func TestGetAddressByContractNameAndVersion(t *testing.T)  {
+	service := GetService(t)
 
 	// test GetAddressByContractNameAndVersion
 	addr, err := service.GetAddressByContractNameAndVersion(name + ":" + version)
@@ -147,6 +153,10 @@ func TestAll(t *testing.T) {
 		t.Fatalf("GetAddressByContractNameAndVersion failed: %v", err)
 	}
 	t.Logf("address: %s", addr)
+}
+
+func TestQueryCnsByNameAndVersion(t *testing.T)  {
+	service := GetService(t)
 
 	// test QueryCnsByNameAndVersion
 	cnsInfo, err := service.QueryCnsByNameAndVersion(name, version)
@@ -154,6 +164,10 @@ func TestAll(t *testing.T) {
 		t.Fatalf("QueryCnsByNameAndVersion failed: %v\n", err)
 	}
 	t.Logf("QueryCnsByNameAndVersion: %s", cnsInfo[0].String())
+}
+
+func TestQueryCnsByName(t *testing.T) {
+	service := GetService(t)
 
 	// test QueryCnsByNameAndVersion
 	cnsInfoByName, err := service.QueryCnsByName(name)

@@ -599,6 +599,7 @@ func (hc *channelSession) processMessages() {
 			if err != nil {
 				// fmt.Printf("channel Read error:%v", err)
 				hc.Close()
+				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
 			msg, err := decodeChannelMessage(hc.buf)
