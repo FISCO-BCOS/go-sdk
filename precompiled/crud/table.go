@@ -1,10 +1,10 @@
 package crud
 
 type Table struct {
-	TableName    string
-	Key          string
-	ValueFields  string
-	Optional     string
+	TableName   string
+	Key         string
+	ValueFields string
+	Optional    string
 }
 
 func (t *Table) GetTableName() string {
@@ -40,9 +40,9 @@ func (t *Table) SetOptional(optional string) {
 }
 
 func (t *Table) GetEntry() *Entry {
-	return &Entry{fields:make(map[string]string)}
+	return &Entry{fields: make(map[string]string)}
 }
 
 func (t *Table) GetCondition() *Condition {
-	return &Condition{conditions:make(map[string]map[EnumOP]string)}
+	return &Condition{conditions: make(map[string]map[EnumOP]string)}
 }

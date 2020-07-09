@@ -1,9 +1,9 @@
 package permission
 
 type PermissionInfo struct {
-	Address     string  `json:"address"`
-	EnableNum   string  `json:"enable_num"`
-	TableName   string  `json:"table_name"`
+	Address   string `json:"address"`
+	EnableNum string `json:"enable_num"`
+	TableName string `json:"table_name"`
 }
 
 func (p *PermissionInfo) GetTableName() string {

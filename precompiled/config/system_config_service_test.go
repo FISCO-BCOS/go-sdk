@@ -2,10 +2,11 @@ package config
 
 import (
 	"context"
+	"testing"
+
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"testing"
 )
 
 func TestSetValueByKey(t *testing.T) {

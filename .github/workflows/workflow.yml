@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 5
       # - uses: actions/cache@v1
       #   id: cache
       #   with:

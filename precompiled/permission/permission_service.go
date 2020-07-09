@@ -9,9 +9,9 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
