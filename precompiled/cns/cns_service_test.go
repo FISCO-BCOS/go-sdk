@@ -3,8 +3,9 @@ package cns
 import (
 	"context"
 	"crypto/ecdsa"
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"testing"
+
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -42,7 +43,7 @@ func GetService(t *testing.T) *Service {
 }
 
 const (
-	name = "store"
+	name    = "store"
 	version = "5.0"
 	address = "0x0626918C51A1F36c7ad4354BB1197460A533a2B9"
 	testABI = `[
@@ -128,7 +129,7 @@ const (
 	]`
 )
 
-func TestRegisterCns(t *testing.T)  {
+func TestRegisterCns(t *testing.T) {
 	c := GetClient(t)
 	service := GetService(t)
 	// test RegisterCns
@@ -144,7 +145,7 @@ func TestRegisterCns(t *testing.T)  {
 	t.Logf("transaction hash: %s\n", receipt.GetTransactionHash())
 }
 
-func TestGetAddressByContractNameAndVersion(t *testing.T)  {
+func TestGetAddressByContractNameAndVersion(t *testing.T) {
 	service := GetService(t)
 
 	// test GetAddressByContractNameAndVersion
@@ -155,7 +156,7 @@ func TestGetAddressByContractNameAndVersion(t *testing.T)  {
 	t.Logf("address: %s", addr)
 }
 
-func TestQueryCnsByNameAndVersion(t *testing.T)  {
+func TestQueryCnsByNameAndVersion(t *testing.T) {
 	service := GetService(t)
 
 	// test QueryCnsByNameAndVersion

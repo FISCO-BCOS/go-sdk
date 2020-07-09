@@ -3,16 +3,16 @@ package client
 import (
 	"context"
 	"fmt"
-	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
 	"strings"
 	"testing"
 
+	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 )
 
 var (
 	contractAddress = ""
-	blockHash = ""       // get blockHash by TestBlockHashByNumber test case
+	blockHash       = "" // get blockHash by TestBlockHashByNumber test case
 	transactionHash = ""
 )
 
@@ -54,7 +54,7 @@ func TestBlockHashByNumber(t *testing.T) {
 	}
 
 	t.Logf("block hash by number:\n%s", raw)
-	blockHash = strings.Trim(string(raw),"\"")
+	blockHash = strings.Trim(string(raw), "\"")
 }
 
 func TestClientVersion(t *testing.T) {
@@ -91,7 +91,7 @@ func TestPBFTView(t *testing.T) {
 }
 
 func TestBlockLimit(t *testing.T) {
-    c := GetClient(t)
+	c := GetClient(t)
 	// cannot use big.NewInt to construct json request
 	// TODO: analysis the ethereum's big.NewInt
 	bl, err := c.GetBlockLimit(context.Background())
@@ -103,7 +103,7 @@ func TestBlockLimit(t *testing.T) {
 }
 
 func TestGroupID(t *testing.T) {
-    c := GetClient(t)
+	c := GetClient(t)
 	// cannot use big.NewInt to construct json request
 	// TODO: analysis the ethereum's big.NewInt
 	groupid := c.GetGroupID()
@@ -111,7 +111,7 @@ func TestGroupID(t *testing.T) {
 }
 
 func TestChainID(t *testing.T) {
-    c := GetClient(t)
+	c := GetClient(t)
 	// cannot use big.NewInt to construct json request
 	// TODO: analysis the ethereum's big.NewInt
 	chainid, err := c.GetChainID(context.Background())

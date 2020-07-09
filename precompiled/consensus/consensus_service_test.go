@@ -3,9 +3,10 @@ package consensus
 import (
 	"context"
 	"crypto/ecdsa"
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"regexp"
 	"testing"
+
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -56,7 +57,7 @@ func TestGetNodeID(t *testing.T) {
 	}
 	reg := regexp.MustCompile(`[\w]+`)
 	nodeList := reg.FindAllString(string(sealerList), -1)
-	if len(nodeList) < 4 {   // pbft consensus needs 2f+1
+	if len(nodeList) < 4 { // pbft consensus needs 2f+1
 		t.Fatalf("the number of nodes does not exceed 4")
 	}
 	nodeID = nodeList[1]
