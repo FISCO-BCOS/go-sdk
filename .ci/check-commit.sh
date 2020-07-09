@@ -8,7 +8,7 @@ SHELL_FOLDER=$(
 )
 
 # check_script=gofmt -e -s -w 
-check_script="goimports -w"
+check_script="goimports -d"
 commit_limit=2
 file_limit=35
 insert_limit=800
@@ -39,17 +39,18 @@ execute_cmd() {
 }
 
 function check_codeFormat() {
-    # Redirect output to stderr.
-    exec 1>&2
     go get golang.org/x/tools/cmd/goimports
     sum=0
-    for file in $(git diff-index --name-status HEAD^ -- | grep -v D | grep -E '\.go' | awk '{print $2}'); do
-        execute_cmd "$check_script $file"
-        sum=$(expr ${sum} + $?)
+    for file in $(git diff-index --name-status HEAD^ | grep -v D | grep -E '\.go' | awk '{print $2}'); do
+        checkResult=$(eval "${check_script} ${file}")
+        if [ -n "${checkResult}" ]; then
+            LOG_ERROR "file ${file} does not meet the format requirements"
+            echo "${checkResult}"
+            sum=1
+        fi
     done
-
     if [ ${sum} -ne 0 ]; then
-        echo "######### ERROR: Format check failed, please adjust them before commit"
+        LOG_ERROR "######### ERROR: Format check failed, please adjust them before commit"
         exit 1
     fi
 }
@@ -100,6 +101,5 @@ function check_PR_limit() {
     LOG_INFO "modify ${files} files, insert ${insertions} lines, valid insertion ${valid_insertions}, delete ${deletions} lines. Total ${commits} commits."
 }
 
-go get golang.org/x/tools/cmd/goimports
 check_codeFormat
 check_PR_limit
