@@ -42,5 +42,3 @@ jobs:
         run: bash .ci/check-commit.sh
       - name: test
         run: bash .ci/integration_test.sh
-      # - name: generate code coverage
-      #   run:

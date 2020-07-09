@@ -60,19 +60,10 @@ function stop_nodes()
    execute_cmd "./nodes/127.0.0.1/stop_all.sh"
 }
 
-# test the common jsonRPC interface
-function test_rpc_connection()
-{
-   LOG_INFO "## test commonRPCInterface..."
-   # rpc client testing
-   execute_cmd "go test -v -count=1 ./client"
-}
-
 function main()
 {
    build_blockchain
    start_nodes
-   test_rpc_connection
 }
 
 main
