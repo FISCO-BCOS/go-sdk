@@ -333,9 +333,9 @@ func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.Priva
 	return hc.subscribePrivateTopic(topic, privateKey, handler)
 }
 
-func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.publishPrivateTopic(topic, publicKey, handler)
+	return hc.publishPrivateTopic(topic, publicKey)
 }
 
 func (c *Connection) UnsubscribeTopic(topic string) error {

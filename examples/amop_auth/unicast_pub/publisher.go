@@ -11,18 +11,8 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/status-im/keycard-go/hexutils"
-)
-
-func onPush(data []byte) {
-	log.Printf("received: %s\n", string(data))
-}
-
-const (
-	publicKey1 = "7cd0596006e3c0549482d010735303f25d6c308ef66643b63deef0a382a7620556eb49641cb3d45f4901a068a5e68475f8ba3b03a1bc785e84fe6490d66df365"
-	publicKey2 = "19dece101df106ca4baf478f98911cdc525db5c6b58f2189af9f69ff314e9f0bcb816b41fb8bd49ae830dc1087bf51c71a21c3e3a332132262b5ecf0189817f4"
-	publicKey3 = "8b38138ea887220289276ca700e162647af79b4c61f33aefcfdaa2c3b714b2983084e519273208e8646b7f840e91b9053952df28a3bce1a6bca0132c26a36694"
 )
 
 func main() {
@@ -39,14 +29,24 @@ func main() {
 		log.Fatalf("init publisher failed, err: %v\n", err)
 	}
 	publicKeys := make([]*ecdsa.PublicKey, 0)
-	pubKey1, err := crypto.UnmarshalPubkey(hexutils.HexToBytes("04" + publicKey1))
-	pubKey2, err := crypto.UnmarshalPubkey(hexutils.HexToBytes("04" + publicKey2))
-	pubKey3, err := crypto.UnmarshalPubkey(hexutils.HexToBytes("04" + publicKey3))
-	if err != nil {
-		log.Fatalf("decompress pubkey failed, err: %v", err)
+	var publicKeysHex = []string{
+		"0x047cd0596006e3c0549482d010735303f25d6c308ef66643b63deef0a382a7620556eb49641cb3d45f4901a068a5e68475f8ba3b03a1bc785e84fe6490d66df365",
+		"0x0419dece101df106ca4baf478f98911cdc525db5c6b58f2189af9f69ff314e9f0bcb816b41fb8bd49ae830dc1087bf51c71a21c3e3a332132262b5ecf0189817f4",
+		"0x048b38138ea887220289276ca700e162647af79b4c61f33aefcfdaa2c3b714b2983084e519273208e8646b7f840e91b9053952df28a3bce1a6bca0132c26a36694",
 	}
-	publicKeys = append(publicKeys, pubKey1, pubKey2, pubKey3)
-	err = c.PublishPrivateTopic(topic, publicKeys, onPush)
+	for _, k := range publicKeysHex {
+		pubKeyBytes, err := hexutil.Decode(k)
+		if err != nil {
+			log.Fatalf("decode publicKey failed, err: %v\n", err)
+		}
+		pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+		if err != nil {
+			log.Fatalf("decompress pubkey failed, err: %v", err)
+		}
+		publicKeys = append(publicKeys, pubKey)
+	}
+
+	err = c.PublishPrivateTopic(topic, publicKeys)
 	if err != nil {
 		log.Fatalf("publish topic failed, err: %v\n", err)
 	}
