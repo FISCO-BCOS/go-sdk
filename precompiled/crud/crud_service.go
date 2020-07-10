@@ -49,9 +49,8 @@ func NewCRUDService(client *client.Client, privateKey *ecdsa.PrivateKey) (*CRUDS
 	return &CRUDService{crud: crudInstance, tableFactory: tableInstance, crudAuth: auth, client: client}, nil
 }
 
-// CreateTable returns the status of the creating that 0 represents succeed
-func (service *CRUDService) CreateTable(table *Table) (int, error) {
-	tx, err := service.tableFactory.CreateTable(service.crudAuth, table.GetTableName(), table.GetKey(), table.GetValueFields())
+func (service *CRUDService) CreateTable(tableName string, key string, valueFields string) (int, error) {
+	tx, err := service.tableFactory.CreateTable(service.crudAuth, tableName, key, valueFields)
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService CreateTable failed: %v", err)
 	}
@@ -65,8 +64,8 @@ func (service *CRUDService) CreateTable(table *Table) (int, error) {
 }
 
 // Insert entry
-func (service *CRUDService) Insert(table *Table, entry *Entry) (int, error) {
-	if len(table.GetKey()) > TableKeyMaxLength {
+func (service *CRUDService) Insert(tableName string, key string, entry *Entry) (int, error) {
+	if len(key) > TableKeyMaxLength {
 		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	// change to string
@@ -75,7 +74,7 @@ func (service *CRUDService) Insert(table *Table, entry *Entry) (int, error) {
 		return -1, fmt.Errorf("change entry to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Insert(service.crudAuth, table.GetTableName(), table.GetKey(), string(entryJSON[:]), table.GetOptional())
+	tx, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
 	}
@@ -89,8 +88,8 @@ func (service *CRUDService) Insert(table *Table, entry *Entry) (int, error) {
 }
 
 // Update entry
-func (service *CRUDService) Update(table *Table, entry *Entry, condition *Condition) (int, error) {
-	if len(table.GetKey()) > TableKeyMaxLength {
+func (service *CRUDService) Update(tableName string, key string, entry *Entry, condition *Condition) (int, error) {
+	if len(key) > TableKeyMaxLength {
 		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	// change to string
@@ -103,7 +102,7 @@ func (service *CRUDService) Update(table *Table, entry *Entry, condition *Condit
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Update(service.crudAuth, table.GetTableName(), table.GetKey(), string(entryJSON[:]), string(conditionJSON[:]), table.GetOptional())
+	tx, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
 	}
@@ -116,9 +115,8 @@ func (service *CRUDService) Update(table *Table, entry *Entry, condition *Condit
 	return handleReceipt(receipt)
 }
 
-// Remove entry
-func (service *CRUDService) Remove(table *Table, condition *Condition) (int, error) {
-	if len(table.GetKey()) > TableKeyMaxLength {
+func (service *CRUDService) Remove(tableName string, key string, condition *Condition) (int, error) {
+	if len(key) > TableKeyMaxLength {
 		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
@@ -126,7 +124,7 @@ func (service *CRUDService) Remove(table *Table, condition *Condition) (int, err
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Remove(service.crudAuth, table.GetTableName(), table.GetKey(), string(conditionJSON[:]), table.GetOptional())
+	tx, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
 	}
@@ -140,8 +138,8 @@ func (service *CRUDService) Remove(table *Table, condition *Condition) (int, err
 }
 
 // Select entry
-func (service *CRUDService) Select(table *Table, condition *Condition) ([]map[string]string, error) {
-	if len(table.GetKey()) > TableKeyMaxLength {
+func (service *CRUDService) Select(tableName string, key string, condition *Condition) ([]map[string]string, error) {
+	if len(key) > TableKeyMaxLength {
 		return nil, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
@@ -149,7 +147,7 @@ func (service *CRUDService) Select(table *Table, condition *Condition) ([]map[st
 		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 	opts := &bind.CallOpts{From: service.crudAuth.From}
-	result, err := service.crud.Select(opts, table.GetTableName(), table.GetKey(), string(conditionJSON[:]), table.GetOptional())
+	result, err := service.crud.Select(opts, tableName, key, string(conditionJSON[:]), "")
 	if err != nil {
 		return nil, fmt.Errorf("CRUDService Select failed: %v", err)
 	}
@@ -163,23 +161,18 @@ func (service *CRUDService) Select(table *Table, condition *Condition) ([]map[st
 }
 
 // Desc is used for Table
-func (service *CRUDService) Desc(tableName string) (*Table, error) {
-	table := &Table{}
-	table.SetTableName(SysTable)
-	table.SetKey(UserTablePrefix + tableName)
-	condition := table.GetCondition()
-	userTable, err := service.Select(table, condition)
+func (service *CRUDService) Desc(userTableName string) (string, string, error) {
+	tableName := SysTable
+	key := UserTablePrefix + userTableName
+	condition := NewCondition()
+	userTable, err := service.Select(tableName, key, condition)
 	if err != nil {
-		return nil, fmt.Errorf("select table failed: %v", err)
+		return "", "", fmt.Errorf("select table failed: %v", err)
 	}
-	tableInfo := &Table{}
 	if len(userTable) == 0 {
-		return nil, fmt.Errorf("The table %s does not exist", tableName)
+		return "", "", fmt.Errorf("the table %s does not exist", tableName)
 	}
-	tableInfo.SetTableName(tableName)
-	tableInfo.SetKey(userTable[0]["key_field"])
-	tableInfo.SetValueFields(userTable[0]["value_field"])
-	return table, nil
+	return userTable[0]["key_field"], userTable[0]["value_field"], nil
 }
 
 func handleReceipt(receipt *types.Receipt) (int, error) {
@@ -191,8 +184,8 @@ func handleReceipt(receipt *types.Receipt) (int, error) {
 	if output != "0x" {
 		i := new(big.Int)
 		var flag bool
-		i, flag = i.SetString(output[2:len(output)], 16)
-		if flag == false {
+		i, flag = i.SetString(output[2:], 16)
+		if !flag {
 			return -1, fmt.Errorf("handleReceipt: convert receipt output to int failed")
 		}
 		return int(i.Uint64()), nil

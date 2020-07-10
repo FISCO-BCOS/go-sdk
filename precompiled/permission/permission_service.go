@@ -49,7 +49,7 @@ func (service *PermissionService) GrantUserTableManager(tableName string, grantr
 	if err != nil {
 		return "", fmt.Errorf("PermissionService create CRUDService failed: %v", err)
 	}
-	_, err = crudService.Desc(tableName)
+	_, _, err = crudService.Desc(tableName)
 	if err != nil {
 		return "", fmt.Errorf("GrantUserTableManager failed: %v", err)
 	}

@@ -2,12 +2,10 @@ package permission
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -16,28 +14,6 @@ const (
 	tableName      = "t_test"
 	permisstionAdd = "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 )
-
-func createUserTable(t *testing.T) error {
-	tableName := "t_test"
-	key := "name"
-	valueFields := "item_id, item_name"
-	table := &crud.Table{TableName: tableName, Key: key, ValueFields: valueFields}
-
-	c := GetClient(t)
-	privateKey := GenerateKey(t)
-	service, err := crud.NewCRUDService(c, privateKey)
-	if err != nil {
-		return fmt.Errorf("init CRUDService failed: %+v", err)
-	}
-
-	// create table
-	resultCreate, err := service.CreateTable(table)
-	if err != nil {
-		return fmt.Errorf("create table %v failed: %+v", tableName, err)
-	}
-	t.Logf("resultCreate: %d\n", resultCreate)
-	return nil
-}
 
 func GetClient(t *testing.T) *client.Client {
 	// config := &conf.ParseConfig("config.toml")[0]
@@ -98,11 +74,6 @@ func TestGrant(t *testing.T) {
 }
 
 func TestUserTableManager(t *testing.T) {
-	err := createUserTable(t)
-	if err != nil {
-		t.Logf("TestUserTableManager failed: %v", err)
-	}
-
 	service := GetService(t)
 
 	result, err := service.GrantUserTableManager(tableName, permisstionAdd)

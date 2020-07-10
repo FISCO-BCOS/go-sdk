@@ -4,6 +4,10 @@ type Entry struct {
 	fields map[string]string
 }
 
+func NewEntry() *Entry {
+	return &Entry{fields: make(map[string]string)}
+}
+
 func (e *Entry) GetFields() map[string]string {
 	return e.fields
 }
