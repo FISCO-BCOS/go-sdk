@@ -1,5 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity>=0.4.24 <0.6.11;
 pragma experimental ABIEncoderV2;
+
 import "./Table.sol";
 
 contract TableTest {
@@ -11,16 +12,16 @@ contract TableTest {
     TableFactory tableFactory;
     string constant TABLE_NAME = "t_test";
     constructor() public {
-        //The fixed address is 0x1010 for KVTableFactory
         tableFactory = TableFactory(0x1001); //The fixed address is 0x1001 for TableFactory
+        // the parameters of createTable are tableName,keyField,"vlaueFiled1,vlaueFiled2,vlaueFiled3,..."
         tableFactory.createTable(TABLE_NAME, "name", "item_id,item_name");
     }
 
     //select records
-    function select(string name)
+    function select(string memory name)
         public
         view
-        returns (string[], int256[], string[])
+        returns (string[] memory, int256[] memory, string[] memory)
     {
         Table table = tableFactory.openTable(TABLE_NAME);
 
@@ -46,7 +47,7 @@ contract TableTest {
         return (user_name_bytes_list, item_id_list, item_name_bytes_list);
     }
     //insert records
-    function insert(string name, int256 item_id, string item_name)
+    function insert(string memory name, int256 item_id, string memory item_name)
         public
         returns (int256)
     {
@@ -63,7 +64,7 @@ contract TableTest {
         return count;
     }
     //update records
-    function update(string name, int256 item_id, string item_name)
+    function update(string memory name, int256 item_id, string memory item_name)
         public
         returns (int256)
     {
@@ -82,7 +83,7 @@ contract TableTest {
         return count;
     }
     //remove records
-    function remove(string name, int256 item_id) public returns (int256) {
+    function remove(string memory name, int256 item_id) public returns (int256) {
         Table table = tableFactory.openTable(TABLE_NAME);
 
         Condition condition = table.newCondition();
