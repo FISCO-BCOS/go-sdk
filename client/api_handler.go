@@ -97,7 +97,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		fmt.Printf("rlp encode tx error!")
 		return err
 	}
-	return api.CallContext(ctx, nil, "sendRawTransaction", groupID, common.ToHex(data))
+	return api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
@@ -133,23 +133,23 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 	}
 
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return nil, errors.New("GetChainID Json respond does not satisfy the type assertion: map[string]interface{}")
 	}
 	var temp interface{}
 	temp, ok = m["Chain Id"]
-	if ok != true {
+	if !ok {
 		return nil, errors.New("Json respond does not contains the key : Chain Id")
 	}
 	var strChainid string
 	strChainid, ok = temp.(string)
-	if ok != true {
+	if !ok {
 		return nil, errors.New("type assertion for Chain Id is wrong: not a string")
 	}
 	convertor := new(big.Int)
 	var chainid *big.Int
 	chainid, ok = convertor.SetString(strChainid, 10)
-	if ok != true {
+	if !ok {
 		return nil, errors.New("big.Int.SetString(): error for Chain Id")
 	}
 	return chainid, nil
@@ -368,17 +368,17 @@ func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txha
 		return contractAddress, err
 	}
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return contractAddress, fmt.Errorf("GetContractAddress Json respond does not satisfy the type assertion: map[string]interface{}, %+v", raw)
 	}
 	var temp interface{}
 	temp, ok = m["contractAddress"]
-	if ok != true {
+	if !ok {
 		return contractAddress, errors.New("Json respond does not contains the key : contractAddress")
 	}
 	var strContractAddress string
 	strContractAddress, ok = temp.(string)
-	if ok != true {
+	if !ok {
 		return contractAddress, errors.New("type assertion for Chain Id is wrong: not a string")
 	}
 	return common.HexToAddress(strContractAddress), nil

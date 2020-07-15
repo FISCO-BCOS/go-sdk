@@ -68,30 +68,30 @@ func (service *Service) GetAddressByContractNameAndVersion(contractNameAndVersio
 		addressInfo, err := service.SelectByNameAndVersion(name, version)
 		if err != nil {
 			return "", err
-		} else if addressInfo == "[\n]" {
+		} else if addressInfo == "[]\n" {
 			return "", fmt.Errorf("The contract version does not exist")
 		}
 		// json unmarshal
-		var dat []Info
-		if err := json.Unmarshal([]byte(addressInfo), &dat); err != nil {
+		var infos []Info
+		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
 			return "", fmt.Errorf("Unmarshal the addressInfo failed: %s", addressInfo)
 		}
-		cnsInfo := dat[len(dat)-1]
-		address = cnsInfo.GetAddress()
-	} else { // onlu contract name
+		cnsInfo := infos[len(infos)-1]
+		address = cnsInfo.Address
+	} else { // only contract name
 		addressInfo, err := service.SelectByName(contractNameAndVersion)
 		if err != nil {
 			return "", err
-		} else if addressInfo == "[\n]" {
+		} else if addressInfo == "[]\n" {
 			return "", fmt.Errorf("The contract version does not exist")
 		}
 		// json unmarshal
-		var dat []Info
-		if err := json.Unmarshal([]byte(addressInfo), &dat); err != nil {
+		var infos []Info
+		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
 			return "", fmt.Errorf("Unmarshal the addressInfo failed  %v", err)
 		}
-		cnsInfo := dat[len(dat)-1]
-		address = cnsInfo.GetAddress()
+		cnsInfo := infos[len(infos)-1]
+		address = cnsInfo.Address
 	}
 	if !common.IsHexAddress(address) {
 		return "", fmt.Errorf("Unable to resolve address for name: %s", contractNameAndVersion)
@@ -118,11 +118,11 @@ func (service *Service) QueryCnsByName(name string) ([]Info, error) {
 		return nil, err
 	}
 	// json unmarshal
-	var dat []Info
-	if err := json.Unmarshal([]byte(cnsInfo), &dat); err != nil {
+	var infos []Info
+	if err := json.Unmarshal([]byte(cnsInfo), &infos); err != nil {
 		return nil, fmt.Errorf("Unmarshal the Info failed")
 	}
-	return dat, nil
+	return infos, nil
 }
 
 // QueryCnsByNameAndVersion returns the CNS info according to the name and version
@@ -132,11 +132,11 @@ func (service *Service) QueryCnsByNameAndVersion(name string, version string) ([
 		return nil, err
 	}
 	// json unmarshal
-	var dat []Info
-	if err := json.Unmarshal([]byte(cnsInfo), &dat); err != nil {
+	var infos []Info
+	if err := json.Unmarshal([]byte(cnsInfo), &infos); err != nil {
 		return nil, fmt.Errorf("Unmarshal the Info failed")
 	}
-	return dat, nil
+	return infos, nil
 }
 
 func isValidCnsName(input string) bool {

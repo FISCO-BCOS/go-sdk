@@ -18,6 +18,7 @@ package commandline
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -99,6 +100,9 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	configs := conf.ParseConfig("config.toml")
+	configs, err := conf.ParseConfigFile("config.toml")
+	if err != nil {
+		log.Fatalf("iniConfig failed, err: %v", err)
+	}
 	RPC = getClient(&configs[0])
 }
