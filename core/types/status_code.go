@@ -74,10 +74,17 @@ const (
 	InvalidKey_RC1                  int = 157
 	InvalidKey                      int = 51300
 	InvalidKey_RC3                  int = -51300
+	CommitteeMemberExist            int = -52000
+	CommitteeMemberNotExist         int = -52001
+	AccountFrozen                   int = -52011
+	CurrentValueIsEepectedValue     int = -52012
+	InvalidRequestPermissionDenied  int = -52002
 
 	TABLE_KEY_MAX_LENGTH int = 255
 
 	BCOS_VERSION string = ""
+
+	GoErrorCode int = -1
 )
 
 // GetStatusMessage returns the status message
@@ -86,88 +93,60 @@ func GetStatusMessage(status int) string {
 	switch status {
 	case Success:
 		message = "success"
-		break
 	case Unknown:
 		message = "unknown"
-		break
 	case BadRLP:
 		message = "bad RLP"
-		break
 	case InvalidFormat:
 		message = "invalid format"
-		break
 	case OutOfGasIntrinsic:
 		message = "out of gas intrinsic"
-		break
 	case InvalidSignature:
 		message = "invalid signature"
-		break
 	case InvalidNonce:
 		message = "invalid nonce"
-		break
 	case NotEnoughCash:
 		message = "not enough cash"
-		break
 	case OutOfGasBase:
 		message = "out of gas base"
-		break
 	case BlockGasLimitReached:
 		message = "block gas limit reached"
-		break
 	case BadInstruction:
 		message = "bad instruction"
-		break
 	case BadJumpDestination:
 		message = "bad jump destination"
-		break
 	case OutOfGas:
 		message = "out of gas"
-		break
 	case OutOfStack:
 		message = "out of stack"
-		break
 	case StackUnderflow:
 		message = "stack underflow"
-		break
 	case NonceCheckFail:
 		message = "nonce check fail"
-		break
 	case BlockLimitCheckFail:
 		message = "block limit check fail"
-		break
 	case FilterCheckFail:
 		message = "filter check fail"
-		break
 	case NoDeployPermission:
 		message = "no deploy permission"
-		break
 	case NoCallPermission:
 		message = "no call permission"
-		break
 	case NoTxPermission:
 		message = "no tx permission"
-		break
 	case PrecompiledError:
 		message = "precompiled error"
-		break
 	case RevertInstruction:
 		message = "revert instruction"
-		break
 	case InvalidZeroSignatureFormat:
 		message = "invalid zero signature format"
-		break
 	case AddressAlreadyUsed:
 		message = "address already used"
-		break
 	case PermissionDenied:
 		message = "permission denied"
-		break
 	case CallAddressError:
 		message = "call address error"
-		break
 	default:
 		message = strconv.Itoa(status)
-		break
 	}
 
 	return message
@@ -206,6 +185,16 @@ func TransferToJson(code int) (string, error) {
 		msg = "contract name and version already exist"
 	} else if code == VersionExceeds {
 		msg = "version string length exceeds the maximum limit"
+	} else if code == CommitteeMemberExist {
+		msg = "COMMITTEE_MEMBER_EXIST"
+	} else if code == CommitteeMemberNotExist {
+		msg = "COMMITTEE_MEMBER_NOT_EXIST"
+	} else if code == AccountFrozen {
+		msg = "ACCOUNT_FROZEN"
+	} else if code == CurrentValueIsEepectedValue {
+		msg = "CURRENT_VALUE_IS_EXPECTED_VALUE"
+	} else if code == InvalidRequestPermissionDenied {
+		msg = "INVALID_REQUEST_PERMISSION_DENIED"
 	}
 
 	outputJSON, err := json.MarshalIndent(strconv.Itoa(code)+" "+msg, "", "\t")
@@ -221,7 +210,7 @@ func GetJsonStr(output string) (string, error) {
 	i := new(big.Int)
 	var flag bool
 	i, flag = i.SetString(output[2:], 16)
-	if flag == false {
+	if !flag {
 		return "", fmt.Errorf("handleOutput: convert output to Int failed")
 	}
 	code = int(i.Uint64())
@@ -229,4 +218,27 @@ func GetJsonStr(output string) (string, error) {
 		code = PreSuccess
 	}
 	return TransferToJson(code)
+}
+
+func GetServiceOutputCode(bigNum *big.Int) (int, error) {
+	code, err := BigIntToInt(bigNum)
+	if err != nil {
+		return GoErrorCode, fmt.Errorf("GetServiceStatusCode failed, err: %v", err)
+	}
+	if code != 1 && code != 0 {
+		message, err := TransferToJson(code)
+		if err != nil {
+			return GoErrorCode, err
+		}
+		return code, fmt.Errorf(message)
+	}
+	return code, nil
+}
+
+func BigIntToInt(bigNum *big.Int) (int, error) {
+	boolean := bigNum.IsInt64()
+	if !boolean {
+		return 0, fmt.Errorf("bigNum %v can't transfer to int64", bigNum)
+	}
+	return int(bigNum.Int64()), nil
 }

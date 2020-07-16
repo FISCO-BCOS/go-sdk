@@ -20,7 +20,6 @@ import (
 	"io"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -55,12 +54,12 @@ type Log struct {
 	Removed bool `json:"removed"`
 }
 
-type logMarshaling struct {
-	Data        hexutil.Bytes
-	BlockNumber hexutil.Uint64
-	TxIndex     hexutil.Uint
-	Index       hexutil.Uint
-}
+//type logMarshaling struct {
+//	Data        hexutil.Bytes
+//	BlockNumber hexutil.Uint64
+//	TxIndex     hexutil.Uint
+//	Index       hexutil.Uint
+//}
 
 type rlpLog struct {
 	Address common.Address

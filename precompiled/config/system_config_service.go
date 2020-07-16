@@ -5,6 +5,7 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -13,8 +14,6 @@ type SystemConfigService struct {
 	systemConfig *Config
 	client       *client.Client
 }
-
-const methodSetValueByKey = "setValueByKey"
 
 // contract address
 var systemConfigPrecompileAddress common.Address = common.HexToAddress("0x0000000000000000000000000000000000001000")
@@ -29,18 +28,18 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 }
 
 // SetValueByKey returns nil if there is no error occurred.
-func (s *SystemConfigService) SetValueByKey(key string, value string) (*types.Transaction, error) {
+func (s *SystemConfigService) SetValueByKey(key string, value string) (int, error) {
 	tx, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
 	if err != nil {
-		return tx, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
+		return types.PrecompiledError, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
 	}
-	// receipt, _ := s.client.WaitMined(tx)
-	// output := common.FromHex(receipt.Output)
-	// ret := new(*big.Int)
-	// err = s.abi.Unpack(ret, methodSetValueByKey, output)
-	// if err != nil {
-	// 	return tx, fmt.Errorf("SystemConfigService setValueByKey failed,ret:%d, err:%+v", ret, err)
-	// }
-	// fmt.Printf("return value:%v", ret)
-	return tx, nil
+	receipt, err := s.client.WaitMined(tx)
+	if err != nil {
+		return types.PrecompiledError, fmt.Errorf("client.WaitMined failed, err: %v", err)
+	}
+	num, err := precompiled.GetPreServiceOutput(ConfigABI, "setValueByKey", receipt)
+	if err != nil {
+		return types.PrecompiledError, fmt.Errorf("systemConfigService setValueByKey failed, err: %+v", err)
+	}
+	return num, nil
 }
