@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"log"
 	"math/big"
 	"os"
 	"strings"
@@ -282,7 +283,10 @@ func (_BN256 *BN256TransactorSession) Bn256ScalarMul(x [32]byte, y [32]byte, sca
 }
 
 func main() {
-	configs := conf.ParseConfig("config.toml")
+	configs, err := conf.ParseConfigFile("config.toml")
+	if err != nil {
+		log.Fatalf("parseConfig failed, err: %v", err)
+	}
 	client, err := client.Dial(&configs[0])
 	if err != nil {
 		fmt.Printf("Dial Client failed, err:%v", err)

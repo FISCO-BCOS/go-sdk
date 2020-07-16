@@ -54,7 +54,10 @@ generate_main() {
 cat << EOF >> "${output}"
 
 func main() {
-	configs := conf.ParseConfig("config.toml")
+	configs, err := conf.ParseConfigFile("config.toml")
+	if err != nil {
+		log.Fatalf("ParseConfigFile failed, err: %v", err)
+	}
 	client, err := client.Dial(&configs[0])
 	if err != nil {
 		fmt.Printf("Dial Client failed, err:%v", err)

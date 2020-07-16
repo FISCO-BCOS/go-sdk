@@ -75,19 +75,22 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 		return nil, fmt.Errorf("%v", err)
 	}
 	var raw interface{}
-	json.Unmarshal(response, &raw)
+	err = json.Unmarshal(response, &raw)
+	if err != nil {
+		return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
+	}
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return nil, errors.New("parse response json to map error")
 	}
 	var compatibleVersion string
 	compatibleVersion, ok = m["Supported Version"].(string)
-	if ok != true {
+	if !ok {
 		return nil, errors.New("Json respond does not contains the key : Supported Version")
 	}
 	var nodeChainID int64
 	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
-	if ok != true {
+	if err != nil {
 		return nil, errors.New("Json respond does not contains the key : Chain Id")
 	}
 	if config.ChainID != nodeChainID {
@@ -242,8 +245,7 @@ func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
 func (c *Client) GetChainID(ctx context.Context) (*big.Int, error) {
 	convertor := new(big.Int)
-	var chainid *big.Int
-	chainid = convertor.SetInt64(c.chainID)
+	var chainid = convertor.SetInt64(c.chainID)
 	return chainid, nil
 }
 

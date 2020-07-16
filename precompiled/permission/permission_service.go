@@ -169,13 +169,13 @@ func (service *PermissionService) revoke(tableName string, address string) (stri
 
 func (service *PermissionService) list(tableName string) ([]PermissionInfo, error) {
 	opts := &bind.CallOpts{From: service.permissionAuth.From}
-	permissionyInfo, err := service.permission.QueryByName(opts, tableName)
+	permissionInfo, err := service.permission.QueryByName(opts, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("PermissionService List failed: %v", err)
 	}
 	// unmarshal result
 	var results []PermissionInfo
-	if err := json.Unmarshal([]byte(permissionyInfo), &results); err != nil {
+	if err := json.Unmarshal([]byte(permissionInfo), &results); err != nil {
 		return nil, fmt.Errorf("PermissionService: Unmarshal the List result failed: %v", err)
 	}
 	return results, nil
