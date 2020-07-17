@@ -237,6 +237,11 @@ func (c *Client) SetGroupID(newID int) {
 	c.groupID = newID
 }
 
+// GetCompatibleVersion returns the compatible version of FISCO BCOS
+func (c *Client) GetCompatibleVersion() string {
+	return c.compatibleVersion
+}
+
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
 func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
 	return c.apiHandler.GetClientVersion(ctx)
