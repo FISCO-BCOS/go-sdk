@@ -93,5 +93,5 @@ func (r *Receipt) String() string {
 	if err != nil {
 		return fmt.Sprintf("%v", err)
 	}
-	return fmt.Sprintf(string(out))
+	return string(out)
 }
