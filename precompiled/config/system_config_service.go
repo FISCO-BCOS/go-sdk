@@ -20,8 +20,8 @@ const (
 	invalidConfigurationValues int64 = -51300
 )
 
-// getErrorCodeMessage returns the message of error code
-func getErrorCodeMessage(errorCode int64) string {
+// getErrorMessage returns the message of error code
+func getErrorMessage(errorCode int64) string {
 	var message string
 	switch errorCode {
 	case invalidConfigurationValues:
@@ -39,7 +39,7 @@ func errorCodeToError(errorCode int64) error {
 	if errorCodeMessage != "" {
 		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
 	}
-	errorCodeMessage = getErrorCodeMessage(errorCode)
+	errorCodeMessage = getErrorMessage(errorCode)
 	if errorCodeMessage != "" {
 		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
 	}
