@@ -34,8 +34,8 @@ type AccountInfo struct {
 	EnableNum string `json:"enable_num"`
 }
 
-// getErrorCodeMessage returns the message of error code
-func getErrorCodeMessage(errorCode int64) string {
+// getErrorMessage returns the message of error code
+func getErrorMessage(errorCode int64) string {
 	var message string
 	switch errorCode {
 	case currentValueIsExpectedValue:
@@ -70,14 +70,14 @@ func getErrorCodeMessage(errorCode int64) string {
 	return message
 }
 
-// judgeErrorCode judges whether the error code represents an error
+// errorCodeToError judges whether the error code represents an error
 func errorCodeToError(errorCode int64) error {
 	var errorCodeMessage string
 	errorCodeMessage = precompiled.GetCommonErrorCodeMessage(errorCode)
 	if errorCodeMessage != "" {
 		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
 	}
-	errorCodeMessage = getErrorCodeMessage(errorCode)
+	errorCodeMessage = getErrorMessage(errorCode)
 	if errorCodeMessage != "" {
 		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
 	}
