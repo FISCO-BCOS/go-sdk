@@ -1,19 +1,14 @@
 package cns
 
 import (
-	"context"
-	"crypto/ecdsa"
+	"os"
 	"testing"
-
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func GetClient(t *testing.T) *client.Client {
-	// config := &conf.ParseConfig("config.toml")[0]
+func getClient(t *testing.T) *client.Client {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
 		NodeURL:    "http://localhost:8545"}
@@ -24,29 +19,21 @@ func GetClient(t *testing.T) *client.Client {
 	return c
 }
 
-func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
-	privateKey, err := crypto.HexToECDSA("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewCnsService(c)
 	if err != nil {
-		t.Fatalf("init privateKey failed: %+v", err)
+		t.Fatalf("init CnsService failed: %+v", err)
 	}
-	return privateKey
-}
-
-func GetService(t *testing.T) *Service {
-	c := GetClient(t)
-	privateKey := GenerateKey(t)
-	service, err := NewCnsService(c, privateKey)
-	if err != nil {
-		t.Fatalf("init Service failed: %+v", err)
-	}
-	return service
+	service = newService
 }
 
 const (
-	name    = "store"
-	version = "5.0"
-	address = "0x0626918C51A1F36c7ad4354BB1197460A533a2B9"
-	testABI = `[
+	standardOutput = 1
+	name           = "store"
+	version        = "5.0"
+	address        = "0x0626918C51A1F36c7ad4354BB1197460A533a2B9"
+	testABI        = `[
 		{
 			"constant": true,
 			"inputs": [
@@ -129,51 +116,56 @@ const (
 	]`
 )
 
+var (
+	service *Service
+)
+
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
+
 func TestRegisterCns(t *testing.T) {
-	c := GetClient(t)
-	service := GetService(t)
-	// test RegisterCns
-	tx, err := service.RegisterCns(name, version, address, testABI)
+	result, err := service.RegisterCns(name, version, address, testABI)
 	if err != nil {
 		t.Fatalf("Service RegisterCns failed: %+v\n", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), c, tx)
-	if err != nil {
-		t.Fatalf("tx mining error:%v\n", err)
+	if result != standardOutput {
+		t.Fatalf("TestRegisterCns failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("transaction hash: %s\n", receipt.GetTransactionHash())
+	t.Logf("TestRegisterCns result: %v", result)
 }
 
 func TestGetAddressByContractNameAndVersion(t *testing.T) {
-	service := GetService(t)
-
-	// test GetAddressByContractNameAndVersion
 	addr, err := service.GetAddressByContractNameAndVersion(name + ":" + version)
 	if err != nil {
 		t.Fatalf("GetAddressByContractNameAndVersion failed: %v", err)
+	}
+	if addr != "0x0626918C51A1F36c7ad4354BB1197460A533a2B9" {
+		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0x0626918C51A1F36c7ad4354BB1197460A533a2B9\"", addr)
 	}
 	t.Logf("address: %s", addr)
 }
 
 func TestQueryCnsByNameAndVersion(t *testing.T) {
-	service := GetService(t)
-
-	// test QueryCnsByNameAndVersion
 	cnsInfo, err := service.QueryCnsByNameAndVersion(name, version)
 	if err != nil {
 		t.Fatalf("QueryCnsByNameAndVersion failed: %v\n", err)
 	}
-	t.Logf("QueryCnsByNameAndVersion: %s", cnsInfo[0].String())
+	if len(cnsInfo) != 1 {
+		t.Fatalf("QueryCnsByNameAndVersion failed, the length of cnsInfo \"%v\" is inconsistent with 1", len(cnsInfo))
+	}
+	t.Logf("QueryCnsByNameAndVersion: %v", cnsInfo[0])
 }
 
 func TestQueryCnsByName(t *testing.T) {
-	service := GetService(t)
-
-	// test QueryCnsByNameAndVersion
 	cnsInfoByName, err := service.QueryCnsByName(name)
 	if err != nil {
 		t.Fatalf("QueryCnsByName failed: %v\n", err)
 	}
-	t.Logf("QueryCnsByName: %s", cnsInfoByName[0].String())
+	if len(cnsInfoByName) != 1 {
+		t.Fatalf("QueryCnsByNameAndVersion failed, the length of cnsInfoByName \"%v\" is inconsistent with 1", len(cnsInfoByName))
+	}
+	t.Logf("QueryCnsByName: %v", cnsInfoByName[0])
 }

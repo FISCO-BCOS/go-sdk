@@ -1,11 +1,11 @@
 package cns
 
 import (
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strings"
+
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -13,26 +13,68 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// cns precompiled contract error code
+const (
+	versionLengthOverflow  int64 = -51201
+	addressAndVersionExist int64 = -51200
+)
+
+// getErrorMessage returns the message of error code
+func getErrorMessage(errorCode int64) string {
+	var message string
+	switch errorCode {
+	case versionLengthOverflow:
+		message = "version length overflow"
+	case addressAndVersionExist:
+		message = "address and version exist"
+	default:
+		message = ""
+	}
+	return message
+}
+
+// errorCodeToError judges whether the error code represents an error
+func errorCodeToError(errorCode int64) error {
+	var errorCodeMessage string
+	errorCodeMessage = precompiled.GetCommonErrorCodeMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	errorCodeMessage = getErrorMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	return nil
+}
+
+// Info is used for the CNSService
+type Info struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Address string `json:"address"`
+	Abi     string `json:"abi"`
+}
+
 // Service is a precompile contract service.
 type Service struct {
 	cns     *Cns
 	cnsAuth *bind.TransactOpts
+	client  *client.Client
 }
 
 const maxVersionLength = 40
 
 // contract address
-var cnsPrecompileAddress common.Address = common.HexToAddress("0x0000000000000000000000000000000000001004")
+var cnsPrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001004")
 
 // NewCnsService returns ptr of Service
-func NewCnsService(client *client.Client, privateKey *ecdsa.PrivateKey) (*Service, error) {
+func NewCnsService(client *client.Client) (*Service, error) {
 	instance, err := NewCns(cnsPrecompileAddress, client)
 	if err != nil {
 		return nil, fmt.Errorf("construct Service failed: %+v", err)
 	}
-	auth := bind.NewKeyedTransactor(privateKey)
-	auth.GasLimit = big.NewInt(30000000)
-	return &Service{cns: instance, cnsAuth: auth}, nil
+	auth := client.GetTransactOpts()
+	return &Service{cns: instance, cnsAuth: auth, client: client}, nil
 }
 
 // SelectByName returns the cns information according to the name string.
@@ -40,7 +82,7 @@ func (service *Service) SelectByName(name string) (string, error) {
 	opts := &bind.CallOpts{From: service.cnsAuth.From}
 	cnsName, err := service.cns.SelectByName(opts, name)
 	if err != nil {
-		return "", fmt.Errorf("Service SelectByName failed: %+v", err)
+		return "", fmt.Errorf("service SelectByName failed: %+v", err)
 	}
 	return cnsName, nil
 }
@@ -50,7 +92,7 @@ func (service *Service) SelectByNameAndVersion(name string, version string) (str
 	opts := &bind.CallOpts{From: service.cnsAuth.From}
 	cnsName, err := service.cns.SelectByNameAndVersion(opts, name, version)
 	if err != nil {
-		return "", fmt.Errorf("Service SelectByNameAndVersion failed: %+v", err)
+		return "", fmt.Errorf("service SelectByNameAndVersion failed: %+v", err)
 	}
 	return cnsName, nil
 }
@@ -68,13 +110,14 @@ func (service *Service) GetAddressByContractNameAndVersion(contractNameAndVersio
 		addressInfo, err := service.SelectByNameAndVersion(name, version)
 		if err != nil {
 			return "", err
-		} else if addressInfo == "[]\n" {
-			return "", fmt.Errorf("The contract version does not exist")
+		}
+		if addressInfo == "[]\n" {
+			return "", fmt.Errorf("the contract version does not exist")
 		}
 		// json unmarshal
 		var infos []Info
 		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
-			return "", fmt.Errorf("Unmarshal the addressInfo failed: %s", addressInfo)
+			return "", fmt.Errorf("unmarshal the addressInfo failed: %s", addressInfo)
 		}
 		cnsInfo := infos[len(infos)-1]
 		address = cnsInfo.Address
@@ -83,32 +126,32 @@ func (service *Service) GetAddressByContractNameAndVersion(contractNameAndVersio
 		if err != nil {
 			return "", err
 		} else if addressInfo == "[]\n" {
-			return "", fmt.Errorf("The contract version does not exist")
+			return "", fmt.Errorf("the contract version does not exist")
 		}
 		// json unmarshal
 		var infos []Info
 		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
-			return "", fmt.Errorf("Unmarshal the addressInfo failed  %v", err)
+			return "", fmt.Errorf("unmarshal the addressInfo failed  %v", err)
 		}
 		cnsInfo := infos[len(infos)-1]
 		address = cnsInfo.Address
 	}
 	if !common.IsHexAddress(address) {
-		return "", fmt.Errorf("Unable to resolve address for name: %s", contractNameAndVersion)
+		return "", fmt.Errorf("unable to resolve address for name: %s", contractNameAndVersion)
 	}
 	return address, nil
 }
 
 // RegisterCns registers a contract for its CNS.
-func (service *Service) RegisterCns(name string, version string, addr string, abi string) (*types.Transaction, error) {
+func (service *Service) RegisterCns(name string, version string, addr string, abi string) (int64, error) {
 	if len(version) > maxVersionLength {
-		return nil, fmt.Errorf("version string length exceeds the maximum limit")
+		return precompiled.DefaultErrorCode, fmt.Errorf("version string length exceeds the maximum limit")
 	}
 	tx, err := service.cns.Insert(service.cnsAuth, name, version, addr, abi)
 	if err != nil {
-		return nil, fmt.Errorf("Service RegisterCns failed: %+v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("service RegisterCns failed: %+v", err)
 	}
-	return tx, nil
+	return handleReceipt(service.client, tx, "insert")
 }
 
 // QueryCnsByName returns the CNS info according to the CNS name
@@ -120,7 +163,7 @@ func (service *Service) QueryCnsByName(name string) ([]Info, error) {
 	// json unmarshal
 	var infos []Info
 	if err := json.Unmarshal([]byte(cnsInfo), &infos); err != nil {
-		return nil, fmt.Errorf("Unmarshal the Info failed")
+		return nil, fmt.Errorf("unmarshal the Info failed")
 	}
 	return infos, nil
 }
@@ -134,11 +177,32 @@ func (service *Service) QueryCnsByNameAndVersion(name string, version string) ([
 	// json unmarshal
 	var infos []Info
 	if err := json.Unmarshal([]byte(cnsInfo), &infos); err != nil {
-		return nil, fmt.Errorf("Unmarshal the Info failed")
+		return nil, fmt.Errorf("unmarshal the Info failed")
 	}
 	return infos, nil
 }
 
 func isValidCnsName(input string) bool {
 	return input != "" && (strings.Contains(input, ":") || !common.IsHexAddress(input))
+}
+
+func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
+	// wait for the mining
+	receipt, err := c.WaitMined(tx)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CnsService wait for the transaction receipt failed, err: %v", err)
+	}
+	status := receipt.GetStatus()
+	if types.Success != status {
+		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
+	}
+	bigNum, err := precompiled.ParseBigIntFromOutput(CnsABI, name, receipt)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+	}
+	errorCode, err := precompiled.BigIntToInt64(bigNum)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+	}
+	return errorCode, errorCodeToError(errorCode)
 }
