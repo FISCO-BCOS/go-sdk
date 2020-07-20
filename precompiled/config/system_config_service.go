@@ -68,6 +68,10 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, er
 	if err != nil {
 		return types.PrecompiledError, fmt.Errorf("client.WaitMined failed, err: %v", err)
 	}
+	status := receipt.GetStatus()
+	if types.Success != status {
+		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
+	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ConfigABI, "setValueByKey", receipt)
 	if err != nil {
 		return types.PrecompiledError, fmt.Errorf("systemConfigService setValueByKey failed, err: %+v", err)

@@ -271,7 +271,7 @@ func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64,
 	}
 	status := receipt.GetStatus()
 	if types.Success != status {
-		return precompiled.DefaultErrorCode, fmt.Errorf(types.GetStatusMessage(status))
+		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ChainGovernanceABI, name, receipt)
 	if err != nil {
