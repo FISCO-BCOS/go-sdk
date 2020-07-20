@@ -2,23 +2,24 @@ package consensus
 
 import (
 	"context"
-	"crypto/ecdsa"
+	"os"
 	"regexp"
 	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/ethereum/go-ethereum/crypto"
+)
+
+const (
+	standardOutput = 1
 )
 
 var (
-	nodeID = ""
+	nodeID  = ""
+	service *Service
 )
 
-func GetClient(t *testing.T) *client.Client {
-	// config := &conf.ParseConfig("config.toml")[0]
+func getClient(t *testing.T) *client.Client {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62",
 		NodeURL:    "http://localhost:8545"}
@@ -29,121 +30,98 @@ func GetClient(t *testing.T) *client.Client {
 	return c
 }
 
-func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
-	privateKey, err := crypto.HexToECDSA("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	if err != nil {
-		t.Fatalf("init privateKey failed: %+v", err)
-	}
-	return privateKey
-}
-
-func GetService(t *testing.T) *ConsensusService {
-	c := GetClient(t)
-	privateKey := GenerateKey(t)
-	service, err := NewConsensusService(c, privateKey)
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewConsensusService(c)
 	if err != nil {
 		t.Fatalf("init ConsensusService failed: %+v", err)
 	}
-	return service
+	service = newService
 }
 
-// Get nodeID
-// TODO: try to use TestMain function to init before excute test case
-func TestGetNodeID(t *testing.T) {
-	c := GetClient(t)
+func getNodeID(t *testing.T) {
+	c := getClient(t)
 	sealerList, err := c.GetNodeIDList(context.Background())
 	if err != nil {
 		t.Fatalf("sealer list not found: %v", err)
 	}
 	reg := regexp.MustCompile(`[\w]+`)
 	nodeList := reg.FindAllString(string(sealerList), -1)
-	if len(nodeList) < 4 { // pbft consensus needs 2f+1
-		t.Fatalf("the number of nodes does not exceed 4")
+	if len(nodeList) < 2 {
+		t.Fatalf("the number of nodes does not exceed 2")
 	}
 	nodeID = nodeList[1]
 }
 
-func TestAddObserver(t *testing.T) {
-	c := GetClient(t)
-	service := GetService(t)
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	getNodeID(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
 
-	observer, err := c.GetObserverList(context.Background())
+func TestAddObserver(t *testing.T) {
+	observer, err := service.client.GetObserverList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetObserverList failed: %+v\n", err)
 	}
-	t.Logf("Observer list: %s\n", observer)
+	t.Logf("Observer list before excute AddObserver: %s\n", observer)
 
-	tx, err := service.AddObserver(nodeID)
+	result, err := service.AddObserver(nodeID)
 	if err != nil {
 		t.Fatalf("ConsensusService AddObserver failed: %+v\n", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), c, tx)
-	if err != nil {
-		t.Fatalf("tx mining error:%v\n", err)
+	if result != standardOutput {
+		t.Fatalf("TestAddObserver failed, the result \"%v\" is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = c.GetObserverList(context.Background())
+	observer, err = service.client.GetObserverList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetObserverList second time failed: %+v\n", err)
 	}
-	t.Logf("Observer list: %s\n", observer)
+	t.Logf("Observer list after excute AddObserver: %s\n", observer)
 }
 
 func TestAddSealer(t *testing.T) {
-	c := GetClient(t)
-	service := GetService(t)
-
-	observer, err := c.GetSealerList(context.Background())
+	observer, err := service.client.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetSealerList failed: %+v\n", err)
 	}
-	t.Logf("Sealer list: %s\n", observer)
+	t.Logf("Sealer list before excute AddSealer: %s\n", observer)
 
-	tx, err := service.AddSealer(nodeID)
+	result, err := service.AddSealer(nodeID)
 	if err != nil {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), c, tx)
-	if err != nil {
-		t.Fatalf("tx mining error:%v\n", err)
+	if result != standardOutput {
+		t.Fatalf("TestAddSealer failed, the result \"%v\" is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = c.GetSealerList(context.Background())
+	observer, err = service.client.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
-	t.Logf("Sealer list: %s\n", observer)
+	t.Logf("Sealer list after excute AddSealer: %s\n", observer)
 }
 
 func TestRemove(t *testing.T) {
-	c := GetClient(t)
-	service := GetService(t)
-
-	observer, err := c.GetSealerList(context.Background())
+	observer, err := service.client.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService GetSealerList failed: %+v\n", err)
 	}
-	t.Logf("Sealer list: %s\n", observer)
+	t.Logf("Sealer list before excute RemoveNode: %s\n", observer)
 
-	tx, err := service.RemoveNode(nodeID)
-
+	result, err := service.RemoveNode(nodeID)
 	if err != nil {
 		t.Fatalf("ConsensusService Remove failed: %+v\n", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), c, tx)
-	if err != nil {
-		t.Fatalf("tx mining error:%v\n", err)
+	if result != standardOutput {
+		t.Fatalf("TestRemove failed, the result \"%v\" is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("transaction hash: %s", receipt.GetTransactionHash())
 
-	observer, err = c.GetSealerList(context.Background())
+	observer, err = service.client.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
-	t.Logf("Sealer list: %s\n", observer)
+	t.Logf("Sealer list after excute RemoveNode: %s\n", observer)
 }

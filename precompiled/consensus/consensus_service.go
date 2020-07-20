@@ -2,115 +2,149 @@ package consensus
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"math/big"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// ConsensusService is a precompile contract service.
-type ConsensusService struct {
+// consensus precompiled contract error code
+const (
+	lastSealer    int64 = -51101
+	invalidNodeID int64 = -51100
+)
+
+// getErrorMessage returns the message of error code
+func getErrorMessage(errorCode int64) string {
+	var message string
+	switch errorCode {
+	case lastSealer:
+		message = "last sealer"
+	case invalidNodeID:
+		message = "invalid nodeID"
+	default:
+		message = ""
+	}
+	return message
+}
+
+// errorCodeToError judges whether the error code represents an error
+func errorCodeToError(errorCode int64) error {
+	var errorCodeMessage string
+	errorCodeMessage = precompiled.GetCommonErrorCodeMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	errorCodeMessage = getErrorMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	return nil
+}
+
+// Service is a precompile contract service.
+type Service struct {
 	consensus     *Consensus
 	consensusAuth *bind.TransactOpts
 	client        *client.Client
 }
 
 // contract address
-var consensusPrecompileAddress common.Address = common.HexToAddress("0x0000000000000000000000000000000000001003")
+var consensusPrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001003")
 
 // NewConsensusService returns ptr of ConsensusService
-func NewConsensusService(client *client.Client, privateKey *ecdsa.PrivateKey) (*ConsensusService, error) {
+func NewConsensusService(client *client.Client) (*Service, error) {
 	instance, err := NewConsensus(consensusPrecompileAddress, client)
 	if err != nil {
 		return nil, fmt.Errorf("construct ConsensusService failed: %+v", err)
 	}
-	auth := bind.NewKeyedTransactor(privateKey)
-	auth.GasLimit = big.NewInt(30000000)
-	return &ConsensusService{consensus: instance, consensusAuth: auth, client: client}, nil
+	auth := client.GetTransactOpts()
+	return &Service{consensus: instance, consensusAuth: auth, client: client}, nil
 }
 
 // AddObserver add a new observe node according to the node ID
-func (service *ConsensusService) AddObserver(nodeID string) (*types.Transaction, error) {
+func (service *Service) AddObserver(nodeID string) (int64, error) {
 	flag, err := service.isValidNodeID(nodeID)
 	if err != nil {
-		return nil, err
-	} else if !flag {
-		return nil, fmt.Errorf("the node is not reachable")
+		return precompiled.DefaultErrorCode, fmt.Errorf("AddObserver failed, err: %v", err)
+	}
+	if !flag {
+		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
 	}
 
 	observerRaw, err := service.client.GetObserverList(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("get the observer list failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("get the observer list failed: %v", err)
 	}
 
 	var nodeIDs []string
 	err = json.Unmarshal(observerRaw, &nodeIDs)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal the observer list failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the observer list failed: %v", err)
 	}
 
 	for _, nID := range nodeIDs {
 		if nID == nodeID {
-			return nil, fmt.Errorf("the node is already in the observer lisn")
+			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the observer list")
 		}
 	}
 	tx, err := service.consensus.AddObserver(service.consensusAuth, nodeID)
 	if err != nil {
-		return nil, fmt.Errorf("ConsensusService addObserver failed: %+v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addObserver failed: %+v", err)
 	}
-	return tx, nil
+	return handleReceipt(service.client, tx, "addObserver")
 }
 
 // AddSealer add a new sealer node according to the node ID
-func (service *ConsensusService) AddSealer(nodeID string) (*types.Transaction, error) {
+func (service *Service) AddSealer(nodeID string) (int64, error) {
 	flag, err := service.isValidNodeID(nodeID)
 	if err != nil {
-		return nil, err
-	} else if !flag {
-		return nil, fmt.Errorf("the node is not reachable")
+		return precompiled.DefaultErrorCode, fmt.Errorf("AddSealer failed, err: %v", err)
+	}
+	if !flag {
+		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
 	}
 
 	sealerRaw, err := service.client.GetSealerList(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("get the sealer list failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("get the sealer list failed: %v", err)
 	}
 
 	var nodeIDs []string
 	err = json.Unmarshal(sealerRaw, &nodeIDs)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal the sealer list failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the sealer list failed: %v", err)
 	}
 
 	for _, nID := range nodeIDs {
 		if nID == nodeID {
-			return nil, fmt.Errorf("the node is already in the sealer list")
+			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the sealer list")
 		}
 	}
 
 	tx, err := service.consensus.AddSealer(service.consensusAuth, nodeID)
 	if err != nil {
-		return nil, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
 	}
 
-	return tx, nil
+	return handleReceipt(service.client, tx, "addSealer")
 }
 
 // RemoveNode remove a sealer node according to the node ID
-func (service *ConsensusService) RemoveNode(nodeID string) (*types.Transaction, error) {
+func (service *Service) RemoveNode(nodeID string) (int64, error) {
 	peersRaw, err := service.client.GetGroupPeers(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("get the group peers failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("get the group peers failed: %v", err)
 	}
 
 	var nodeIDs []string
 	err = json.Unmarshal(peersRaw, &nodeIDs)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal the group peers failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the group peers failed: %v", err)
 	}
 
 	var flag = true
@@ -121,34 +155,56 @@ func (service *ConsensusService) RemoveNode(nodeID string) (*types.Transaction, 
 		}
 	}
 	if flag {
-		return nil, fmt.Errorf("the node is not a group peer")
+		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not a group peer")
 	}
 
 	tx, err := service.consensus.Remove(service.consensusAuth, nodeID)
 	// maybe will occur something wrong
 	// when request the receipt from the SDK since the connected node of SDK is removed
+	//TODO: how to handle the problem that can't get the tx receipt when remove the connected node of SDK
 	if err != nil {
-		return nil, fmt.Errorf("ConsensusService Remove failed: %+v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService Remove failed: %+v", err)
 	}
-	return tx, nil
+	return handleReceipt(service.client, tx, "remove")
 }
 
-// isValidNodeID returns true if the nodeID exits in NodeIDlist.
-func (service *ConsensusService) isValidNodeID(nodeID string) (bool, error) {
-	var flag = false
+// isValidNodeID returns true if the nodeID exits in NodeIDList.
+func (service *Service) isValidNodeID(nodeID string) (bool, error) {
 	nodeIDRaw, err := service.client.GetNodeIDList(context.Background())
 	if err != nil {
-		return flag, fmt.Errorf("get the valid Node IDs failed: %v", err)
+		return false, fmt.Errorf("get the valid Node IDs failed: %v", err)
 	}
 	var nodeIDs []string
 	err = json.Unmarshal(nodeIDRaw, &nodeIDs)
 	if err != nil {
-		return flag, fmt.Errorf("unmarshal the valid Node IDs failed: %v", err)
+		return false, fmt.Errorf("unmarshal the valid Node IDs failed: %v", err)
 	}
+	var flag = false
 	for _, nID := range nodeIDs {
 		if nID == nodeID {
 			flag = true
 		}
 	}
 	return flag, nil
+}
+
+func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
+	// wait for the mining
+	receipt, err := c.WaitMined(tx)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService wait for the transaction receipt failed, err: %v", err)
+	}
+	status := receipt.GetStatus()
+	if types.Success != status {
+		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
+	}
+	bigNum, err := precompiled.ParseBigIntFromOutput(ConsensusABI, name, receipt)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+	}
+	errorCode, err := precompiled.BigIntToInt64(bigNum)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+	}
+	return errorCode, errorCodeToError(errorCode)
 }
