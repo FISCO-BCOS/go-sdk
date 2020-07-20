@@ -2,6 +2,7 @@ package contractlifecycle
 
 import (
 	"encoding/hex"
+	"os"
 	"testing"
 
 	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
@@ -17,9 +18,10 @@ const (
 
 var (
 	contractAddress = ""
+	service         *Service
 )
 
-func GetClient(t *testing.T) *client.Client {
+func getClient(t *testing.T) *client.Client {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "8c47f550380591adab955cf050c439c0ffabb236bf05a64849ee0ba8aed42a41", NodeURL: "http://localhost:8545"}
 	c, err := client.Dial(config)
@@ -29,17 +31,17 @@ func GetClient(t *testing.T) *client.Client {
 	return c
 }
 
-func GetService(t *testing.T) *Service {
-	c := GetClient(t)
-	service, err := NewService(c)
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewService(c)
 	if err != nil {
 		t.Fatalf("init contractLifeCycleService failed: %+v", err)
 	}
-	return service
+	service = newService
 }
 
 func deployHelloWorldContract(t *testing.T) {
-	c := GetClient(t)
+	c := getClient(t)
 	address, tx, instance, err := helloworld.DeployHelloWorld(c.GetTransactOpts(), c) // deploy contract
 	if err != nil {
 		t.Fatalf("deploy HelloWorld contract failed：%v", err)
@@ -50,10 +52,14 @@ func deployHelloWorldContract(t *testing.T) {
 	contractAddress = address.Hex()
 }
 
-func TestFreeze(t *testing.T) {
-	deployHelloWorldContract(t)
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	deployHelloWorldContract(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
 
-	service := GetService(t)
+func TestFreeze(t *testing.T) {
 	result, err := service.Freeze(common.HexToAddress(contractAddress))
 	if err != nil {
 		t.Fatalf("TestFreeze failed: %v", err)
@@ -65,7 +71,6 @@ func TestFreeze(t *testing.T) {
 }
 
 func TestUnfreeze(t *testing.T) {
-	service := GetService(t)
 	result, err := service.Unfreeze(common.HexToAddress(contractAddress))
 	if err != nil {
 		t.Fatalf("TestUnfreeze failed: %v", err)
@@ -77,7 +82,6 @@ func TestUnfreeze(t *testing.T) {
 }
 
 func TestGrantManager(t *testing.T) {
-	service := GetService(t)
 	result, err := service.GrantManager(common.HexToAddress(contractAddress), common.HexToAddress(managerContractAccount))
 	if err != nil {
 		t.Fatalf("TestGrantManager failed: %v", err)
@@ -89,7 +93,6 @@ func TestGrantManager(t *testing.T) {
 }
 
 func TestGetStatus(t *testing.T) {
-	service := GetService(t)
 	num, message, err := service.GetStatus(common.HexToAddress(contractAddress))
 	if err != nil {
 		t.Fatalf("TestGetStatus failed: %v", err)
@@ -101,7 +104,6 @@ func TestGetStatus(t *testing.T) {
 }
 
 func TestListManager(t *testing.T) {
-	service := GetService(t)
 	num, managerAddressList, err := service.ListManager(common.HexToAddress(contractAddress))
 	if err != nil {
 		t.Fatalf("TestListManager failed: %v", err)
