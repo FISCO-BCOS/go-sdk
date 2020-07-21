@@ -85,7 +85,6 @@ func (service *Service) CreateTable(tableName string, key string, valueFields st
 		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService CreateTable failed: %v", err)
 	}
 	return handleReceipt(service.client, tx, "createTable")
-
 }
 
 // Insert entry
