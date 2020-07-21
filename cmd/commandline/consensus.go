@@ -24,10 +24,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	DefaultSuccessMessage string = "success"
-)
-
 var addObserver = &cobra.Command{
 	Use:   "addObserver",
 	Short: "[nodeID]                         Add an observer node",
