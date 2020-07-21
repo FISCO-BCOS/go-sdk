@@ -22,6 +22,7 @@ import (
 	"log"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -38,17 +39,15 @@ type Client struct {
 	apiHandler        *APIHandler
 	groupID           int
 	chainID           int64
-	compatibleVersion string
+	compatibleVersion int
 	auth              *bind.TransactOpts
 	callOpts          *bind.CallOpts
 	smCrypto          bool
 }
 
 const (
-	//V210 is node version v2.1.0
-	V210 = "2.1.0"
-	//V220 is node version v2.2.0
-	V220 = "2.2.0"
+	//V2_5_0 is node version v2.5.0
+	V2_5_0 int = 0x02050000
 )
 
 // Dial connects a client to the given URL and groupID.
@@ -83,10 +82,14 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if !ok {
 		return nil, errors.New("parse response json to map error")
 	}
-	var compatibleVersion string
-	compatibleVersion, ok = m["Supported Version"].(string)
+	var compatibleVersionStr string
+	compatibleVersionStr, ok = m["Supported Version"].(string)
 	if !ok {
 		return nil, errors.New("Json respond does not contains the key : Supported Version")
+	}
+	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
+	if err != nil {
+		return nil, fmt.Errorf("DialContext failed, err: %v", err)
 	}
 	var nodeChainID int64
 	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
@@ -238,7 +241,7 @@ func (c *Client) SetGroupID(newID int) {
 }
 
 // GetCompatibleVersion returns the compatible version of FISCO BCOS
-func (c *Client) GetCompatibleVersion() string {
+func (c *Client) GetCompatibleVersion() int {
 	return c.compatibleVersion
 }
 
@@ -378,4 +381,21 @@ func (c *Client) GetTotalTransactionCount(ctx context.Context) ([]byte, error) {
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
 func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) ([]byte, error) {
 	return c.apiHandler.GetSystemConfigByKey(ctx, c.groupID, configKey)
+}
+
+func getVersionNumber(strVersion string) (int, error) {
+	strList := strings.Split(strVersion, ".")
+	if len(strList) != 3 {
+		return 0, fmt.Errorf("strList length must be 3")
+	}
+	var versionNumber int
+	for i := 0; i < len(strList); i++ {
+		num, err := strconv.Atoi(strList[i])
+		if err != nil {
+			return 0, fmt.Errorf("getVersionNumber failed, err: %v", err)
+		}
+		versionNumber += num
+		versionNumber = versionNumber << 8
+	}
+	return versionNumber, nil
 }

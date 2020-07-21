@@ -42,6 +42,9 @@ func getService(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	getService(&testing.T{})
+	if service.client.GetCompatibleVersion() < client.V2_5_0 {
+		os.Exit(0)
+	}
 	// only freezing the accounts that deploy contracts
 	deployHelloWorldContract(&testing.T{})
 	exitCode := m.Run()

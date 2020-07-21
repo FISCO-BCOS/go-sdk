@@ -2,8 +2,6 @@ package permission
 
 import (
 	"os"
-	"strconv"
-	"strings"
 	"testing"
 
 	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
@@ -46,39 +44,6 @@ func getService(t *testing.T) {
 	service = newService
 }
 
-// version1 > version2 return 1
-// version1 < version2 return -1
-// version1 = version2 return 0
-func compareVersion(version1 string, version2 string) int {
-	nums1 := strings.Split(version1, ".")
-	nums2 := strings.Split(version2, ".")
-	len1, len2 := len(nums1), len(nums2)
-	if len1 < len2 {
-		return -compareVersion(version2, version1)
-	}
-	i := 0
-	j := 0
-	for i < len1 && j < len2 {
-		num1, _ := strconv.Atoi(nums1[i])
-		num2, _ := strconv.Atoi(nums2[j])
-		if num1 < num2 {
-			return -1
-		} else if num1 > num2 {
-			return 1
-		}
-		i++
-		j++
-	}
-
-	for ; i < len1; i++ {
-		num, _ := strconv.Atoi(nums1[i])
-		if num > 0 {
-			return 1
-		}
-	}
-	return 0
-}
-
 func deployHelloWorldContract(t *testing.T) {
 	c := getClient(t)
 	address, tx, instance, err := helloworld.DeployHelloWorld(c.GetTransactOpts(), c) // deploy contract
@@ -118,9 +83,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestGrantPermissionManager(t *testing.T) {
-	compatibleVersion := service.client.GetCompatibleVersion()
 	// FISCO BCOS version compatible test
-	if compareVersion(compatibleVersion, "2.5.0") >= 0 {
+	if service.client.GetCompatibleVersion() >= client.V2_5_0 {
 		result, err := service.GrantPermissionManager(common.HexToAddress(permissionAdd))
 		if result != -51004 {
 			t.Fatalf("TestGrantPermissionManager failed: %v", err)
@@ -139,9 +103,8 @@ func TestGrantPermissionManager(t *testing.T) {
 }
 
 func TestListPermissionManager(t *testing.T) {
-	compatibleVersion := service.client.GetCompatibleVersion()
 	// FISCO BCOS version compatible test
-	if compareVersion(compatibleVersion, "2.5.0") >= 0 {
+	if service.client.GetCompatibleVersion() >= client.V2_5_0 {
 		listResult, err := service.ListPermissionManager()
 		if err != nil {
 			t.Fatalf("TestListPermissionManager failed: %v", err)
@@ -160,9 +123,8 @@ func TestListPermissionManager(t *testing.T) {
 }
 
 func TestRevokePermissionManager(t *testing.T) {
-	compatibleVersion := service.client.GetCompatibleVersion()
 	// FISCO BCOS version compatible test
-	if compareVersion(compatibleVersion, "2.5.0") >= 0 {
+	if service.client.GetCompatibleVersion() >= client.V2_5_0 {
 		result, err := service.RevokePermissionManager(common.HexToAddress(permissionAdd))
 		if result != -51004 {
 			t.Fatalf("TestRevokePermissionManager failed: %v", err)
