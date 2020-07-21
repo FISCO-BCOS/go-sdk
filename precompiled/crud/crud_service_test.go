@@ -1,13 +1,12 @@
 package crud
 
 import (
-	"crypto/ecdsa"
+	"os"
 	"strconv"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -16,8 +15,11 @@ const (
 	valueFields = "item_id, item_name"
 )
 
-func GetClient(t *testing.T) *client.Client {
-	// config := &conf.ParseConfig("config.toml")[0]
+var (
+	service *Service
+)
+
+func getClient(t *testing.T) *client.Client {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
 		NodeURL:    "http://localhost:8545"}
@@ -28,38 +30,34 @@ func GetClient(t *testing.T) *client.Client {
 	return c
 }
 
-func GenerateKey(t *testing.T) *ecdsa.PrivateKey {
-	privateKey, err := crypto.HexToECDSA("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewCRUDService(c)
 	if err != nil {
-		t.Fatalf("init privateKey failed: %+v", err)
+		t.Fatalf("init CrudService failed: %+v", err)
 	}
-	return privateKey
+	service = newService
 }
 
-func GetService(t *testing.T) *CRUDService {
-	c := GetClient(t)
-	privateKey := GenerateKey(t)
-	service, err := NewCRUDService(c, privateKey)
-	if err != nil {
-		t.Fatalf("init CRUDService failed: %+v", err)
-	}
-	return service
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }
 
 func TestCreateTable(t *testing.T) {
-	service := GetService(t)
-
-	resultCreate, err := service.CreateTable(tableName, key, valueFields)
+	result, err := service.CreateTable(tableName, key, valueFields)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
-	t.Logf("resultCreate: %d\n", resultCreate)
+	if result != 0 {
+		t.Fatalf("TestCreateTable failed, the result \"%v\" is inconsistent with \"0\"", result)
+	}
+	t.Logf("result: %d\n", result)
 }
 
 func TestInsert(t *testing.T) {
-	service := GetService(t)
-
-	var insertResults int
+	var insertResults int64
 	insertEntry := NewEntry()
 	for i := 1; i <= 5; i++ {
 		insertEntry.Put("item_id", "1")
@@ -70,12 +68,13 @@ func TestInsert(t *testing.T) {
 		}
 		insertResults += insertResult
 	}
+	if insertResults != 5 {
+		t.Fatalf("TestInsert failed, the insertResults \"%v\" is inconsistent with \"5\"", insertResults)
+	}
 	t.Logf("insertResults: %d\n", insertResults)
 }
 
 func TestSelect(t *testing.T) {
-	service := GetService(t)
-
 	condition := NewCondition()
 	condition.EQ("item_id", "1")
 	condition.Limit(5)
@@ -83,6 +82,9 @@ func TestSelect(t *testing.T) {
 	resultSelect, err := service.Select(tableName, "fruit", condition)
 	if err != nil {
 		t.Fatalf("select table failed: %v", err)
+	}
+	if len(resultSelect) != 5 {
+		t.Fatalf("TestSelect failed, the length of resultSelect \"%v\" is not inconsistent with \"5\"", len(resultSelect))
 	}
 	t.Logf("resultSelect :\n")
 	t.Logf("%d", len(resultSelect))
@@ -94,8 +96,6 @@ func TestSelect(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	service := GetService(t)
-
 	updateEntry := NewEntry()
 	updateEntry.Put("item_id", "1")
 	updateEntry.Put("item_name", "orange")
@@ -105,27 +105,35 @@ func TestUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
+	if updateResult != 5 {
+		t.Fatalf("TestUpdate failed, the updateResult \"%v\" is not inconsistent with \"5\"", updateResult)
+	}
 	t.Logf("updateResult: %d", updateResult)
 }
 
 func TestRemove(t *testing.T) {
-	service := GetService(t)
-
 	removeCondition := NewCondition()
 	removeCondition.EQ("item_id", "1")
 	removeResult, err := service.Remove(tableName, "fruit", removeCondition)
 	if err != nil {
 		t.Fatalf("remove table failed: %v", err)
 	}
+	if removeResult != 5 {
+		t.Fatalf("TestRemove failed, the removeResult \"%v\" is not inconsistent with \"5\"", removeResult)
+	}
 	t.Logf("removeResult: %d\n", removeResult)
 }
 
 func TestDesc(t *testing.T) {
-	service := GetService(t)
-
 	keyField, valueField, err := service.Desc(tableName)
 	if err != nil {
 		t.Fatalf("query table info by tableName failed: %v", err)
+	}
+	if keyField != "name" {
+		t.Fatalf("TestDesc failed, the keyField \"%v\" is not inconsistent with \"name\"", keyField)
+	}
+	if valueField != "item_id,item_name" {
+		t.Fatalf("TestDesc failed, the valueField \"%v\" is not inconsistent with \"item_id,item_name\"", valueField)
 	}
 	t.Logf("keyFiled is：%s\n", keyField)
 	t.Logf("valueField is：%s\n", valueField)

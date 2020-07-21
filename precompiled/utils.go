@@ -7,14 +7,14 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/core/types"
-
 	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
 const (
 	// common precompiled contract error code
-	noAuthorized int64 = -50000
+	permissionDenied  int64 = -50000
+	tableAlreadyExist int64 = -50001
 
 	// non-precompiled contract error code, only used when logic errors occur
 	DefaultErrorCode int64 = -1
@@ -26,8 +26,10 @@ const (
 func GetCommonErrorCodeMessage(errorCode int64) string {
 	var message string
 	switch errorCode {
-	case noAuthorized:
+	case permissionDenied:
 		message = "permission denied"
+	case tableAlreadyExist:
+		message = "table already exist"
 	default:
 		message = ""
 	}

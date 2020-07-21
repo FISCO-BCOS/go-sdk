@@ -8,7 +8,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompiled"
-	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -25,6 +24,7 @@ const (
 	SysCNS         = "_sys_cns_"
 	SysTableAccess = "_sys_table_access_"
 	SysConfig      = "_sys_config_"
+	SysTable       = "_sys_tables_"
 )
 
 type Info struct {
@@ -104,17 +104,17 @@ func (service *Service) ListUserTableManager(tableName string) ([]Info, error) {
 
 // GrantDeployAndCreateManager grants the deploy and create option to an address
 func (service *Service) GrantDeployAndCreateManager(accountAddress common.Address) (int64, error) {
-	return service.grant(crud.SysTable, accountAddress)
+	return service.grant(SysTable, accountAddress)
 }
 
 // RevokeDeployAndCreateManager revokes a accountAddress's right of the deploy and create option
 func (service *Service) RevokeDeployAndCreateManager(accountAddress common.Address) (int64, error) {
-	return service.revoke(crud.SysTable, accountAddress)
+	return service.revoke(SysTable, accountAddress)
 }
 
 // ListDeployAndCreateManager returns the list of permission info
 func (service *Service) ListDeployAndCreateManager() ([]Info, error) {
-	return service.list(crud.SysTable)
+	return service.list(SysTable)
 }
 
 // GrantPermissionManager grants the permission

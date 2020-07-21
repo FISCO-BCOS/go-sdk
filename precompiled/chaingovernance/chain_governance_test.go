@@ -1,6 +1,7 @@
 package chaingovernance
 
 import (
+	"os"
 	"testing"
 
 	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
@@ -16,7 +17,11 @@ const (
 	standardOutput             = 1
 )
 
-func GetClient(t *testing.T) *client.Client {
+var (
+	service *Service
+)
+
+func getClient(t *testing.T) *client.Client {
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
 		PrivateKey: "b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62", NodeURL: "http://localhost:8545"}
 	c, err := client.Dial(config)
@@ -26,13 +31,21 @@ func GetClient(t *testing.T) *client.Client {
 	return c
 }
 
-func GetService(t *testing.T) *Service {
-	c := GetClient(t)
-	service, err := NewService(c)
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewService(c)
 	if err != nil {
 		t.Fatalf("init ChainGovernanceService failed: %+v", err)
 	}
-	return service
+	service = newService
+}
+
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	// only freezing the accounts that deploy contracts
+	deployHelloWorldContract(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }
 
 func deployHelloWorldContract(t *testing.T) {
@@ -52,7 +65,6 @@ func deployHelloWorldContract(t *testing.T) {
 }
 
 func TestGrantCommitteeMember(t *testing.T) {
-	service := GetService(t)
 	result, err := service.GrantCommitteeMember(common.HexToAddress(committeeMemberUserAccount))
 	if err != nil {
 		t.Fatalf("TestGrantCommitteeMember failed: %v", err)
@@ -64,7 +76,6 @@ func TestGrantCommitteeMember(t *testing.T) {
 }
 
 func TestRevokeCommitteeMember(t *testing.T) {
-	service := GetService(t)
 	result, err := service.RevokeCommitteeMember(common.HexToAddress(committeeMemberUserAccount))
 	if err != nil {
 		t.Fatalf("TestRevokeCommitteeMember failed: %v", err)
@@ -82,7 +93,6 @@ func TestRevokeCommitteeMember(t *testing.T) {
 }
 
 func TestListCommitteeMembers(t *testing.T) {
-	service := GetService(t)
 	result, err := service.ListCommitteeMembers()
 	if err != nil {
 		t.Fatalf("TestListCommitteeMembers failed: %v", err)
@@ -97,7 +107,6 @@ func TestListCommitteeMembers(t *testing.T) {
 }
 
 func TestQueryCommitteeMemberWeight(t *testing.T) {
-	service := GetService(t)
 	result, err := service.QueryCommitteeMemberWeight(common.HexToAddress(committeeMemberUserAccount))
 	if err != nil {
 		t.Fatalf("TestQueryCommitteeMemberWeight failed, err: %v", err)
@@ -109,7 +118,6 @@ func TestQueryCommitteeMemberWeight(t *testing.T) {
 }
 
 func TestUpdateCommitteeMemberWeight(t *testing.T) {
-	service := GetService(t)
 	var weight uint64 = 2
 	result, err := service.UpdateCommitteeMemberWeight(common.HexToAddress(committeeMemberUserAccount), weight)
 	if err != nil {
@@ -128,7 +136,6 @@ func TestUpdateCommitteeMemberWeight(t *testing.T) {
 }
 
 func TestUpdateUpdateThreshold(t *testing.T) {
-	service := GetService(t)
 	var threshold uint64 = 3
 	result, err := service.UpdateThreshold(threshold)
 	if err != nil {
@@ -147,7 +154,6 @@ func TestUpdateUpdateThreshold(t *testing.T) {
 }
 
 func TestQueryThreshold(t *testing.T) {
-	service := GetService(t)
 	result, err := service.QueryThreshold()
 	if err != nil {
 		t.Fatalf("TestQueryThreshold failed: %v", err)
@@ -159,7 +165,6 @@ func TestQueryThreshold(t *testing.T) {
 }
 
 func TestGrantOperator(t *testing.T) {
-	service := GetService(t)
 	result, err := service.GrantOperator(common.HexToAddress(operatorUserAccount))
 	if err != nil {
 		t.Fatalf("TestGrantOperator failed: %v", err)
@@ -171,7 +176,6 @@ func TestGrantOperator(t *testing.T) {
 }
 
 func TestRevokeOperator(t *testing.T) {
-	service := GetService(t)
 	result, err := service.RevokeOperator(common.HexToAddress(operatorUserAccount))
 	if err != nil {
 		t.Fatalf("TestRevokeOperator failed: %v", err)
@@ -192,7 +196,6 @@ func TestRevokeOperator(t *testing.T) {
 }
 
 func TestListOperators(t *testing.T) {
-	service := GetService(t)
 	result, err := service.ListOperators()
 	if err != nil {
 		t.Fatalf("TestListOperators failed: %v", err)
@@ -207,10 +210,6 @@ func TestListOperators(t *testing.T) {
 }
 
 func TestFreezeAccount(t *testing.T) {
-	// only freezing the accounts that deploy contracts
-	deployHelloWorldContract(t)
-
-	service := GetService(t)
 	result, err := service.FreezeAccount(common.HexToAddress(operatorUserAccount))
 	if err != nil {
 		t.Fatalf("TestFreezeAccount failed: %v", err)
@@ -222,7 +221,6 @@ func TestFreezeAccount(t *testing.T) {
 }
 
 func TestUnfreezeAccount(t *testing.T) {
-	service := GetService(t)
 	result, err := service.UnfreezeAccount(common.HexToAddress(operatorUserAccount))
 	if err != nil {
 		t.Fatalf("TestUnfreezeAccount failed: %v", err)
@@ -234,7 +232,6 @@ func TestUnfreezeAccount(t *testing.T) {
 }
 
 func TestGetAccountStatus(t *testing.T) {
-	service := GetService(t)
 	result, err := service.GetAccountStatus(common.HexToAddress(operatorUserAccount))
 	if err != nil {
 		t.Fatalf("TestGetAccountStatus failed: %v", err)
@@ -247,7 +244,6 @@ func TestGetAccountStatus(t *testing.T) {
 
 // TestRecoverRoleState restores role permissions, otherwise it will affect other test cases
 func TestRecoverRoleState(t *testing.T) {
-	service := GetService(t)
 	// revoke operator
 	result, err := service.RevokeOperator(common.HexToAddress(operatorUserAccount))
 	if err != nil {

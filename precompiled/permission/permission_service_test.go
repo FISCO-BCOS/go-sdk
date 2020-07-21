@@ -9,11 +9,14 @@ import (
 	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	tableName      = "t_test"
+	tableName      = "t_test1"
+	key            = "name"
+	valueFields    = "item_id, item_name"
 	permissionAdd  = "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 	standardOutput = 1
 )
@@ -88,9 +91,26 @@ func deployHelloWorldContract(t *testing.T) {
 	contractAddress = address.Hex()
 }
 
+func createTable(t *testing.T) {
+	c := getClient(t)
+	crudService, err := crud.NewCRUDService(c)
+	if err != nil {
+		t.Fatalf("createTable failed, init curdService error: %v", err)
+	}
+	result, err := crudService.CreateTable(tableName, key, valueFields)
+	if err != nil {
+		t.Fatalf("create table failed: %v", err)
+	}
+	if result != 0 {
+		t.Fatalf("createTable failed, the result \"%v\" is inconsistent with \"0\"", result)
+	}
+	t.Logf("result: %d\n", result)
+}
+
 func TestMain(m *testing.M) {
 	getService(&testing.T{})
 	deployHelloWorldContract(&testing.T{})
+	createTable(&testing.T{})
 
 	exitCode := m.Run()
 
