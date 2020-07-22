@@ -39,9 +39,9 @@ func getErrorMessage(errorCode int64) string {
 	var message string
 	switch errorCode {
 	case currentValueIsExpectedValue:
-		message = "current value is expectedValue"
+		message = "current value is expected value"
 	case accountFrozen:
-		message = "account frozen"
+		message = "account has been frozen"
 	case accountAlreadyAvailable:
 		message = "account already available"
 	case invalidAccountAddress:
@@ -63,7 +63,7 @@ func getErrorMessage(errorCode int64) string {
 	case committeeMemberNotExist:
 		message = "committee member not exist"
 	case committeeMemberExist:
-		message = "committee memberExist"
+		message = "committee member exist"
 	default:
 		message = ""
 	}
@@ -145,7 +145,7 @@ func (service *Service) QueryCommitteeMemberWeight(accountAddress common.Address
 		return 0, fmt.Errorf("ChainGovernanceService QueryCommitteeMemberWeight failed, err: %v", err)
 	}
 	if !boolean {
-		return 0, fmt.Errorf("ChainGovernanceService QueryCommitteeMemberWeight, Address %s does not exist", accountAddress)
+		return 0, fmt.Errorf("ChainGovernanceService QueryCommitteeMemberWeight, Address %s does not exist", common.Bytes2Hex(accountAddress[:]))
 	}
 	num, err := precompiled.BigIntToUint64(weight)
 	if err != nil {
