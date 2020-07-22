@@ -6,6 +6,7 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func getClient(t *testing.T) *client.Client {
@@ -138,12 +139,12 @@ func TestRegisterCns(t *testing.T) {
 }
 
 func TestGetAddressByContractNameAndVersion(t *testing.T) {
-	addr, err := service.GetAddressByContractNameAndVersion(name + ":" + version)
+	addr, err := service.GetAddressByContractNameAndVersion(name, version)
 	if err != nil {
 		t.Fatalf("GetAddressByContractNameAndVersion failed: %v", err)
 	}
-	if addr != "0x0626918C51A1F36c7ad4354BB1197460A533a2B9" {
-		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0x0626918C51A1F36c7ad4354BB1197460A533a2B9\"", addr)
+	if common.Bytes2Hex(addr[:]) != "0626918c51a1f36c7ad4354bb1197460a533a2b9" {
+		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0626918c51a1f36c7ad4354bb1197460a533a2b9\"", common.Bytes2Hex(addr[:]))
 	}
 	t.Logf("address: %s", addr)
 }

@@ -3,13 +3,11 @@ package cns
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-
-	"github.com/FISCO-BCOS/go-sdk/precompiled"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -98,46 +96,11 @@ func (service *Service) SelectByNameAndVersion(name string, version string) (str
 }
 
 // GetAddressByContractNameAndVersion returns the contract address.
-func (service *Service) GetAddressByContractNameAndVersion(contractNameAndVersion string) (string, error) {
-	if !isValidCnsName(contractNameAndVersion) {
-		return contractNameAndVersion, fmt.Errorf("contractNameAndVersion is not valid")
-	}
-	var address string
-	if strings.Contains(contractNameAndVersion, ":") {
-		splited := strings.Split(contractNameAndVersion, ":")
-		name := splited[0]
-		version := splited[1]
-		addressInfo, err := service.SelectByNameAndVersion(name, version)
-		if err != nil {
-			return "", err
-		}
-		if addressInfo == "[]\n" {
-			return "", fmt.Errorf("the contract version does not exist")
-		}
-		// json unmarshal
-		var infos []Info
-		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
-			return "", fmt.Errorf("unmarshal the addressInfo failed: %s", addressInfo)
-		}
-		cnsInfo := infos[len(infos)-1]
-		address = cnsInfo.Address
-	} else { // only contract name
-		addressInfo, err := service.SelectByName(contractNameAndVersion)
-		if err != nil {
-			return "", err
-		} else if addressInfo == "[]\n" {
-			return "", fmt.Errorf("the contract version does not exist")
-		}
-		// json unmarshal
-		var infos []Info
-		if err := json.Unmarshal([]byte(addressInfo), &infos); err != nil {
-			return "", fmt.Errorf("unmarshal the addressInfo failed  %v", err)
-		}
-		cnsInfo := infos[len(infos)-1]
-		address = cnsInfo.Address
-	}
-	if !common.IsHexAddress(address) {
-		return "", fmt.Errorf("unable to resolve address for name: %s", contractNameAndVersion)
+func (service *Service) GetAddressByContractNameAndVersion(contractName, version string) (common.Address, error) {
+	opts := &bind.CallOpts{From: service.cnsAuth.From}
+	address, err := service.cns.GetContractAddress(opts, contractName, version)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("service GetAddressByContractNameAndVersion failed: %+v", err)
 	}
 	return address, nil
 }
@@ -180,10 +143,6 @@ func (service *Service) QueryCnsByNameAndVersion(name string, version string) ([
 		return nil, fmt.Errorf("unmarshal the Info failed")
 	}
 	return infos, nil
-}
-
-func isValidCnsName(input string) bool {
-	return input != "" && (strings.Contains(input, ":") || !common.IsHexAddress(input))
 }
 
 func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
