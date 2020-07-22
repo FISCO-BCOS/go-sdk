@@ -11,7 +11,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/event"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -28,7 +28,7 @@ var (
 )
 
 // CnsABI is the input ABI used to generate the binding from.
-const CnsABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"selectByName\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"name\":\"selectByNameAndVersion\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"addr\",\"type\":\"string\"},{\"name\":\"abi\",\"type\":\"string\"}],\"name\":\"insert\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const CnsABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"selectByName\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"name\":\"selectByNameAndVersion\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"addr\",\"type\":\"string\"},{\"name\":\"abi\",\"type\":\"string\"}],\"name\":\"insert\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"name\":\"getContractAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // Cns is an auto generated Go binding around a Solidity contract.
 type Cns struct {
@@ -172,6 +172,32 @@ func (_Cns *CnsTransactorRaw) Transact(opts *bind.TransactOpts, method string, p
 	return _Cns.Contract.contract.Transact(opts, method, params...)
 }
 
+// GetContractAddress is a free data retrieval call binding the contract method 0xf85f8126.
+//
+// Solidity: function getContractAddress(string name, string version) constant returns(address)
+func (_Cns *CnsCaller) GetContractAddress(opts *bind.CallOpts, name string, version string) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _Cns.contract.Call(opts, out, "getContractAddress", name, version)
+	return *ret0, err
+}
+
+// GetContractAddress is a free data retrieval call binding the contract method 0xf85f8126.
+//
+// Solidity: function getContractAddress(string name, string version) constant returns(address)
+func (_Cns *CnsSession) GetContractAddress(name string, version string) (common.Address, error) {
+	return _Cns.Contract.GetContractAddress(&_Cns.CallOpts, name, version)
+}
+
+// GetContractAddress is a free data retrieval call binding the contract method 0xf85f8126.
+//
+// Solidity: function getContractAddress(string name, string version) constant returns(address)
+func (_Cns *CnsCallerSession) GetContractAddress(name string, version string) (common.Address, error) {
+	return _Cns.Contract.GetContractAddress(&_Cns.CallOpts, name, version)
+}
+
 // SelectByName is a free data retrieval call binding the contract method 0x819a3d62.
 //
 // Solidity: function selectByName(string name) constant returns(string)
@@ -226,21 +252,21 @@ func (_Cns *CnsCallerSession) SelectByNameAndVersion(name string, version string
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
-// Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
+// Solidity: function insert(string name, string version, string addr, string abi) returns(uint256)
 func (_Cns *CnsTransactor) Insert(opts *bind.TransactOpts, name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.contract.Transact(opts, "insert", name, version, addr, abi)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
-// Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
+// Solidity: function insert(string name, string version, string addr, string abi) returns(uint256)
 func (_Cns *CnsSession) Insert(name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.Contract.Insert(&_Cns.TransactOpts, name, version, addr, abi)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
-// Solidity: function insert(string name, string version, string addr, string abi) returns(int256)
+// Solidity: function insert(string name, string version, string addr, string abi) returns(uint256)
 func (_Cns *CnsTransactorSession) Insert(name string, version string, addr string, abi string) (*types.Transaction, error) {
 	return _Cns.Contract.Insert(&_Cns.TransactOpts, name, version, addr, abi)
 }
