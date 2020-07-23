@@ -91,13 +91,13 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) error {
+func (api *APIHandler) SendRawTransaction(ctx context.Context, receipt *types.Receipt, groupID int, tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
 		return err
 	}
-	return api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+	return api.CallContext(ctx, receipt, "sendRawTransaction", groupID, hexutil.Encode(data))
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
@@ -107,7 +107,7 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	err := api.CallContext(ctx, &r, "getTransactionReceipt", groupID, txHash.Hex())
 	if err == nil {
 		if r == nil {
-			return nil, errors.New("Transaction not found")
+			return nil, fmt.Errorf("TransactionReceipt failed, transaction not found, txHash is: %v, receipt is: %+v", txHash.Hex(), r)
 		}
 	}
 	return r, err

@@ -146,7 +146,7 @@ func TestGetAddressByContractNameAndVersion(t *testing.T) {
 	if common.Bytes2Hex(addr[:]) != "0626918c51a1f36c7ad4354bb1197460a533a2b9" {
 		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0626918c51a1f36c7ad4354bb1197460a533a2b9\"", common.Bytes2Hex(addr[:]))
 	}
-	t.Logf("address: %s", addr)
+	t.Logf("address: %s", common.Bytes2Hex(addr[:]))
 }
 
 func TestQueryCnsByNameAndVersion(t *testing.T) {

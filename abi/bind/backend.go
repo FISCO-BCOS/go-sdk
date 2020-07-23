@@ -70,7 +70,7 @@ type ContractTransactor interface {
 	// PendingCodeAt returns the code of the given account in the pending state.
 	PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error)
 	// SendTransaction injects the transaction into the pending pool for execution.
-	SendTransaction(ctx context.Context, tx *types.Transaction) error
+	SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error)
 	// GetBlockLimit returns the blocklimit for current blocknumber
 	GetBlockLimit(ctx context.Context) (*big.Int, error)
 	// GetGroupID returns the groupID of the client

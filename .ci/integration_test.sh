@@ -86,7 +86,7 @@ cat << EOF >> "${output}"
 		return
 	}
 	fmt.Printf("Get: %s\n", ret)
-	_, err = hello.Set("fisco")
+	_, _, err = hello.Set("fisco")
 	if err != nil {
 		fmt.Printf("hello.Set failed: %v", err)
 		return
@@ -115,7 +115,7 @@ cat << EOF >> "${output}"
 		return
 	}
 	fmt.Printf("Get: %d\n", ret)
-	_, err = counter.Set(big.NewInt(111))
+	_, _, err = counter.Set(big.NewInt(111))
 	if err != nil {
 		fmt.Printf("counter.Set failed: %v", err)
 		return
@@ -139,7 +139,7 @@ cat << EOF >> "${output}"
 		fmt.Printf("counter.Version() failed, expected 0 (got %d)", ret)
 		return
 	}
-	_, err = counter.Add()
+	_, _, err = counter.Add()
 	if err != nil {
 		fmt.Printf("counter.Add() failed: %v", err)
 		return

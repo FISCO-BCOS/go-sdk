@@ -60,11 +60,7 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 
 // SetValueByKey returns nil if there is no error occurred.
 func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, error) {
-	tx, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
-	if err != nil {
-		return types.PrecompiledError, fmt.Errorf("SystemConfigService setValueByKey failed: %+v", err)
-	}
-	receipt, err := s.client.WaitMined(tx)
+	_, receipt, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
 	if err != nil {
 		return types.PrecompiledError, fmt.Errorf("client.WaitMined failed, err: %v", err)
 	}
@@ -78,7 +74,7 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, er
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

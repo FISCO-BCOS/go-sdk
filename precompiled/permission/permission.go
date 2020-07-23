@@ -144,12 +144,12 @@ func (_Permission *PermissionRaw) Call(opts *bind.CallOpts, result interface{}, 
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Permission *PermissionRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_Permission *PermissionRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.PermissionTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Permission *PermissionRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_Permission *PermissionRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.PermissionTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -163,12 +163,12 @@ func (_Permission *PermissionCallerRaw) Call(opts *bind.CallOpts, result interfa
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Permission *PermissionTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Permission *PermissionTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -227,83 +227,83 @@ func (_Permission *PermissionCallerSession) QueryPermission(contractAddr common.
 // GrantWrite is a paid mutator transaction binding the contract method 0x96ec37c4.
 //
 // Solidity: function grantWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionTransactor) GrantWrite(opts *bind.TransactOpts, contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionTransactor) GrantWrite(opts *bind.TransactOpts, contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.contract.Transact(opts, "grantWrite", contractAddr, user)
 }
 
 // GrantWrite is a paid mutator transaction binding the contract method 0x96ec37c4.
 //
 // Solidity: function grantWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionSession) GrantWrite(contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionSession) GrantWrite(contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.GrantWrite(&_Permission.TransactOpts, contractAddr, user)
 }
 
 // GrantWrite is a paid mutator transaction binding the contract method 0x96ec37c4.
 //
 // Solidity: function grantWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionTransactorSession) GrantWrite(contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorSession) GrantWrite(contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.GrantWrite(&_Permission.TransactOpts, contractAddr, user)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactor) Insert(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionTransactor) Insert(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.contract.Transact(opts, "insert", table_name, addr)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionSession) Insert(table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionSession) Insert(table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.Insert(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0x06e63ff8.
 //
 // Solidity: function insert(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactorSession) Insert(table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorSession) Insert(table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.Insert(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactor) Remove(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionTransactor) Remove(opts *bind.TransactOpts, table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.contract.Transact(opts, "remove", table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionSession) Remove(table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionSession) Remove(table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.Remove(&_Permission.TransactOpts, table_name, addr)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x44590a7e.
 //
 // Solidity: function remove(string table_name, string addr) returns(int256)
-func (_Permission *PermissionTransactorSession) Remove(table_name string, addr string) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorSession) Remove(table_name string, addr string) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.Remove(&_Permission.TransactOpts, table_name, addr)
 }
 
 // RevokeWrite is a paid mutator transaction binding the contract method 0x99c26010.
 //
 // Solidity: function revokeWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionTransactor) RevokeWrite(opts *bind.TransactOpts, contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionTransactor) RevokeWrite(opts *bind.TransactOpts, contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.contract.Transact(opts, "revokeWrite", contractAddr, user)
 }
 
 // RevokeWrite is a paid mutator transaction binding the contract method 0x99c26010.
 //
 // Solidity: function revokeWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionSession) RevokeWrite(contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionSession) RevokeWrite(contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.RevokeWrite(&_Permission.TransactOpts, contractAddr, user)
 }
 
 // RevokeWrite is a paid mutator transaction binding the contract method 0x99c26010.
 //
 // Solidity: function revokeWrite(address contractAddr, address user) returns(int256)
-func (_Permission *PermissionTransactorSession) RevokeWrite(contractAddr common.Address, user common.Address) (*types.Transaction, error) {
+func (_Permission *PermissionTransactorSession) RevokeWrite(contractAddr common.Address, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _Permission.Contract.RevokeWrite(&_Permission.TransactOpts, contractAddr, user)
 }

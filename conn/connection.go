@@ -624,3 +624,8 @@ func (c *Connection) read(codec ServerCodec) {
 		c.readOp <- readOp{msgs, batch}
 	}
 }
+
+// IsHTTP returns whether is HTTP
+func (c *Connection) IsHTTP() bool {
+	return c.isHTTP
+}
