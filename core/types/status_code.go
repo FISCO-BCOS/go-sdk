@@ -8,33 +8,6 @@ import (
 )
 
 const (
-	Success = iota
-	Unknown
-	BadRLP
-	InvalidFormat
-	OutOfGasIntrinsic
-	InvalidSignature
-	InvalidNonce
-	NotEnoughCash
-	OutOfGasBase
-	BlockGasLimitReached
-	BadInstruction
-	BadJumpDestination
-	OutOfGas
-	OutOfStack
-	StackUnderflow
-	NonceCheckFail
-	BlockLimitCheckFail
-	FilterCheckFail
-	NoDeployPermission
-	NoCallPermission
-	NoTxPermission
-	PrecompiledError
-	RevertInstruction
-	InvalidZeroSignatureFormat
-	AddressAlreadyUsed
-	PermissionDenied
-	CallAddressError
 
 	// precompile
 	BCOS_RC1 string = "2.0.0-rc1"
@@ -79,71 +52,6 @@ const (
 
 	BCOS_VERSION string = ""
 )
-
-// GetStatusMessage returns the status message
-func GetStatusMessage(status int) string {
-	var message string
-	switch status {
-	case Success:
-		message = "success"
-	case Unknown:
-		message = "unknown"
-	case BadRLP:
-		message = "bad RLP"
-	case InvalidFormat:
-		message = "invalid format"
-	case OutOfGasIntrinsic:
-		message = "out of gas intrinsic"
-	case InvalidSignature:
-		message = "invalid signature"
-	case InvalidNonce:
-		message = "invalid nonce"
-	case NotEnoughCash:
-		message = "not enough cash"
-	case OutOfGasBase:
-		message = "out of gas base"
-	case BlockGasLimitReached:
-		message = "block gas limit reached"
-	case BadInstruction:
-		message = "bad instruction"
-	case BadJumpDestination:
-		message = "bad jump destination"
-	case OutOfGas:
-		message = "out of gas"
-	case OutOfStack:
-		message = "out of stack"
-	case StackUnderflow:
-		message = "stack underflow"
-	case NonceCheckFail:
-		message = "nonce check fail"
-	case BlockLimitCheckFail:
-		message = "block limit check fail"
-	case FilterCheckFail:
-		message = "filter check fail"
-	case NoDeployPermission:
-		message = "no deploy permission"
-	case NoCallPermission:
-		message = "no call permission"
-	case NoTxPermission:
-		message = "no tx permission"
-	case PrecompiledError:
-		message = "precompiled error"
-	case RevertInstruction:
-		message = "revert instruction"
-	case InvalidZeroSignatureFormat:
-		message = "invalid zero signature format"
-	case AddressAlreadyUsed:
-		message = "address already used"
-	case PermissionDenied:
-		message = "permission denied"
-	case CallAddressError:
-		message = "call address error"
-	default:
-		message = strconv.Itoa(status)
-	}
-
-	return message
-}
 
 // TransferToJson returns the message json according to the status code
 func TransferToJson(code int) (string, error) {

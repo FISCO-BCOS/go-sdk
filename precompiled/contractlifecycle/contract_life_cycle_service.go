@@ -132,9 +132,9 @@ func (service *Service) ListManager(contractAddress common.Address) (uint64, []c
 }
 
 func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
-	status := receipt.GetStatus()
-	if types.Success != status {
-		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
+	errorMessage := receipt.GetErrorMessage()
+	if errorMessage != "" {
+		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ContractLifeCycleABI, name, receipt)
 	if err != nil {
