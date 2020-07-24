@@ -53,13 +53,13 @@ type channelSession struct {
 	mu        sync.RWMutex
 	responses map[string]*channelResponse
 	// receiptsMutex sync.Mutex
-	receipts      map[string]*channelResponse
-	topicMu       sync.RWMutex
-	topicHandlers map[string]func(*topicData)
-	buf           []byte
-	nodeInfo      nodeInfo
-	closeOnce     sync.Once
-	closed        chan interface{}
+	receiptResponses map[string]*channelResponse
+	topicMu          sync.RWMutex
+	topicHandlers    map[string]func(*topicData)
+	buf              []byte
+	nodeInfo         nodeInfo
+	closeOnce        sync.Once
+	closed           chan interface{}
 }
 
 const (
@@ -300,7 +300,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			return nil, err
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
-			receipts: make(map[string]*channelResponse), topicHandlers: make(map[string]func(*topicData)),
+			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func(*topicData)),
 			nodeInfo: nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
@@ -409,15 +409,15 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	}
 
 	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
-	receipt := &channelResponse{Message: nil, Notify: make(chan interface{})}
+	receiptResponse := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	hc.mu.Lock()
 	hc.responses[rpcMsg.uuid] = response
-	hc.receipts[rpcMsg.uuid] = receipt
+	hc.receiptResponses[rpcMsg.uuid] = receiptResponse
 	hc.mu.Unlock()
 	defer func() {
 		hc.mu.Lock()
 		delete(hc.responses, rpcMsg.uuid)
-		delete(hc.receipts, rpcMsg.uuid)
+		delete(hc.receiptResponses, rpcMsg.uuid)
 		hc.mu.Unlock()
 	}()
 	msgBytes := rpcMsg.Encode()
@@ -443,23 +443,23 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	}
 	// fmt.Printf("sendTransaction reveived response,seq:%s message:%s\n ", rpcMsg.uuid, respmsg.Result)
 
-	<-receipt.Notify
+	<-receiptResponse.Notify
 
 	hc.mu.RLock()
-	receipt = hc.receipts[rpcMsg.uuid]
+	receiptResponse = hc.receiptResponses[rpcMsg.uuid]
 	hc.mu.RUnlock()
-	if receipt.Message.errorCode != 0 {
-		return nil, errors.New("response error:" + string(receipt.Message.errorCode))
+	if receiptResponse.Message.errorCode != 0 {
+		return nil, errors.New("response error:" + string(receiptResponse.Message.errorCode))
 	}
 	var transactionReceipt types.Receipt
-	if err := json.Unmarshal(receipt.Message.body, &transactionReceipt); err != nil {
+	if err := json.Unmarshal(receiptResponse.Message.body, &transactionReceipt); err != nil {
 		return nil, fmt.Errorf("parse receipt error %w", err)
 	}
 	if transactionReceipt.Status != "0x0" {
 		return nil, fmt.Errorf("receipt error code:%s", transactionReceipt.Status)
 	}
 	// fmt.Printf("sendTransaction reveived transactionReceipt:%+v\n ", transactionReceipt)
-	return receipt.Message.body, nil
+	return receiptResponse.Message.body, nil
 }
 
 func (hc *channelSession) doRequestNoResponse(msg *channelMessage) error {
@@ -621,7 +621,7 @@ func (hc *channelSession) processMessages() {
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
 				hc.mu.Lock()
-				if receipt, ok := hc.receipts[msg.uuid]; ok {
+				if receipt, ok := hc.receiptResponses[msg.uuid]; ok {
 					receipt.Message = msg
 					receipt.Notify <- struct{}{}
 				} else {

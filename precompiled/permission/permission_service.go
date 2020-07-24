@@ -179,20 +179,20 @@ func (service *Service) ListSysConfigManager() ([]Info, error) {
 
 // GrantWrite grants the permission of writing contract
 func (service *Service) GrantWrite(contractAddress common.Address, accountAddress common.Address) (int64, error) {
-	tx, err := service.permission.GrantWrite(service.permissionAuth, contractAddress, accountAddress)
+	_, receipt, err := service.permission.GrantWrite(service.permissionAuth, contractAddress, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("GrantWrite grant failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "grantWrite")
+	return parseReturnValue(receipt, "grantWrite")
 }
 
 // RevokeWrite revokes the permission of writing contract
 func (service *Service) RevokeWrite(contractAddress common.Address, accountAddress common.Address) (int64, error) {
-	tx, err := service.permission.RevokeWrite(service.permissionAuth, contractAddress, accountAddress)
+	_, receipt, err := service.permission.RevokeWrite(service.permissionAuth, contractAddress, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("RevokeWrite revoke failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "revokeWrite")
+	return parseReturnValue(receipt, "revokeWrite")
 }
 
 // QueryPermission queries the accounts that have the permission of writing contract
@@ -211,19 +211,19 @@ func (service *Service) QueryPermission(contractAddress common.Address) ([]Info,
 }
 
 func (service *Service) grant(tableName string, accountAddress common.Address) (int64, error) {
-	tx, err := service.permission.Insert(service.permissionAuth, tableName, accountAddress.Hex())
+	_, receipt, err := service.permission.Insert(service.permissionAuth, tableName, accountAddress.Hex())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("PermissionService grant failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "insert")
+	return parseReturnValue(receipt, "insert")
 }
 
 func (service *Service) revoke(tableName string, accountAddress common.Address) (int64, error) {
-	tx, err := service.permission.Remove(service.permissionAuth, tableName, accountAddress.Hex())
+	_, receipt, err := service.permission.Remove(service.permissionAuth, tableName, accountAddress.Hex())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("PermissionService revoke failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "remove")
+	return parseReturnValue(receipt, "remove")
 }
 
 func (service *Service) list(tableName string) ([]Info, error) {
@@ -240,23 +240,18 @@ func (service *Service) list(tableName string) ([]Info, error) {
 	return results, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("PermissionService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(PermissionABI, name, receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

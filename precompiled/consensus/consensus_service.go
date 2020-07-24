@@ -92,11 +92,11 @@ func (service *Service) AddObserver(nodeID string) (int64, error) {
 			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the observer list")
 		}
 	}
-	tx, err := service.consensus.AddObserver(service.consensusAuth, nodeID)
+	_, receipt, err := service.consensus.AddObserver(service.consensusAuth, nodeID)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addObserver failed: %+v", err)
 	}
-	return handleReceipt(service.client, tx, "addObserver")
+	return parseReturnValue(receipt, "addObserver")
 }
 
 // AddSealer add a new sealer node according to the node ID
@@ -126,12 +126,12 @@ func (service *Service) AddSealer(nodeID string) (int64, error) {
 		}
 	}
 
-	tx, err := service.consensus.AddSealer(service.consensusAuth, nodeID)
+	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
 	}
-
-	return handleReceipt(service.client, tx, "addSealer")
+	_ = tx
+	return parseReturnValue(receipt, "addSealer")
 }
 
 // RemoveNode remove a sealer node according to the node ID
@@ -158,14 +158,14 @@ func (service *Service) RemoveNode(nodeID string) (int64, error) {
 		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not a group peer")
 	}
 
-	tx, err := service.consensus.Remove(service.consensusAuth, nodeID)
+	_, receipt, err := service.consensus.Remove(service.consensusAuth, nodeID)
 	// maybe will occur something wrong
 	// when request the receipt from the SDK since the connected node of SDK is removed
 	//TODO: how to handle the problem that can't get the tx receipt when remove the connected node of SDK
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService Remove failed: %+v", err)
 	}
-	return handleReceipt(service.client, tx, "remove")
+	return parseReturnValue(receipt, "remove")
 }
 
 // isValidNodeID returns true if the nodeID exits in NodeIDList.
@@ -188,23 +188,18 @@ func (service *Service) isValidNodeID(nodeID string) (bool, error) {
 	return flag, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ConsensusABI, name, receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

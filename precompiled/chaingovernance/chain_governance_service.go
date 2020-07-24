@@ -106,20 +106,20 @@ func NewService(client *client.Client) (*Service, error) {
 
 // GrantCommitteeMember grants committee member
 func (service *Service) GrantCommitteeMember(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.GrantCommitteeMember(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.GrantCommitteeMember(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService GrantCommitteeMember failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "grantCommitteeMember")
+	return parseReturnValue(receipt, "grantCommitteeMember")
 }
 
 // RevokeCommitteeMember revokes committee member
 func (service *Service) RevokeCommitteeMember(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.RevokeCommitteeMember(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.RevokeCommitteeMember(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService RevokeCommitteeMember failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "revokeCommitteeMember")
+	return parseReturnValue(receipt, "revokeCommitteeMember")
 }
 
 // ListCommitteeMembers lists committee members
@@ -164,11 +164,11 @@ func (service *Service) UpdateCommitteeMemberWeight(accountAddress common.Addres
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService UpdateCommitteeMemberWeight failed, err: %v", err)
 	}
 	bigNum := big.NewInt(weightInt64)
-	tx, err := service.chainGovernance.UpdateCommitteeMemberWeight(service.chainGovernanceAuth, accountAddress, bigNum)
+	_, receipt, err := service.chainGovernance.UpdateCommitteeMemberWeight(service.chainGovernanceAuth, accountAddress, bigNum)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService UpdateCommitteeMemberWeight failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "updateCommitteeMemberWeight")
+	return parseReturnValue(receipt, "updateCommitteeMemberWeight")
 }
 
 // UpdateThreshold updates the threshold that the committee vote needs to reach
@@ -181,11 +181,11 @@ func (service *Service) UpdateThreshold(threshold uint64) (int64, error) {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService UpdateThreshold failed, err: %v", err)
 	}
 	bigNum := big.NewInt(thresholdInt64)
-	tx, err := service.chainGovernance.UpdateThreshold(service.chainGovernanceAuth, bigNum)
+	_, receipt, err := service.chainGovernance.UpdateThreshold(service.chainGovernanceAuth, bigNum)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService UpdateThreshold failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "updateThreshold")
+	return parseReturnValue(receipt, "updateThreshold")
 }
 
 // QueryThreshold queries the threshold of committee member
@@ -204,20 +204,20 @@ func (service *Service) QueryThreshold() (uint64, error) {
 
 // GrantOperator grants operator
 func (service *Service) GrantOperator(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.GrantOperator(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.GrantOperator(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService GrantOperator failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "grantOperator")
+	return parseReturnValue(receipt, "grantOperator")
 }
 
 // RevokeOperator revokes operator
 func (service *Service) RevokeOperator(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.RevokeOperator(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.RevokeOperator(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService RevokeOperator failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "revokeOperator")
+	return parseReturnValue(receipt, "revokeOperator")
 }
 
 // ListOperators lists operators
@@ -237,20 +237,20 @@ func (service *Service) ListOperators() ([]AccountInfo, error) {
 
 // FreezeAccount freezes user account
 func (service *Service) FreezeAccount(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.FreezeAccount(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.FreezeAccount(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService FreezeAccount failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "freezeAccount")
+	return parseReturnValue(receipt, "freezeAccount")
 }
 
 // UnfreezeAccount unfreezes operator
 func (service *Service) UnfreezeAccount(accountAddress common.Address) (int64, error) {
-	tx, err := service.chainGovernance.UnfreezeAccount(service.chainGovernanceAuth, accountAddress)
+	_, receipt, err := service.chainGovernance.UnfreezeAccount(service.chainGovernanceAuth, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService UnfreezeAccount failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "unfreezeAccount")
+	return parseReturnValue(receipt, "unfreezeAccount")
 }
 
 // GetAccountStatus gets the status of account
@@ -263,23 +263,18 @@ func (service *Service) GetAccountStatus(accountAddress common.Address) (string,
 	return result, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("ChainGovernanceService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ChainGovernanceABI, name, receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

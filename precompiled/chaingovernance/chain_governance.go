@@ -144,12 +144,12 @@ func (_ChainGovernance *ChainGovernanceRaw) Call(opts *bind.CallOpts, result int
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ChainGovernance *ChainGovernanceRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.ChainGovernanceTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ChainGovernance *ChainGovernanceRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.ChainGovernanceTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -163,12 +163,12 @@ func (_ChainGovernance *ChainGovernanceCallerRaw) Call(opts *bind.CallOpts, resu
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ChainGovernance *ChainGovernanceTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ChainGovernance *ChainGovernanceTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -309,167 +309,167 @@ func (_ChainGovernance *ChainGovernanceCallerSession) QueryThreshold() (*big.Int
 // FreezeAccount is a paid mutator transaction binding the contract method 0xf26c159f.
 //
 // Solidity: function freezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) FreezeAccount(opts *bind.TransactOpts, account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) FreezeAccount(opts *bind.TransactOpts, account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "freezeAccount", account)
 }
 
 // FreezeAccount is a paid mutator transaction binding the contract method 0xf26c159f.
 //
 // Solidity: function freezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) FreezeAccount(account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) FreezeAccount(account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.FreezeAccount(&_ChainGovernance.TransactOpts, account)
 }
 
 // FreezeAccount is a paid mutator transaction binding the contract method 0xf26c159f.
 //
 // Solidity: function freezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) FreezeAccount(account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) FreezeAccount(account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.FreezeAccount(&_ChainGovernance.TransactOpts, account)
 }
 
 // GrantCommitteeMember is a paid mutator transaction binding the contract method 0x6f8f521f.
 //
 // Solidity: function grantCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) GrantCommitteeMember(opts *bind.TransactOpts, user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) GrantCommitteeMember(opts *bind.TransactOpts, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "grantCommitteeMember", user)
 }
 
 // GrantCommitteeMember is a paid mutator transaction binding the contract method 0x6f8f521f.
 //
 // Solidity: function grantCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) GrantCommitteeMember(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) GrantCommitteeMember(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.GrantCommitteeMember(&_ChainGovernance.TransactOpts, user)
 }
 
 // GrantCommitteeMember is a paid mutator transaction binding the contract method 0x6f8f521f.
 //
 // Solidity: function grantCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) GrantCommitteeMember(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) GrantCommitteeMember(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.GrantCommitteeMember(&_ChainGovernance.TransactOpts, user)
 }
 
 // GrantOperator is a paid mutator transaction binding the contract method 0xe348da13.
 //
 // Solidity: function grantOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) GrantOperator(opts *bind.TransactOpts, user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) GrantOperator(opts *bind.TransactOpts, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "grantOperator", user)
 }
 
 // GrantOperator is a paid mutator transaction binding the contract method 0xe348da13.
 //
 // Solidity: function grantOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) GrantOperator(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) GrantOperator(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.GrantOperator(&_ChainGovernance.TransactOpts, user)
 }
 
 // GrantOperator is a paid mutator transaction binding the contract method 0xe348da13.
 //
 // Solidity: function grantOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) GrantOperator(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) GrantOperator(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.GrantOperator(&_ChainGovernance.TransactOpts, user)
 }
 
 // RevokeCommitteeMember is a paid mutator transaction binding the contract method 0xcafb4d1b.
 //
 // Solidity: function revokeCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) RevokeCommitteeMember(opts *bind.TransactOpts, user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) RevokeCommitteeMember(opts *bind.TransactOpts, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "revokeCommitteeMember", user)
 }
 
 // RevokeCommitteeMember is a paid mutator transaction binding the contract method 0xcafb4d1b.
 //
 // Solidity: function revokeCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) RevokeCommitteeMember(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) RevokeCommitteeMember(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.RevokeCommitteeMember(&_ChainGovernance.TransactOpts, user)
 }
 
 // RevokeCommitteeMember is a paid mutator transaction binding the contract method 0xcafb4d1b.
 //
 // Solidity: function revokeCommitteeMember(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) RevokeCommitteeMember(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) RevokeCommitteeMember(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.RevokeCommitteeMember(&_ChainGovernance.TransactOpts, user)
 }
 
 // RevokeOperator is a paid mutator transaction binding the contract method 0xfad8b32a.
 //
 // Solidity: function revokeOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) RevokeOperator(opts *bind.TransactOpts, user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) RevokeOperator(opts *bind.TransactOpts, user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "revokeOperator", user)
 }
 
 // RevokeOperator is a paid mutator transaction binding the contract method 0xfad8b32a.
 //
 // Solidity: function revokeOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) RevokeOperator(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) RevokeOperator(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.RevokeOperator(&_ChainGovernance.TransactOpts, user)
 }
 
 // RevokeOperator is a paid mutator transaction binding the contract method 0xfad8b32a.
 //
 // Solidity: function revokeOperator(address user) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) RevokeOperator(user common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) RevokeOperator(user common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.RevokeOperator(&_ChainGovernance.TransactOpts, user)
 }
 
 // UnfreezeAccount is a paid mutator transaction binding the contract method 0x788649ea.
 //
 // Solidity: function unfreezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) UnfreezeAccount(opts *bind.TransactOpts, account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) UnfreezeAccount(opts *bind.TransactOpts, account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "unfreezeAccount", account)
 }
 
 // UnfreezeAccount is a paid mutator transaction binding the contract method 0x788649ea.
 //
 // Solidity: function unfreezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) UnfreezeAccount(account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) UnfreezeAccount(account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UnfreezeAccount(&_ChainGovernance.TransactOpts, account)
 }
 
 // UnfreezeAccount is a paid mutator transaction binding the contract method 0x788649ea.
 //
 // Solidity: function unfreezeAccount(address account) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) UnfreezeAccount(account common.Address) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) UnfreezeAccount(account common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UnfreezeAccount(&_ChainGovernance.TransactOpts, account)
 }
 
 // UpdateCommitteeMemberWeight is a paid mutator transaction binding the contract method 0x246c3376.
 //
 // Solidity: function updateCommitteeMemberWeight(address user, int256 weight) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) UpdateCommitteeMemberWeight(opts *bind.TransactOpts, user common.Address, weight *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) UpdateCommitteeMemberWeight(opts *bind.TransactOpts, user common.Address, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "updateCommitteeMemberWeight", user, weight)
 }
 
 // UpdateCommitteeMemberWeight is a paid mutator transaction binding the contract method 0x246c3376.
 //
 // Solidity: function updateCommitteeMemberWeight(address user, int256 weight) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) UpdateCommitteeMemberWeight(user common.Address, weight *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) UpdateCommitteeMemberWeight(user common.Address, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UpdateCommitteeMemberWeight(&_ChainGovernance.TransactOpts, user, weight)
 }
 
 // UpdateCommitteeMemberWeight is a paid mutator transaction binding the contract method 0x246c3376.
 //
 // Solidity: function updateCommitteeMemberWeight(address user, int256 weight) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) UpdateCommitteeMemberWeight(user common.Address, weight *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) UpdateCommitteeMemberWeight(user common.Address, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UpdateCommitteeMemberWeight(&_ChainGovernance.TransactOpts, user, weight)
 }
 
 // UpdateThreshold is a paid mutator transaction binding the contract method 0x97b00861.
 //
 // Solidity: function updateThreshold(int256 threshold) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactor) UpdateThreshold(opts *bind.TransactOpts, threshold *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactor) UpdateThreshold(opts *bind.TransactOpts, threshold *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.contract.Transact(opts, "updateThreshold", threshold)
 }
 
 // UpdateThreshold is a paid mutator transaction binding the contract method 0x97b00861.
 //
 // Solidity: function updateThreshold(int256 threshold) returns(int256)
-func (_ChainGovernance *ChainGovernanceSession) UpdateThreshold(threshold *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceSession) UpdateThreshold(threshold *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UpdateThreshold(&_ChainGovernance.TransactOpts, threshold)
 }
 
 // UpdateThreshold is a paid mutator transaction binding the contract method 0x97b00861.
 //
 // Solidity: function updateThreshold(int256 threshold) returns(int256)
-func (_ChainGovernance *ChainGovernanceTransactorSession) UpdateThreshold(threshold *big.Int) (*types.Transaction, error) {
+func (_ChainGovernance *ChainGovernanceTransactorSession) UpdateThreshold(threshold *big.Int) (*types.Transaction, *types.Receipt, error) {
 	return _ChainGovernance.Contract.UpdateThreshold(&_ChainGovernance.TransactOpts, threshold)
 }

@@ -78,29 +78,29 @@ func NewService(client *client.Client) (*Service, error) {
 
 // Freeze freezes contract address
 func (service *Service) Freeze(contractAddress common.Address) (int64, error) {
-	tx, err := service.contractLifeCycle.Freeze(service.contractLifeCycleAuth, contractAddress)
+	_, receipt, err := service.contractLifeCycle.Freeze(service.contractLifeCycleAuth, contractAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ContractLifeCycleService Freeze failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "freeze")
+	return parseReturnValue(receipt, "freeze")
 }
 
 // Unfreeze unfreezes contract address
 func (service *Service) Unfreeze(contractAddress common.Address) (int64, error) {
-	tx, err := service.contractLifeCycle.Unfreeze(service.contractLifeCycleAuth, contractAddress)
+	_, receipt, err := service.contractLifeCycle.Unfreeze(service.contractLifeCycleAuth, contractAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ContractLifeCycleService Unfreeze failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "unfreeze")
+	return parseReturnValue(receipt, "unfreeze")
 }
 
 // GrantManager grants manager
 func (service *Service) GrantManager(contractAddress, accountAddress common.Address) (int64, error) {
-	tx, err := service.contractLifeCycle.GrantManager(service.contractLifeCycleAuth, contractAddress, accountAddress)
+	_, receipt, err := service.contractLifeCycle.GrantManager(service.contractLifeCycleAuth, contractAddress, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ContractLifeCycleService GrantManager failed, err: %v", err)
 	}
-	return handleReceipt(service.client, tx, "grantManager")
+	return parseReturnValue(receipt, "grantManager")
 }
 
 // GetStatus gets the status of contract account
@@ -131,23 +131,18 @@ func (service *Service) ListManager(contractAddress common.Address) (uint64, []c
 	return num, managerAddressList, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("ContractLifeCycleService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(ContractLifeCycleABI, name, receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

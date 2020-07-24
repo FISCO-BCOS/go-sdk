@@ -144,12 +144,12 @@ func (_ContractLifeCycle *ContractLifeCycleRaw) Call(opts *bind.CallOpts, result
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ContractLifeCycle *ContractLifeCycleRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.ContractLifeCycleTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ContractLifeCycle *ContractLifeCycleRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.ContractLifeCycleTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -163,12 +163,12 @@ func (_ContractLifeCycle *ContractLifeCycleCallerRaw) Call(opts *bind.CallOpts, 
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ContractLifeCycle *ContractLifeCycleTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ContractLifeCycle *ContractLifeCycleTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -235,62 +235,62 @@ func (_ContractLifeCycle *ContractLifeCycleCallerSession) ListManager(addr commo
 // Freeze is a paid mutator transaction binding the contract method 0x8d1fdf2f.
 //
 // Solidity: function freeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactor) Freeze(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactor) Freeze(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.contract.Transact(opts, "freeze", addr)
 }
 
 // Freeze is a paid mutator transaction binding the contract method 0x8d1fdf2f.
 //
 // Solidity: function freeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleSession) Freeze(addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleSession) Freeze(addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.Freeze(&_ContractLifeCycle.TransactOpts, addr)
 }
 
 // Freeze is a paid mutator transaction binding the contract method 0x8d1fdf2f.
 //
 // Solidity: function freeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactorSession) Freeze(addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactorSession) Freeze(addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.Freeze(&_ContractLifeCycle.TransactOpts, addr)
 }
 
 // GrantManager is a paid mutator transaction binding the contract method 0xa721fb43.
 //
 // Solidity: function grantManager(address contractAddr, address userAddr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactor) GrantManager(opts *bind.TransactOpts, contractAddr common.Address, userAddr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactor) GrantManager(opts *bind.TransactOpts, contractAddr common.Address, userAddr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.contract.Transact(opts, "grantManager", contractAddr, userAddr)
 }
 
 // GrantManager is a paid mutator transaction binding the contract method 0xa721fb43.
 //
 // Solidity: function grantManager(address contractAddr, address userAddr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleSession) GrantManager(contractAddr common.Address, userAddr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleSession) GrantManager(contractAddr common.Address, userAddr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.GrantManager(&_ContractLifeCycle.TransactOpts, contractAddr, userAddr)
 }
 
 // GrantManager is a paid mutator transaction binding the contract method 0xa721fb43.
 //
 // Solidity: function grantManager(address contractAddr, address userAddr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactorSession) GrantManager(contractAddr common.Address, userAddr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactorSession) GrantManager(contractAddr common.Address, userAddr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.GrantManager(&_ContractLifeCycle.TransactOpts, contractAddr, userAddr)
 }
 
 // Unfreeze is a paid mutator transaction binding the contract method 0x45c8b1a6.
 //
 // Solidity: function unfreeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactor) Unfreeze(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactor) Unfreeze(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.contract.Transact(opts, "unfreeze", addr)
 }
 
 // Unfreeze is a paid mutator transaction binding the contract method 0x45c8b1a6.
 //
 // Solidity: function unfreeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleSession) Unfreeze(addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleSession) Unfreeze(addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.Unfreeze(&_ContractLifeCycle.TransactOpts, addr)
 }
 
 // Unfreeze is a paid mutator transaction binding the contract method 0x45c8b1a6.
 //
 // Solidity: function unfreeze(address addr) returns(int256)
-func (_ContractLifeCycle *ContractLifeCycleTransactorSession) Unfreeze(addr common.Address) (*types.Transaction, error) {
+func (_ContractLifeCycle *ContractLifeCycleTransactorSession) Unfreeze(addr common.Address) (*types.Transaction, *types.Receipt, error) {
 	return _ContractLifeCycle.Contract.Unfreeze(&_ContractLifeCycle.TransactOpts, addr)
 }

@@ -80,11 +80,11 @@ func NewCRUDService(client *client.Client) (*Service, error) {
 }
 
 func (service *Service) CreateTable(tableName string, key string, valueFields string) (int64, error) {
-	tx, err := service.tableFactory.CreateTable(service.crudAuth, tableName, key, valueFields)
+	_, receipt, err := service.tableFactory.CreateTable(service.crudAuth, tableName, key, valueFields)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService CreateTable failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "createTable")
+	return parseReturnValue(receipt, "createTable")
 }
 
 // Insert entry
@@ -97,11 +97,11 @@ func (service *Service) Insert(tableName string, key string, entry *Entry) (int6
 	if err != nil {
 		return -1, fmt.Errorf("change entry to json struct failed: %v", err)
 	}
-	tx, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
+	_, receipt, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "insert")
+	return parseReturnValue(receipt, "insert")
 }
 
 // Update entry
@@ -119,11 +119,11 @@ func (service *Service) Update(tableName string, key string, entry *Entry, condi
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
+	_, receipt, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "update")
+	return parseReturnValue(receipt, "update")
 }
 
 func (service *Service) Remove(tableName string, key string, condition *Condition) (int64, error) {
@@ -135,11 +135,11 @@ func (service *Service) Remove(tableName string, key string, condition *Conditio
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
+	_, receipt, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
 	}
-	return handleReceipt(service.client, tx, "remove")
+	return parseReturnValue(receipt, "remove")
 }
 
 // Select entry
@@ -174,28 +174,24 @@ func (service *Service) Desc(userTableName string) (string, string, error) {
 	return keyField, valueField, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("CrudService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	var bigNum *big.Int
+	var err error
 	if name == "createTable" {
 		bigNum, err = precompiled.ParseBigIntFromOutput(TableFactoryABI, name, receipt)
 	} else {
 		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, name, receipt)
 	}
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

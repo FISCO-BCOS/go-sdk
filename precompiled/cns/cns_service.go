@@ -110,11 +110,11 @@ func (service *Service) RegisterCns(name string, version string, addr string, ab
 	if len(version) > maxVersionLength {
 		return precompiled.DefaultErrorCode, fmt.Errorf("version string length exceeds the maximum limit")
 	}
-	tx, err := service.cns.Insert(service.cnsAuth, name, version, addr, abi)
+	_, receipt, err := service.cns.Insert(service.cnsAuth, name, version, addr, abi)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("service RegisterCns failed: %+v", err)
 	}
-	return handleReceipt(service.client, tx, "insert")
+	return parseReturnValue(receipt, "insert")
 }
 
 // QueryCnsByName returns the CNS info according to the CNS name
@@ -145,23 +145,18 @@ func (service *Service) QueryCnsByNameAndVersion(name string, version string) ([
 	return infos, nil
 }
 
-func handleReceipt(c *client.Client, tx *types.Transaction, name string) (int64, error) {
-	// wait for the mining
-	receipt, err := c.WaitMined(tx)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("CnsService wait for the transaction receipt failed, err: %v", err)
-	}
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	status := receipt.GetStatus()
 	if types.Success != status {
 		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(CnsABI, name, receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("handleReceipt failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

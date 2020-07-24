@@ -220,8 +220,21 @@ func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) 
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
-	return c.apiHandler.SendRawTransaction(ctx, c.groupID, tx)
+func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+	var receipt = new(types.Receipt)
+	if c.apiHandler.IsHTTP() {
+		err := c.apiHandler.SendRawTransaction(ctx, nil, c.groupID, tx)
+		if err != nil {
+			return nil, fmt.Errorf("SendTransaction failed, c.apiHandler.SendRawTransaction err: %v", err)
+		}
+		receipt, err = c.WaitMined(tx)
+		if err != nil {
+			return nil, fmt.Errorf("SendTransaction failed, c.WaitMined err: %v", err)
+		}
+		return receipt, nil
+	} else {
+		return receipt, c.apiHandler.SendRawTransaction(ctx, receipt, c.groupID, tx)
+	}
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
