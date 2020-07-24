@@ -82,23 +82,39 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if !ok {
 		return nil, errors.New("parse response json to map error")
 	}
+
+	// get supported FISCO BCOS version
 	var compatibleVersionStr string
 	compatibleVersionStr, ok = m["Supported Version"].(string)
 	if !ok {
-		return nil, errors.New("Json respond does not contains the key : Supported Version")
+		return nil, errors.New("JSON response does not contains the key : Supported Version")
 	}
 	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
 	if err != nil {
 		return nil, fmt.Errorf("DialContext failed, err: %v", err)
 	}
+
+	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
+	var fiscoBcosVersion string
+	fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
+	if !ok {
+		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
+	}
+	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
+	if nodeIsSupportedSM != config.IsSMCrypto {
+		return nil, fmt.Errorf("the SDK set SMCrypt=%v, but the node is mismatched", config.IsSMCrypto)
+	}
+
+	// get node chain ID
 	var nodeChainID int64
 	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
 	if err != nil {
-		return nil, errors.New("Json respond does not contains the key : Chain Id")
+		return nil, errors.New("JSON response does not contains the key : Chain Id")
 	}
 	if config.ChainID != nodeChainID {
 		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	}
+
 	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
