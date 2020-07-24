@@ -30,7 +30,6 @@ import (
 	"time"
 
 	tls "github.com/FISCO-BCOS/crypto/tls"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/google/uuid"
 )
 
@@ -319,7 +318,7 @@ func (c *Connection) sendRPCRequest(ctx context.Context, op *requestOp, msg inte
 	if rpcMsg.Method == "sendRawTransaction" {
 		respBody, err := hc.sendTransaction(ctx, msg)
 		if err != nil {
-			return fmt.Errorf("sendTransaction %v", err)
+			return fmt.Errorf("sendTransaction failed, %v", err)
 		}
 		rpcResp := new(jsonrpcMessage)
 		rpcResp.Result = respBody
@@ -451,14 +450,6 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	if receiptResponse.Message.errorCode != 0 {
 		return nil, errors.New("response error:" + string(receiptResponse.Message.errorCode))
 	}
-	var transactionReceipt types.Receipt
-	if err := json.Unmarshal(receiptResponse.Message.body, &transactionReceipt); err != nil {
-		return nil, fmt.Errorf("parse receipt error %w", err)
-	}
-	if transactionReceipt.Status != "0x0" {
-		return nil, fmt.Errorf("receipt error code:%s", transactionReceipt.Status)
-	}
-	// fmt.Printf("sendTransaction reveived transactionReceipt:%+v\n ", transactionReceipt)
 	return receiptResponse.Message.body, nil
 }
 

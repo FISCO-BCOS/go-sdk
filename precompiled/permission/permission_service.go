@@ -241,9 +241,9 @@ func (service *Service) list(tableName string) ([]Info, error) {
 }
 
 func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
-	status := receipt.GetStatus()
-	if types.Success != status {
-		return int64(status), fmt.Errorf(types.GetStatusMessage(status))
+	errorMessage := receipt.GetErrorMessage()
+	if errorMessage != "" {
+		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
 	bigNum, err := precompiled.ParseBigIntFromOutput(PermissionABI, name, receipt)
 	if err != nil {
