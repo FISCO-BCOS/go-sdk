@@ -20,12 +20,15 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
+	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -91,13 +94,57 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, receipt *types.Receipt, groupID int, tx *types.Transaction) error {
+func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) (*types.Receipt, error) {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
-		return err
+		return nil, err
 	}
-	return api.CallContext(ctx, receipt, "sendRawTransaction", groupID, hexutil.Encode(data))
+	var receipt *types.Receipt
+	if api.IsHTTP() {
+		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil, err
+		}
+
+		// timer to wait transaction on-chain
+		queryTicker := time.NewTicker(time.Second)
+		defer queryTicker.Stop()
+		logger := log.New("hash", tx.Hash())
+		for {
+			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+			if receipt != nil {
+				return receipt, nil
+			}
+			if err != nil {
+				logger.Trace("Receipt retrieval failed", "err", err)
+			} else {
+				logger.Trace("Transaction not yet mined")
+			}
+			// Wait for the next round.
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-queryTicker.C:
+			}
+		}
+	} else {
+		var anonymityReceipt = &struct {
+			types.Receipt
+			Status string `json:"status"`
+		}{}
+		err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil, err
+		}
+		status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+		if err != nil {
+			return nil, fmt.Errorf("SendRawTransaction failed, strconv.ParseInt err: " + fmt.Sprint(err))
+		}
+		receipt = &anonymityReceipt.Receipt
+		receipt.Status = int(status)
+		return receipt, nil
+	}
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
@@ -105,10 +152,8 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, receipt *types.Re
 func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHash common.Hash) (*types.Receipt, error) {
 	var r *types.Receipt
 	err := api.CallContext(ctx, &r, "getTransactionReceipt", groupID, txHash.Hex())
-	if err == nil {
-		if r == nil {
-			return nil, fmt.Errorf("TransactionReceipt failed, transaction not found, txHash is: %v, receipt is: %+v", txHash.Hex(), r)
-		}
+	if err == nil && r == nil {
+		return nil, fmt.Errorf("TransactionReceipt failed, transaction not found, txHash is: %v, receipt is: %+v", txHash.Hex(), r)
 	}
 	return r, err
 }
@@ -139,7 +184,7 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 	var temp interface{}
 	temp, ok = m["Chain Id"]
 	if !ok {
-		return nil, errors.New("Json respond does not contains the key : Chain Id")
+		return nil, errors.New("JSON respond does not contains the key : Chain Id")
 	}
 	var strChainid string
 	strChainid, ok = temp.(string)
@@ -351,11 +396,23 @@ func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
 func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, txhash string) (*types.Receipt, error) {
 	var raw *types.Receipt
-	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txhash)
+	var anonymityReceipt = &struct {
+		types.Receipt
+		Status string `json:"status"`
+	}{}
+	err := api.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", groupID, txhash)
 	if err != nil {
 		return nil, err
 	}
-	// js, err := json.MarshalIndent(raw, "", indent)
+	if len(anonymityReceipt.Status) < 2 {
+		return nil, fmt.Errorf("transaction %v is not on-chain", txhash)
+	}
+	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+	if err != nil {
+		return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
+	}
+	raw = &anonymityReceipt.Receipt
+	raw.Status = int(status)
 	return raw, err
 }
 
