@@ -18,7 +18,7 @@ type Receipt struct {
 	GasUsed          string         `json:"gasUsed"`
 	ContractAddress  common.Address `json:"contractAddress"`
 	Root             string         `json:"root"`
-	Status           string         `json:"status"`
+	Status           int            `json:"status"`
 	From             string         `json:"from"`
 	To               string         `json:"to"`
 	Input            string         `json:"input"`
@@ -159,11 +159,7 @@ func (r *Receipt) GetRoot() string {
 
 // GetStatus returns the transaction status
 func (r *Receipt) GetStatus() int {
-	status, err := strconv.ParseInt(r.Status[2:], 16, 32)
-	if err != nil {
-		panic("receipt.GetStatus failed, strconv.ParseInt err: " + fmt.Sprint(err))
-	}
-	return int(status)
+	return r.Status
 }
 
 // GetFrom returns the transaction sender address
