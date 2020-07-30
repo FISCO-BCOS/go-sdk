@@ -246,6 +246,22 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash.Hex())
 }
 
+func (c *Client) SubscribeTopic(topic string, handler func([]byte)) error {
+	return c.apiHandler.SubscribeTopic(topic, handler)
+}
+
+func (c *Client) UnsubscribeTopic(topic string) error {
+	return c.apiHandler.UnsubscribeTopic(topic)
+}
+
+func (c *Client) PushTopicDataRandom(topic string, data []byte) error {
+	return c.apiHandler.PushTopicDataRandom(topic, data)
+}
+
+func (c *Client) PushTopicDataToALL(topic string, data []byte) error {
+	return c.apiHandler.PushTopicDataToALL(topic, data)
+}
+
 // GetGroupID returns the groupID of the client
 func (c *Client) GetGroupID() *big.Int {
 	return big.NewInt(int64(c.groupID))

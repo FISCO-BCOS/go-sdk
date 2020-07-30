@@ -306,6 +306,26 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
+func (c *Connection) SubscribeTopic(topic string, handler func([]byte)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribeTopic(topic, handler)
+}
+
+func (c *Connection) UnsubscribeTopic(topic string) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.unsubscribeTopic(topic)
+}
+
+func (c *Connection) PushTopicDataRandom(topic string, data []byte) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.pushTopicDataRandom(topic, data)
+}
+
+func (c *Connection) PushTopicDataToALL(topic string, data []byte) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.pushTopicDataToALL(topic, data)
+}
+
 // BatchCall sends all given requests as a single batch and waits for the server
 // to return a response for all of them.
 //

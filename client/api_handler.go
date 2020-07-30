@@ -158,6 +158,22 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	return r, err
 }
 
+func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte)) error {
+	return api.Connection.SubscribeTopic(topic, handler)
+}
+
+func (api *APIHandler) UnsubscribeTopic(topic string) error {
+	return api.Connection.UnsubscribeTopic(topic)
+}
+
+func (api *APIHandler) PushTopicDataRandom(topic string, data []byte) error {
+	return api.Connection.PushTopicDataRandom(topic, data)
+}
+
+func (api *APIHandler) PushTopicDataToALL(topic string, data []byte) error {
+	return api.Connection.PushTopicDataToALL(topic, data)
+}
+
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
 func (api *APIHandler) GetClientVersion(ctx context.Context) ([]byte, error) {
 	var raw interface{}
