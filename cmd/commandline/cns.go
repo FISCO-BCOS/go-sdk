@@ -9,7 +9,7 @@ import (
 
 var queryCNS = &cobra.Command{
 	Use:   "queryCNS",
-	Short: "[name] [version]                 Query CNS information by contract name and contract version",
+	Short: "[name] [version]                   Query CNS information by contract name and contract version",
 	Long: `Query CNS information by contract name and contract version.
 Arguments:
           [name]: string
@@ -53,7 +53,7 @@ For more information please refer:
 
 var getAddressByContractNameAndVersion = &cobra.Command{
 	Use:   "getAddressByContractNameAndVersion",
-	Short: "[name] [version]                 Get address by contract name and version",
+	Short: "[name] [version]                   Get address by contract name and version",
 	Long: `Get address by contract name and version.
 Arguments:
           [name]: string
@@ -80,7 +80,7 @@ For example:
 			fmt.Printf("getAddressByContractNameAndVersion failed, cnsService.GetAddressByContractNameAndVersion err: %v\n", err)
 			return
 		}
-		fmt.Println(address)
+		fmt.Println(address.Hex())
 	},
 }
 

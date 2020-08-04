@@ -11,7 +11,7 @@ import (
 
 var grantUserTableManager = &cobra.Command{
 	Use:   "grantUserTableManager",
-	Short: "[tableName]   [accountAddress]   Grant manager permission of user table",
+	Short: "[tableName]   [accountAddress]     Grant manager permission of user table",
 	Long: `Grant manager permission of user table. After the user obtains this permission, the user can write to the table.
 Arguments:
           [tableName]: string
@@ -48,7 +48,7 @@ For more information please refer:
 
 var revokeUserTableManager = &cobra.Command{
 	Use:   "revokeUserTableManager",
-	Short: "[tableName]   [accountAddress]   Revoke manager permission of user table",
+	Short: "[tableName]   [accountAddress]     Revoke manager permission of user table",
 	Long: `Revoke manager permission of user table. After the user is revoked this permission, the user can't write to the table.
 Arguments:
           [tableName]: string
@@ -85,7 +85,7 @@ For more information please refer:
 
 var listUserTableManager = &cobra.Command{
 	Use:   "listUserTableManager",
-	Short: "[tableName]                      List all managers of user table",
+	Short: "[tableName]                        List all managers of user table",
 	Long: `List all managers in user table.
 Arguments:
           [tableName]: string
@@ -121,7 +121,7 @@ For more information please refer:
 
 var grantDeployAndCreateManager = &cobra.Command{
 	Use:   "grantDeployAndCreateManager",
-	Short: "[accountAddress]                 Grant permission for deploy contract and create user table by address",
+	Short: "[accountAddress]                   Grant permission for deploy contract and create user table by address",
 	Long: `Grant permission for deploy contract and create user table by address.
 Arguments:
           [accountAddress]: string
@@ -156,7 +156,7 @@ For more information please refer:
 
 var revokeDeployAndCreateManager = &cobra.Command{
 	Use:   "revokeDeployAndCreateManager",
-	Short: "[accountAddress]                 Revoke permission for deploy contract and create user table by address",
+	Short: "[accountAddress]                   Revoke permission for deploy contract and create user table by address",
 	Long: `Revoke permission for deploy contract and create user table by address.
 Arguments:
          [accountAddress]: string
@@ -191,7 +191,7 @@ For more information please refer:
 
 var listDeployAndCreateManager = &cobra.Command{
 	Use:   "listDeployAndCreateManager",
-	Short: "                                 Query permission information for deploy contract and create user table",
+	Short: "                                   Query permission information for deploy contract and create user table",
 	Long: `Query permission information for deploy contract and create user table.
 For example:
 
@@ -223,7 +223,7 @@ For more information please refer:
 
 var grantPermissionManager = &cobra.Command{
 	Use:   "grantPermissionManager",
-	Short: "[accountAddress]                 Grant permission to manage blockchain by address",
+	Short: "[accountAddress]                   Grant permission to manage blockchain by address",
 	Long: `Grant permission to manage blockchain by address.
 Arguments:
           [accountAddress]: string
@@ -262,7 +262,7 @@ For more information please refer:
 
 var revokePermissionManager = &cobra.Command{
 	Use:   "revokePermissionManager",
-	Short: "[accountAddress]                 Revoke permission to manage blockchain by address",
+	Short: "[accountAddress]                   Revoke permission to manage blockchain by address",
 	Long: `Revoke permission to manage blockchain by address.
 Arguments:
         [accountAddress]: string
@@ -301,7 +301,7 @@ For more information please refer:
 
 var listPermissionManager = &cobra.Command{
 	Use:   "listPermissionManager",
-	Short: "                                 Query permission information that can manage blockchain",
+	Short: "                                   Query permission information that can manage blockchain",
 	Long: `Query permission information that can manage blockchain.
 For example:
 
@@ -333,7 +333,7 @@ For more information please refer:
 
 var grantNodeManager = &cobra.Command{
 	Use:   "grantNodeManager",
-	Short: "[accountAddress]                 Grant permission for node configuration by address",
+	Short: "[accountAddress]                   Grant permission for node configuration by address",
 	Long: `Grant permission for node configuration by address.
 Arguments:
           [accountAddress]: string
@@ -368,7 +368,7 @@ For more information please refer:
 
 var revokeNodeManager = &cobra.Command{
 	Use:   "revokeNodeManager",
-	Short: "[accountAddress]                 Revoke permission for node configuration by address",
+	Short: "[accountAddress]                   Revoke permission for node configuration by address",
 	Long: `Revoke permission for node configuration by address.
 Arguments:
        [accountAddress]: string
@@ -403,7 +403,7 @@ For more information please refer:
 
 var listNodeManager = &cobra.Command{
 	Use:   "listNodeManager",
-	Short: "                                 Query permission information for node configuration",
+	Short: "                                   Query permission information for node configuration",
 	Long: `Query permission information for node configuration.
 For example:
 
@@ -435,7 +435,7 @@ For more information please refer:
 
 var grantCNSManager = &cobra.Command{
 	Use:   "grantCNSManager",
-	Short: "[accountAddress]                 Grant permission for CNS by address",
+	Short: "[accountAddress]                   Grant permission for CNS by address",
 	Long: `Grant permission for CNS by address.
 Arguments:
           [accountAddress]: string
@@ -470,7 +470,7 @@ For more information please refer:
 
 var revokeCNSManager = &cobra.Command{
 	Use:   "revokeCNSManager",
-	Short: "[accountAddress]                 Revoke permission for CNS by address",
+	Short: "[accountAddress]                   Revoke permission for CNS by address",
 	Long: `Revoke permission for CNS by address.
 Arguments:
       [accountAddress]: string
@@ -505,7 +505,7 @@ For more information please refer:
 
 var listCNSManager = &cobra.Command{
 	Use:   "listCNSManager",
-	Short: "                                 Query permission information for CNS",
+	Short: "                                   Query permission information for CNS",
 	Long: `Query permission information for CNS.
 For example:
 
@@ -537,7 +537,7 @@ For more information please refer:
 
 var grantSysConfigManager = &cobra.Command{
 	Use:   "grantSysConfigManager",
-	Short: "[accountAddress]                 Grant permission for system configuration by address",
+	Short: "[accountAddress]                   Grant permission for system configuration by address",
 	Long: `Grant permission for system configuration by address.
 Arguments:
           [accountAddress]: string
@@ -572,7 +572,7 @@ For more information please refer:
 
 var revokeSysConfigManager = &cobra.Command{
 	Use:   "revokeSysConfigManager",
-	Short: "[accountAddress]                 Revoke permission for system configuration by address",
+	Short: "[accountAddress]                   Revoke permission for system configuration by address",
 	Long: `Revoke permission for system configuration by address.
 Arguments:
      [accountAddress]: string
@@ -607,7 +607,7 @@ For more information please refer:
 
 var listSysConfigManager = &cobra.Command{
 	Use:   "listSysConfigManager",
-	Short: "                                 Query permission information for system configuration",
+	Short: "                                   Query permission information for system configuration",
 	Long: ` Query permission information for system configuration.
 For example:
 
@@ -707,7 +707,7 @@ For example:
 
 var queryPermission = &cobra.Command{
 	Use:   "queryPermission",
-	Short: "[contractAddress]                Query permission for write contract by address",
+	Short: "[contractAddress]                  Query permission for write contract by address",
 	Long: `Query permission for write contract by address.
 Arguments:
           [contractAddress]: string

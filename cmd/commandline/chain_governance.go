@@ -11,7 +11,7 @@ import (
 
 var grantCommitteeMember = &cobra.Command{
 	Use:   "grantCommitteeMember",
-	Short: "[accountAddress]                 Grant a committee member",
+	Short: "[accountAddress]                   Grant a committee member",
 	Long: `Grant the permission of committee for a user account, which can add and 
 delete committee members,modify the weight of the committee members, modify the 
 effective voting threshold, add and delete nodes, modify chain configuration items,
@@ -50,7 +50,7 @@ For more information please refer:
 
 var revokeCommitteeMember = &cobra.Command{
 	Use:   "revokeCommitteeMember",
-	Short: "[accountAddress]                 Revoke a committee member",
+	Short: "[accountAddress]                   Revoke a committee member",
 	Long: `Revoke the permission of committee for a user account.
 Arguments:
           [accountAddress]: string
@@ -85,7 +85,7 @@ For more information please refer:
 
 var listCommitteeMembers = &cobra.Command{
 	Use:   "listCommitteeMembers",
-	Short: "                                 List all committee members",
+	Short: "                                   List all committee members",
 	Long: `List all committee members in blockchain.
 For example:
 
@@ -117,7 +117,7 @@ For more information please refer:
 
 var queryCommitteeMemberWeight = &cobra.Command{
 	Use:   "queryCommitteeMemberWeight",
-	Short: "[accountAddress]                 Query committee member weight",
+	Short: "[accountAddress]                   Query committee member weight",
 	Long: `query the weight of the committee member.
 Arguments:
           [accountAddress]: string
@@ -148,7 +148,7 @@ For more information please refer:
 
 var updateCommitteeMemberWeight = &cobra.Command{
 	Use:   "updateCommitteeMemberWeight",
-	Short: "[accountAddress] [weight]        Update committee member weight",
+	Short: "[accountAddress] [weight]          Update committee member weight",
 	Long: `update the weight of the committee member.
 Arguments:
           [accountAddress]: string
@@ -194,7 +194,7 @@ For more information please refer:
 
 var updateThreshold = &cobra.Command{
 	Use:   "updateThreshold",
-	Short: "[threshold]                      Update the threshold",
+	Short: "[threshold]                        Update the threshold",
 	Long: `Update voting effective threshold.
 Arguments:
           [threshold]: must be in the range of [0, 100).
@@ -238,7 +238,7 @@ For more information please refer:
 
 var queryThreshold = &cobra.Command{
 	Use:   "queryThreshold",
-	Short: "                                 Query the threshold",
+	Short: "                                   Query the threshold",
 	Long: `Query the effective threshold of voting.
 For example:
 
@@ -265,7 +265,7 @@ For more information please refer:
 
 var grantOperator = &cobra.Command{
 	Use:   "grantOperator",
-	Short: "                                 Grant the account operator",
+	Short: "                                   Grant the account operator",
 	Long: `Add an operator account, and the operator role has the permissions to deploy contracts, create user tables, and manage CNS.
 Arguments:
           [accountAddress]: string
@@ -300,7 +300,7 @@ For more information please refer:
 
 var revokeOperator = &cobra.Command{
 	Use:   "revokeOperator",
-	Short: "[accountAddress]                 Revoke the operator",
+	Short: "[accountAddress]                   Revoke the operator",
 	Long: `Revoke the permission of operator.
 Arguments:
          [accountAddress]: string
@@ -335,7 +335,7 @@ For more information please refer:
 
 var listOperators = &cobra.Command{
 	Use:   "listOperators",
-	Short: "                                 List all operators",
+	Short: "                                   List all operators",
 	Long: `List all operators.
 For example:
 
@@ -367,7 +367,7 @@ For more information please refer:
 
 var freezeAccount = &cobra.Command{
 	Use:   "freezeAccount",
-	Short: "[accountAddress]                 Freeze the account",
+	Short: "[accountAddress]                   Freeze the account",
 	Long: `Freeze the specified account. For accounts that have not sent transactions,
 the freezing operation will prompt that the account address does not exist.
 Arguments:
@@ -403,7 +403,7 @@ For more information please refer:
 
 var unfreezeAccount = &cobra.Command{
 	Use:   "unfreezeAccount",
-	Short: "[accountAddress]                 Unfreeze the account",
+	Short: "[accountAddress]                   Unfreeze the account",
 	Long: `Unfreeze the specified account. For accounts that have not sent transactions,
 the unfreezing operation will prompt that the account address does not exist.
 Arguments:
@@ -439,7 +439,7 @@ For more information please refer:
 
 var getAccountStatus = &cobra.Command{
 	Use:   "getAccountStatus",
-	Short: "[accountAddress]                 Get status of the account",
+	Short: "[accountAddress]                   Get status of the account",
 	Long: `Get the user account status and determine whether the account is frozen.
 Arguments:
          [accountAddress]: string

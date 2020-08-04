@@ -73,7 +73,7 @@ var newAccountCmd = &cobra.Command{
 
 var getClientVersionCmd = &cobra.Command{
 	Use:   "getClientVersion",
-	Short: "                                 Get the blockchain version",
+	Short: "                                   Get the blockchain version",
 	Long:  `Returns the specific FISCO BCOS version that runs on the node you connected.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -88,7 +88,7 @@ var getClientVersionCmd = &cobra.Command{
 
 var getGroupIDCmd = &cobra.Command{
 	Use:   "getGroupID",
-	Short: "                                 Get the group ID of the client",
+	Short: "                                   Get the group ID of the client",
 	Long:  `Returns the group ID that the console had connected to.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -99,7 +99,7 @@ var getGroupIDCmd = &cobra.Command{
 
 var getBlockNumberCmd = &cobra.Command{
 	Use:   "getBlockNumber",
-	Short: "                                 Get the latest block height of the blockchain",
+	Short: "                                   Get the latest block height of the blockchain",
 	Long: `Returns the latest block height in the specified group.
 The block height is encoded in hex`,
 	Args: cobra.NoArgs,
@@ -122,7 +122,7 @@ The block height is encoded in hex`,
 
 var getPbftViewCmd = &cobra.Command{
 	Use:   "getPbftView",
-	Short: "                                 Get the latest PBFT view(PBFT consensus only)",
+	Short: "                                   Get the latest PBFT view(PBFT consensus only)",
 	Long: `Returns the latest PBFT view in the specified group where the node is located.
 The PBFT view is encoded in hex`,
 	Args: cobra.NoArgs,
@@ -138,7 +138,7 @@ The PBFT view is encoded in hex`,
 
 var getSealerListCmd = &cobra.Command{
 	Use:   "getSealerList",
-	Short: "                                 Get the sealers' ID list",
+	Short: "                                   Get the sealers' ID list",
 	Long:  `Returns an ID list of the sealer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -153,7 +153,7 @@ var getSealerListCmd = &cobra.Command{
 
 var getObserverListCmd = &cobra.Command{
 	Use:   "getObserverList",
-	Short: "                                 Get the observers' ID list",
+	Short: "                                   Get the observers' ID list",
 	Long:  `Returns an ID list of observer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -168,7 +168,7 @@ var getObserverListCmd = &cobra.Command{
 
 var getConsensusStatusCmd = &cobra.Command{
 	Use:   "getConsensusStatus",
-	Short: "                                 Get consensus status of nodes",
+	Short: "                                   Get consensus status of nodes",
 	Long:  `Returns consensus status information within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -183,7 +183,7 @@ var getConsensusStatusCmd = &cobra.Command{
 
 var getSyncStatusCmd = &cobra.Command{
 	Use:   "getSyncStatus",
-	Short: "                                 Get synchronization status of nodes",
+	Short: "                                   Get synchronization status of nodes",
 	Long:  `Returns synchronization status information within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -198,7 +198,7 @@ var getSyncStatusCmd = &cobra.Command{
 
 var getPeersCmd = &cobra.Command{
 	Use:   "getPeers",
-	Short: "                                 Get the connected peers' information",
+	Short: "                                   Get the connected peers' information",
 	Long:  `Returns the information of connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -213,7 +213,7 @@ var getPeersCmd = &cobra.Command{
 
 var getGroupPeersCmd = &cobra.Command{
 	Use:   "getGroupPeers",
-	Short: "                                 Get all peers' ID within the group",
+	Short: "                                   Get all peers' ID within the group",
 	Long:  `Returns an ID list of consensus nodes and observer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -228,7 +228,7 @@ var getGroupPeersCmd = &cobra.Command{
 
 var getNodeIDListCmd = &cobra.Command{
 	Use:   "getNodeIDList",
-	Short: "                                 Get ID list of nodes",
+	Short: "                                   Get ID list of nodes",
 	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -243,7 +243,7 @@ var getNodeIDListCmd = &cobra.Command{
 
 var getGroupListCmd = &cobra.Command{
 	Use:   "getGroupList",
-	Short: "                                 Get ID list of groups that the node belongs",
+	Short: "                                   Get ID list of groups that the node belongs",
 	Long:  `Returns an ID list of groups that the node belongs.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -260,7 +260,7 @@ var getGroupListCmd = &cobra.Command{
 
 var getBlockByHashCmd = &cobra.Command{
 	Use:   "getBlockByHash",
-	Short: "[blockHash]   [true/false]       Query the block by its hash",
+	Short: "[blockHash]   [true/false]         Query the block by its hash",
 	Long: `Returns the block information according to the block hash.
 Arguments:
           [blockHash]: hash string
@@ -307,7 +307,7 @@ For more information please refer:
 
 var getBlockByNumberCmd = &cobra.Command{
 	Use:   "getBlockByNumber",
-	Short: "[blockNumber] [true/false]       Query the block by its number",
+	Short: "[blockNumber] [true/false]         Query the block by its number",
 	Long: `Returns the block information according to the block number.
 Arguments:
        [blockNumber]: can be input in a decimal or in hex(prefix with "0x").
@@ -361,7 +361,7 @@ For more information please refer:
 
 var getBlockHashByNumberCmd = &cobra.Command{
 	Use:   "getBlockHashByNumber",
-	Short: "[blockNumber]                    Query the block hash by its number",
+	Short: "[blockNumber]                      Query the block hash by its number",
 	Long: `Returns the block hash according to the block number.
 Arguments:
 [blockNumber]: can be input in a decimal format or in hex(prefix with "0x").
@@ -401,7 +401,7 @@ For more information please refer:
 
 var getTransactionByHashCmd = &cobra.Command{
 	Use:   "getTransactionByHash",
-	Short: "[transactionHash]                Query the transaction by its hash",
+	Short: "[transactionHash]                  Query the transaction by its hash",
 	Long: `Returns the transaction according to the transaction hash.
 Arguments:
 [transactionHash]: hash string.
@@ -433,7 +433,7 @@ For more information please refer:
 
 var getTransactionByBlockHashAndIndexCmd = &cobra.Command{
 	Use:   `getTransactionByBlockHashAndIndex`,
-	Short: "[blockHash]   [transactionIndex] Query the transaction by block hash and transaction index",
+	Short: "[blockHash]   [transactionIndex]   Query the transaction by block hash and transaction index",
 	Long: `Returns transaction information based on block hash and transaction index inside the block.
 Arguments:
        [blockHash]: block hash string.
@@ -479,7 +479,7 @@ For more information please refer:
 
 var getTransactionByBlockNumberAndIndexCmd = &cobra.Command{
 	Use:   "getTransactionByBlockNumberAndIndex",
-	Short: "[blockNumber] [transactionIndex] Query the transaction by block number and transaction index",
+	Short: "[blockNumber] [transactionIndex]   Query the transaction by block number and transaction index",
 	Long: `Returns transaction information based on block number and transaction index inside the block.
 Arguments:
      [blockNumber]: block number encoded in decimal format or in hex(prefix with "0x").
@@ -525,7 +525,7 @@ For more information please refer:
 
 var getTransactionReceiptCmd = &cobra.Command{
 	Use:   "getTransactionReceipt",
-	Short: "[transactionHash]                Query the transaction receipt by transaction hash",
+	Short: "[transactionHash]                  Query the transaction receipt by transaction hash",
 	Long: `Returns transaction receipt information based on transaction hash.
 Arguments:
 [transactionHash]: transaction hash string.
@@ -557,7 +557,7 @@ For more information please refer:
 
 var getPendingTransactionsCmd = &cobra.Command{
 	Use:   "getPendingTransactions",
-	Short: "                                 Get the pending transactions",
+	Short: "                                   Get the pending transactions",
 	Long:  `Return the transactions that are pending for packaging.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -572,7 +572,7 @@ var getPendingTransactionsCmd = &cobra.Command{
 
 var getPendingTxSizeCmd = &cobra.Command{
 	Use:   "getPendingTxSize",
-	Short: "                                 Get the count of pending transactions",
+	Short: "                                   Get the count of pending transactions",
 	Long:  `Return the total count of pending transactions.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -596,7 +596,7 @@ var getPendingTxSizeCmd = &cobra.Command{
 
 var getCodeCmd = &cobra.Command{
 	Use:   "getCode",
-	Short: "[contract address]               Get the contract data from contract address",
+	Short: "[contract address]                 Get the contract data from contract address",
 	Long: `Return contract data queried according to contract address.
 Arguments:
 [contract address]: contract hash string.
@@ -634,7 +634,7 @@ For more information please refer:
 
 var getTotalTransactionCountCmd = &cobra.Command{
 	Use:   "getTotalTransactionCount",
-	Short: "                                 Get the totoal transactions and the latest block height",
+	Short: "                                   Get the totoal transactions and the latest block height",
 	Long:  `Returns the current total number of transactions and block height.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -649,10 +649,10 @@ var getTotalTransactionCountCmd = &cobra.Command{
 
 var getSystemConfigByKeyCmd = &cobra.Command{
 	Use:   "getSystemConfigByKey",
-	Short: "[tx_count_limit/tx_gas_limit]    Get the system configuration through key-value",
+	Short: "[configurationItem]                Get the system configuration through key-value",
 	Long: `Returns the system configuration through key-value.
 Arguments:
-[key to query]: currently only support two key: "tx_count_limit" and "tx_gas_limit".
+[key to query]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num", "rpbft_epoch_block_num".
 
 For example:
 
