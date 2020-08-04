@@ -54,7 +54,7 @@ type channelSession struct {
 	// receiptsMutex sync.Mutex
 	receiptResponses map[string]*channelResponse
 	topicMu          sync.RWMutex
-	topicHandlers    map[string]func(*topicData)
+	topicHandlers    map[string]func([]byte)
 	buf              []byte
 	nodeInfo         nodeInfo
 	closeOnce        sync.Once
@@ -75,6 +75,14 @@ const (
 	transactionNotify      = 0x1000 // type for  transaction notify
 	blockNotify            = 0x1001 // type for  block notify
 	eventLogPush           = 0x1002 // type for event log push
+
+	// AMOP error code
+	success                            = 0
+	remotePeerUnavailable              = 100
+	remoteClientPeerUnavailable        = 101
+	timeout                            = 102
+	rejectAmopReqForOverBandwidthLimit = 103
+	sendChannelMessageFailed           = 104
 )
 
 type topicData struct {
@@ -123,7 +131,7 @@ func newChannelMessage(msgType uint16, body []byte) (*channelMessage, error) {
 
 func newTopicMessage(t string, data []byte, msgType uint16) (*channelMessage, error) {
 	if len(t) > maxTopicLength {
-		return nil, fmt.Errorf("topic length exceeds 255")
+		return nil, fmt.Errorf("topic length exceeds 254")
 	}
 	topic := &topicData{length: uint8(len(t)) + 1, topic: t, data: data}
 	mesgData := topic.Encode()
@@ -137,7 +145,7 @@ func (t *topicData) Encode() []byte {
 	if err != nil {
 		log.Fatal("encode length error:", err)
 	}
-	err = binary.Write(buf, binary.LittleEndian, t.topic)
+	err = binary.Write(buf, binary.LittleEndian, []byte(t.topic))
 	if err != nil {
 		log.Fatal("encode type error:", err)
 	}
@@ -299,13 +307,13 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			return nil, err
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
-			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func(*topicData)),
+			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte)),
 			nodeInfo: nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
 			fmt.Printf("handshake channel protocol failed, use default protocol version")
 		}
-		if err = ch.SubscribeTopic("_block_notify_"+strconv.Itoa(groupID), nil); err != nil {
+		if err = ch.subscribeTopic("_block_notify_"+strconv.Itoa(groupID), func(i []byte) {}); err != nil {
 			return nil, fmt.Errorf("subscribe block nofity failed")
 		}
 		return ch, nil
@@ -453,7 +461,7 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	return receiptResponse.Message.body, nil
 }
 
-func (hc *channelSession) doRequestNoResponse(msg *channelMessage) error {
+func (hc *channelSession) sendMessageNoResponse(msg *channelMessage) error {
 	msgBytes := msg.Encode()
 	_, err := hc.c.Write(msgBytes)
 	if err != nil {
@@ -462,7 +470,7 @@ func (hc *channelSession) doRequestNoResponse(msg *channelMessage) error {
 	return nil
 }
 
-func (hc *channelSession) doRequest(msg *channelMessage) (*channelMessage, error) {
+func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, error) {
 	msgBytes := msg.Encode()
 	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	hc.mu.Lock()
@@ -482,8 +490,21 @@ func (hc *channelSession) doRequest(msg *channelMessage) (*channelMessage, error
 	hc.mu.Lock()
 	response = hc.responses[msg.uuid]
 	hc.mu.Unlock()
-	if response.Message.errorCode != 0 {
-		return nil, errors.New("response error:" + string(response.Message.errorCode))
+	switch response.Message.errorCode {
+	case success:
+		_ = struct{}{}
+	case remotePeerUnavailable:
+		return nil, fmt.Errorf("error code %v, remote peer unavailable", remotePeerUnavailable)
+	case remoteClientPeerUnavailable:
+		return nil, fmt.Errorf("error code %v, remote client peer unavailable", remoteClientPeerUnavailable)
+	case timeout:
+		return nil, fmt.Errorf("error code %v, timeout", timeout)
+	case rejectAmopReqForOverBandwidthLimit:
+		return nil, fmt.Errorf("error code %v, reject amop reqeust or over bandwidth limit", rejectAmopReqForOverBandwidthLimit)
+	case sendChannelMessageFailed:
+		return nil, fmt.Errorf("error code %v, send channel message failed", sendChannelMessageFailed)
+	default:
+		return nil, fmt.Errorf("response error: %v", response.Message.errorCode)
 	}
 	return response.Message, nil
 }
@@ -496,7 +517,13 @@ func (hc *channelSession) handshakeChannel() error {
 	}
 	var msg, response *channelMessage
 	msg, err = newChannelMessage(clientHandshake, body)
-	response, err = hc.doRequest(msg)
+	if err != nil {
+		return err
+	}
+	response, err = hc.sendMessage(msg)
+	if err != nil {
+		return err
+	}
 	var info nodeInfo
 	if err = json.Unmarshal(response.body, &info); err != nil {
 		return fmt.Errorf("parse handshake channel protocol response failed %w", err)
@@ -506,7 +533,13 @@ func (hc *channelSession) handshakeChannel() error {
 	return nil
 }
 
-func (hc *channelSession) SubscribeTopic(topic string, handler func(*topicData)) error {
+func (hc *channelSession) subscribeTopic(topic string, handler func([]byte)) error {
+	if len(topic) > maxTopicLength {
+		return errors.New("topic length exceeds 254")
+	}
+	if handler == nil {
+		return errors.New("handler is nil")
+	}
 	if _, ok := hc.topicHandlers[topic]; ok {
 		return errors.New("already subscribed to topic " + topic)
 	}
@@ -526,10 +559,16 @@ func (hc *channelSession) SubscribeTopic(topic string, handler func(*topicData))
 		return errors.New("marshal topics failed")
 	}
 	msg, err := newChannelMessage(amopSubscribeTopics, data)
-	return hc.doRequestNoResponse(msg)
+	if err != nil {
+		return fmt.Errorf("newChannelMessage failed, err: %v", err)
+	}
+	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) UnsubscribeTopic(topic string) error {
+func (hc *channelSession) unsubscribeTopic(topic string) error {
+	if _, ok := hc.topicHandlers[topic]; !ok {
+		return fmt.Errorf("topic \"%v\" has't been subscribed", topic)
+	}
 	hc.topicMu.Lock()
 	delete(hc.topicHandlers, topic)
 	hc.topicMu.Unlock()
@@ -543,27 +582,41 @@ func (hc *channelSession) UnsubscribeTopic(topic string) error {
 		return errors.New("marshal topics failed")
 	}
 	msg, err := newChannelMessage(amopSubscribeTopics, data)
-	return hc.doRequestNoResponse(msg)
+	if err != nil {
+		return fmt.Errorf("newChannelMessage failed, err: %v", err)
+	}
+	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) PushTopicDataRandom(topic string, data []byte) error {
+func (hc *channelSession) pushTopicDataRandom(topic string, data []byte) error {
 	msg, err := newTopicMessage(topic, data, amopPushRandom)
 	if err != nil {
 		return err
 	}
-	return hc.doRequestNoResponse(msg)
+	_, err = hc.sendMessage(msg)
+	if err != nil {
+		return fmt.Errorf("sendMessage failed, err: %v", err)
+	}
+	return nil
 }
 
-func (hc *channelSession) PushTopicDataToALL(topic string, data []byte) error {
+func (hc *channelSession) pushTopicDataToALL(topic string, data []byte) error {
 	msg, err := newTopicMessage(topic, data, amopMultiCast)
 	if err != nil {
 		return err
 	}
-	return hc.doRequestNoResponse(msg)
+	message, err := hc.sendMessage(msg)
+	if err != nil {
+		return fmt.Errorf("pushTopicDataToALL, sendMessage failed, err: %v", err)
+	}
+	_, err = decodeTopic(message.body)
+	if err != nil {
+		return fmt.Errorf("pushTopicDataToALL, decodeTopic failed, err: %v", err)
+	}
+	return nil
 }
 
 func (hc *channelSession) processTopicResponse(msg *channelMessage) error {
-	hc.processTopicResponse(msg)
 	topic, err := decodeTopic(msg.body)
 	if err != nil {
 		fmt.Printf("decode topic failed: %+v", msg)
@@ -575,7 +628,16 @@ func (hc *channelSession) processTopicResponse(msg *channelMessage) error {
 	if !ok {
 		return fmt.Errorf("unsubscribe topic %s", topic.topic)
 	}
-	handler(topic)
+	responseMessage, err := newTopicMessage(topic.topic, nil, amopResponse)
+	if err != nil {
+		return err
+	}
+	responseMessage.uuid = msg.uuid
+	err = hc.sendMessageNoResponse(responseMessage)
+	if err != nil {
+		return fmt.Errorf("response message failed")
+	}
+	handler(topic.data)
 	return nil
 }
 
@@ -607,7 +669,7 @@ func (hc *channelSession) processMessages() {
 			}
 			hc.mu.Unlock()
 			switch msg.typeN {
-			case rpcMessage, clientHandshake:
+			case amopResponse, rpcMessage, clientHandshake:
 				// fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
@@ -621,10 +683,12 @@ func (hc *channelSession) processMessages() {
 				hc.mu.Unlock()
 			case blockNotify:
 				hc.updateBlockNumber(msg)
-			case amopResponse:
-				// response of pushRandom and broadcast
+			case amopPushRandom, amopMultiCast:
 				err := hc.processTopicResponse(msg)
-				fmt.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
+				if err != nil {
+					continue
+				}
+				// fmt.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
 			default:
 				fmt.Printf("unknown message type:%d, msg:%+v", msg.typeN, msg)
 			}
