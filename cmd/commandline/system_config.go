@@ -9,7 +9,7 @@ import (
 
 var setSystemConfigByKey = &cobra.Command{
 	Use:   "setSystemConfigByKey",
-	Short: "[system_configuration_item]      Set the system configuration through key-value",
+	Short: "[system_configuration_item]        Set the system configuration through key-value",
 	Long: `Returns the system configuration through key-value.
 Arguments:
 	  [key]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num" and "rpbft_epoch_block_num".

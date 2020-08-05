@@ -9,7 +9,7 @@ import (
 
 var addObserver = &cobra.Command{
 	Use:   "addObserver",
-	Short: "[nodeID]                         Add an observer node",
+	Short: "[nodeID]                           Add an observer node",
 	Long: `Add an observer node from sealer list or free node list.
 Arguments:
           [nodeID]: string
@@ -44,7 +44,7 @@ For more information please refer:
 
 var addSealer = &cobra.Command{
 	Use:   "addSealer",
-	Short: "[nodeID]                         Add a sealer node",
+	Short: "[nodeID]                           Add a sealer node",
 	Long: `Add a sealer node from observer list in group.
 Arguments:
           [nodeID]: string
@@ -79,7 +79,7 @@ For more information please refer:
 
 var removeNode = &cobra.Command{
 	Use:   "removeNode",
-	Short: "[nodeID]                         Remove a node",
+	Short: "[nodeID]                           Remove a node",
 	Long: `Remove a node from sealer list or observer list in group.
 Arguments:
           [nodeID]: string
