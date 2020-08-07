@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -162,8 +163,20 @@ func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte)) error 
 	return api.Connection.SubscribeTopic(topic, handler)
 }
 
+func (api *APIHandler) SubscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+	return api.Connection.SubscribeAuthTopic(topic, privateKey, handler)
+}
+
+func (api *APIHandler) PublishAuthTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+	return api.Connection.PublishAuthTopic(topic, publicKey, handler)
+}
+
 func (api *APIHandler) UnsubscribeTopic(topic string) error {
 	return api.Connection.UnsubscribeTopic(topic)
+}
+
+func (api *APIHandler) UnsubscribeAuthTopic(topic string) error {
+	return api.Connection.UnsubscribeAuthTopic(topic)
 }
 
 func (api *APIHandler) PushTopicDataRandom(topic string, data []byte) error {
@@ -172,6 +185,14 @@ func (api *APIHandler) PushTopicDataRandom(topic string, data []byte) error {
 
 func (api *APIHandler) PushTopicDataToALL(topic string, data []byte) error {
 	return api.Connection.PushTopicDataToALL(topic, data)
+}
+
+func (api *APIHandler) PushAuthTopicDataRandom(topic string, data []byte) error {
+	return api.Connection.PushAuthTopicDataRandom(topic, data)
+}
+
+func (api *APIHandler) PushAuthTopicDataToALL(topic string, data []byte) error {
+	return api.Connection.PushAuthTopicDataToALL(topic, data)
 }
 
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.

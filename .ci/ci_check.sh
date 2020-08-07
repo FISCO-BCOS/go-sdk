@@ -43,7 +43,7 @@ function build_blockchain()
   fi
   execute_cmd "chmod a+x build_chain.sh"
   # build the blockchain
-  ./build_chain.sh -l "127.0.0.1:4"
+  ./build_chain.sh -v 2.5.0 -l "127.0.0.1:4"
   # copy certificate
   # execute_cmd "cp nodes/127.0.0.1/sdk/* bin/"
 }

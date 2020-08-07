@@ -250,9 +250,21 @@ func (c *Client) SubscribeTopic(topic string, handler func([]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
+//func (c *Client) SubscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+//	return c.apiHandler.SubscribeAuthTopic(topic, privateKey, handler)
+//}
+//
+//func (c *Client) PublishAuthTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+//	return c.apiHandler.PublishAuthTopic(topic, publicKey, handler)
+//}
+
 func (c *Client) UnsubscribeTopic(topic string) error {
 	return c.apiHandler.UnsubscribeTopic(topic)
 }
+
+//func (c *Client) UnsubscribeAuthTopic(topic string) error {
+//	return c.apiHandler.UnsubscribeAuthTopic(topic)
+//}
 
 func (c *Client) PushTopicDataRandom(topic string, data []byte) error {
 	return c.apiHandler.PushTopicDataRandom(topic, data)
@@ -261,6 +273,14 @@ func (c *Client) PushTopicDataRandom(topic string, data []byte) error {
 func (c *Client) PushTopicDataToALL(topic string, data []byte) error {
 	return c.apiHandler.PushTopicDataToALL(topic, data)
 }
+
+//func (c *Client) PushAuthTopicDataRandom(topic string, data []byte) error {
+//	return c.apiHandler.PushAuthTopicDataRandom(topic, data)
+//}
+//
+//func (c *Client) PushAuthTopicDataToALL(topic string, data []byte) error {
+//	return c.apiHandler.PushAuthTopicDataToALL(topic, data)
+//}
 
 // GetGroupID returns the groupID of the client
 func (c *Client) GetGroupID() *big.Int {

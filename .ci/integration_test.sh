@@ -190,7 +190,7 @@ integration_std()
     execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
-    bash build_chain.sh -l 127.0.0.1:4 -o nodes
+    bash build_chain.sh -v 2.5.0 -l 127.0.0.1:4 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
     bash nodes/127.0.0.1/start_all.sh
     if [ -z "$(./hello | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
@@ -223,7 +223,7 @@ integration_gm()
     execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
-    bash build_chain.sh -l 127.0.0.1:4 -g -o nodes_gm
+    bash build_chain.sh -v 2.5.0 -l 127.0.0.1:4 -g -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./
     bash nodes_gm/127.0.0.1/start_all.sh
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
