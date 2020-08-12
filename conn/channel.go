@@ -16,6 +16,10 @@ package conn
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -23,6 +27,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,6 +35,7 @@ import (
 	"time"
 
 	tls "github.com/FISCO-BCOS/crypto/tls"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
 )
 
@@ -55,6 +61,8 @@ type channelSession struct {
 	receiptResponses map[string]*channelResponse
 	topicMu          sync.RWMutex
 	topicHandlers    map[string]func([]byte)
+	messageMu        sync.RWMutex
+	messageHandlers  map[string]func([]byte)
 	buf              []byte
 	nodeInfo         nodeInfo
 	closeOnce        sync.Once
@@ -71,7 +79,8 @@ const (
 	amopResponse           = 0x31   // type for response to sdk
 	amopSubscribeTopics    = 0x32   // type for topic request
 	amopMultiCast          = 0x35   // type for mult broadcast
-	requestTopicCert       = 0x38   // type for update status
+	amopAuthTopic          = 0x37   // type for verified topic
+	amopUpdateTopicStatus  = 0x38   // type for update status
 	transactionNotify      = 0x1000 // type for  transaction notify
 	blockNotify            = 0x1001 // type for  block notify
 	eventLogPush           = 0x1002 // type for event log push
@@ -83,6 +92,11 @@ const (
 	timeout                            = 102
 	rejectAmopReqForOverBandwidthLimit = 103
 	sendChannelMessageFailed           = 104
+
+	// authTopic prefix
+	needVerifyPrefix  = "#!$TopicNeedVerify_"
+	authChannelPrefix = "#!$VerifyChannel_"
+	pushChannelPrefix = "#!$PushChannel_"
 )
 
 type topicData struct {
@@ -115,10 +129,27 @@ type channelResponse struct {
 	Notify  chan interface{}
 }
 
+type authData struct {
+	RandValue string `json:"randValue"`
+	Topic     string `json:"topic"`
+}
+
+type requestAuth struct {
+	Topic        string `json:"topic"`
+	TopicForCert string `json:"topicForCert"`
+	NodeID       string `json:"nodeId"`
+}
+
+type updateAuthTopicStatus struct {
+	CheckResult int    `json:"checkResult"`
+	NodeID      string `json:"nodeId"`
+	Topic       string `json:"topic"`
+}
+
 func newChannelMessage(msgType uint16, body []byte) (*channelMessage, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
-		log.Fatal("newChannelMessage error:", err)
+		log.Printf("newChannelMessage error: %v", err)
 		return nil, err
 	}
 	idString := strings.ReplaceAll(id.String(), "-", "")
@@ -149,9 +180,10 @@ func (t *topicData) Encode() []byte {
 	if err != nil {
 		log.Fatal("encode type error:", err)
 	}
+
 	err = binary.Write(buf, binary.LittleEndian, t.data)
 	if err != nil {
-		log.Fatal("encode uuid error:", err)
+		log.Fatal("encode data error:", err)
 	}
 	return buf.Bytes()
 }
@@ -308,13 +340,14 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte)),
-			nodeInfo: nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
+			messageHandlers: make(map[string]func([]byte)),
+			nodeInfo:        nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
 			fmt.Printf("handshake channel protocol failed, use default protocol version")
 		}
 		if err = ch.subscribeTopic("_block_notify_"+strconv.Itoa(groupID), func(i []byte) {}); err != nil {
-			return nil, fmt.Errorf("subscribe block nofity failed")
+			return nil, fmt.Errorf("subscriber block nofity failed")
 		}
 		return ch, nil
 	})
@@ -485,7 +518,6 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 		delete(hc.responses, msg.uuid)
 		hc.mu.Unlock()
 	}()
-
 	<-response.Notify
 	hc.mu.Lock()
 	response = hc.responses[msg.uuid]
@@ -533,6 +565,22 @@ func (hc *channelSession) handshakeChannel() error {
 	return nil
 }
 
+func (hc *channelSession) sendSubscribedTopics() error {
+	keys := make([]string, 0, len(hc.topicHandlers))
+	for k := range hc.topicHandlers {
+		keys = append(keys, k)
+	}
+	data, err := json.Marshal(keys)
+	if err != nil {
+		return errors.New("marshal topics failed")
+	}
+	msg, err := newChannelMessage(amopSubscribeTopics, data)
+	if err != nil {
+		return fmt.Errorf("newChannelMessage failed, err: %v", err)
+	}
+	return hc.sendMessageNoResponse(msg)
+}
+
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte)) error {
 	if len(topic) > maxTopicLength {
 		return errors.New("topic length exceeds 254")
@@ -547,22 +595,193 @@ func (hc *channelSession) subscribeTopic(topic string, handler func([]byte)) err
 	hc.topicHandlers[topic] = handler
 	hc.topicMu.Unlock()
 
-	keys := make([]string, 0, len(hc.topicHandlers))
+	return hc.sendSubscribedTopics()
+}
+
+func (hc *channelSession) publishAuthTopic(topic string, publicKeys []*ecdsa.PublicKey, handler func([]byte)) error {
+	if handler == nil {
+		return errors.New("handler is nil")
+	}
+	var authTopicName = needVerifyPrefix + topic
+	if _, ok := hc.topicHandlers[authTopicName]; ok {
+		return errors.New("already subscribed to topic " + topic)
+	}
+	if len(authChannelPrefix+authTopicName) > maxTopicLength-33 {
+		return fmt.Errorf("the length of real topic %s exceeds 254, because of prefix \"#!$VerifyChannel_\", \"#!$TopicNeedVerify_\" and \"_{uuid}\"", authChannelPrefix+authTopicName+"_92be6ce4dbd311eaae5a983b8fda4e0e")
+	}
+	hc.topicMu.Lock()
+	hc.topicHandlers[authTopicName] = handler
+	hc.topicHandlers[pushChannelPrefix+authTopicName] = func(data []byte) {
+		// generate random number and send it to node
+		var authInfo requestAuth
+		err := json.Unmarshal(data, &authInfo)
+		if err != nil {
+			log.Printf("unmarshal authInfo failed, err: %v", err)
+			return
+		}
+		requestData := authData{
+			generateRandomNum(),
+			topic,
+		}
+		authData, err := json.Marshal(requestData)
+		if err != nil {
+			log.Printf("Marshal authData failed, err: %v", err)
+			return
+		}
+
+		msg, err := newTopicMessage(authInfo.TopicForCert, authData, amopPushRandom)
+		if err != nil {
+			log.Printf("new topic message failed, err: %v", err)
+		}
+		err = hc.sendMessageNoResponse(msg)
+		if err != nil {
+			log.Printf("send message failed, err: %v", err)
+		}
+		hc.messageMu.Lock()
+		hc.messageHandlers[msg.uuid] = func(data []byte) {
+			authTopicData, err := decodeTopic(data)
+			if err != nil {
+				fmt.Printf("decode topic failed: %+v", msg)
+				return
+			}
+			// base64 encoded json message
+			signatureResponse := struct {
+				Signature string `json:"signature"`
+			}{}
+			err = json.Unmarshal(authTopicData.data, &signatureResponse)
+			if err != nil {
+				log.Printf("unmarshal signatureResponse failed, err: %v,data=%s", err, string(authTopicData.data))
+				return
+			}
+			if signatureResponse.Signature == "" {
+				log.Printf("there hasn't signature in response package, data=%s", string(authTopicData.data))
+				return
+			}
+			signature, err := base64.StdEncoding.DecodeString(signatureResponse.Signature)
+			if err != nil {
+				log.Printf("base64 decode signature failed, err: %v,Signature=%s", err, signatureResponse.Signature)
+				return
+			}
+			var checkResult = 1 // 1 is false
+			digest := sha256.Sum256([]byte(requestData.RandValue))
+			for i := 0; i < len(publicKeys); i++ {
+				publicKeyBytes := crypto.FromECDSAPub(publicKeys[i])
+				if crypto.VerifySignature(publicKeyBytes, digest[:], signature[:len(signature)-1]) {
+					checkResult = 0
+					// log.Printf("verify NodeID %v success", authInfo.NodeID)
+					break
+				}
+			}
+			var updateNodeTopicStatus = new(updateAuthTopicStatus)
+			updateNodeTopicStatus.CheckResult = checkResult
+			updateNodeTopicStatus.Topic = authInfo.Topic
+			updateNodeTopicStatus.NodeID = authInfo.NodeID
+			jsonBytes, err := json.Marshal(updateNodeTopicStatus)
+			if err != nil {
+				log.Printf("nodeUpdateTopicStatus marshal failed, err: %v", err)
+			}
+			newMessage, err := newChannelMessage(amopUpdateTopicStatus, jsonBytes)
+			if err != nil {
+				log.Printf("new topic message failed, err: %v", err)
+			}
+			err = hc.sendMessageNoResponse(newMessage)
+			if err != nil {
+				log.Printf("send message no response failed, err: %v", err)
+			}
+		}
+		hc.messageMu.Unlock()
+	}
+	hc.topicMu.Unlock()
+
+	return hc.sendSubscribedTopics()
+}
+
+func (hc *channelSession) subscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+	if handler == nil {
+		return errors.New("handler is nil")
+	}
+	topic = needVerifyPrefix + topic
+	if _, ok := hc.topicHandlers[topic]; ok {
+		return errors.New("already subscribed to topic " + topic)
+	}
+
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return errors.New("new UUID failed")
+	}
+	idString := strings.ReplaceAll(id.String(), "-", "")
+	authChannelTopic := authChannelPrefix + topic + "_" + idString
+	if len(authChannelTopic) > maxTopicLength {
+		return fmt.Errorf("the length of real topic %s exceeds 254, because of prefix \"#!$VerifyChannel_\", \"#!$TopicNeedVerify_\" and \"_{uuid}\"", authChannelTopic)
+	}
+	hc.topicMu.Lock()
+	hc.topicHandlers[topic] = handler
+	hc.topicHandlers[authChannelTopic] = func(data []byte) {
+		// sign random number and send back
+		object := struct {
+			Context []byte
+			MsgSeq  string
+		}{}
+		err := json.Unmarshal(data, &object)
+		if err != nil {
+			log.Printf("unmarshal object failed, err: %v", err)
+			return
+		}
+		var request authData
+		err = json.Unmarshal(object.Context, &request)
+		if err != nil {
+			log.Printf("unmarshal object failed, err: %v", err)
+			return
+		}
+		digest := sha256.Sum256([]byte(request.RandValue))
+		signature, err := crypto.Sign(digest[:], privateKey)
+		if err != nil {
+			log.Printf("sign random number failed, err: %v\n", err)
+			return
+		}
+		signatureBody := struct {
+			Signature string `json:"signature"`
+		}{}
+		signatureBody.Signature = base64.StdEncoding.EncodeToString(signature)
+		jsonBytes, err := json.Marshal(signatureBody)
+		if err != nil {
+			log.Printf("json marshal failed, err: %+v", signatureBody)
+			return
+		}
+		responseMessage, err := newTopicMessage(authChannelPrefix+topic, jsonBytes, amopResponse)
+		if err != nil {
+			log.Printf("%v", err)
+		}
+		responseMessage.uuid = object.MsgSeq
+		err = hc.sendMessageNoResponse(responseMessage)
+		if err != nil {
+			log.Printf("response message failed")
+		}
+	}
+	hc.topicMu.Unlock()
+
+	return hc.sendSubscribedTopics()
+}
+
+func (hc *channelSession) unsubscribeAuthTopic(topic string) error {
+	var authTopicName = needVerifyPrefix + topic
+	if _, ok := hc.topicHandlers[authTopicName]; !ok {
+		return fmt.Errorf("topic \"%v\" has't been subscribed", topic)
+	}
+	var authChannelTopicName = authChannelPrefix + authTopicName // real authChannelTopicName has the UUID suffix
 	for k := range hc.topicHandlers {
-		keys = append(keys, k)
+		if strings.Contains(k, authChannelTopicName) {
+			authChannelTopicName = k
+			break
+		}
 	}
-	data, err := json.Marshal(keys)
-	if err != nil {
-		hc.topicMu.Lock()
-		delete(hc.topicHandlers, topic)
-		hc.topicMu.Unlock()
-		return errors.New("marshal topics failed")
-	}
-	msg, err := newChannelMessage(amopSubscribeTopics, data)
-	if err != nil {
-		return fmt.Errorf("newChannelMessage failed, err: %v", err)
-	}
-	return hc.sendMessageNoResponse(msg)
+	hc.topicMu.Lock()
+	delete(hc.topicHandlers, authTopicName)
+	delete(hc.topicHandlers, authChannelTopicName)
+	delete(hc.topicHandlers, pushChannelPrefix+authTopicName)
+	hc.topicMu.Unlock()
+
+	return hc.sendSubscribedTopics()
 }
 
 func (hc *channelSession) unsubscribeTopic(topic string) error {
@@ -573,29 +792,21 @@ func (hc *channelSession) unsubscribeTopic(topic string) error {
 	delete(hc.topicHandlers, topic)
 	hc.topicMu.Unlock()
 
-	keys := make([]string, 0, len(hc.topicHandlers))
-	for k := range hc.topicHandlers {
-		keys = append(keys, k)
-	}
-	data, err := json.Marshal(keys)
-	if err != nil {
-		return errors.New("marshal topics failed")
-	}
-	msg, err := newChannelMessage(amopSubscribeTopics, data)
-	if err != nil {
-		return fmt.Errorf("newChannelMessage failed, err: %v", err)
-	}
-	return hc.sendMessageNoResponse(msg)
+	return hc.sendSubscribedTopics()
 }
 
 func (hc *channelSession) pushTopicDataRandom(topic string, data []byte) error {
 	msg, err := newTopicMessage(topic, data, amopPushRandom)
 	if err != nil {
-		return err
+		return fmt.Errorf("new topic message failed, err: %v", err)
 	}
-	_, err = hc.sendMessage(msg)
+	message, err := hc.sendMessage(msg)
 	if err != nil {
 		return fmt.Errorf("sendMessage failed, err: %v", err)
+	}
+	_, err = decodeTopic(message.body)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -616,7 +827,15 @@ func (hc *channelSession) pushTopicDataToALL(topic string, data []byte) error {
 	return nil
 }
 
-func (hc *channelSession) processTopicResponse(msg *channelMessage) error {
+func (hc *channelSession) pushAuthTopicDataRandom(topic string, data []byte) error {
+	return hc.pushTopicDataRandom(needVerifyPrefix+topic, data)
+}
+
+func (hc *channelSession) pushAuthTopicDataToALL(topic string, data []byte) error {
+	return hc.pushTopicDataToALL(needVerifyPrefix+topic, data)
+}
+
+func (hc *channelSession) processTopicMessage(msg *channelMessage) error {
 	topic, err := decodeTopic(msg.body)
 	if err != nil {
 		fmt.Printf("decode topic failed: %+v", msg)
@@ -625,8 +844,20 @@ func (hc *channelSession) processTopicResponse(msg *channelMessage) error {
 	hc.topicMu.RLock()
 	handler, ok := hc.topicHandlers[topic.topic]
 	hc.topicMu.RUnlock()
-	if !ok {
-		return fmt.Errorf("unsubscribe topic %s", topic.topic)
+	if ok && strings.Contains(topic.topic, authChannelPrefix) {
+		jsonStruct := struct {
+			Context []byte
+			MsgSeq  string
+		}{
+			topic.data,
+			msg.uuid,
+		}
+		jsonBytes, err := json.Marshal(jsonStruct)
+		if err != nil {
+			return fmt.Errorf("json marshal failed, err: %v", jsonBytes)
+		}
+		go handler(jsonBytes)
+		return nil
 	}
 	responseMessage, err := newTopicMessage(topic.topic, nil, amopResponse)
 	if err != nil {
@@ -637,8 +868,37 @@ func (hc *channelSession) processTopicResponse(msg *channelMessage) error {
 	if err != nil {
 		return fmt.Errorf("response message failed")
 	}
-	handler(topic.data)
-	return nil
+	if ok {
+		go handler(topic.data)
+		return nil
+	}
+	return fmt.Errorf("unsubscribed topic %s", topic.topic)
+}
+
+func (hc *channelSession) processAuthTopicMessage(msg *channelMessage) error {
+	var requestAuthInfo requestAuth
+	err := json.Unmarshal(msg.body, &requestAuthInfo)
+	if err != nil {
+		return fmt.Errorf("unmarshal authInfo failed, err: %v", err)
+	}
+	responseMessage, err := newTopicMessage(authChannelPrefix+requestAuthInfo.TopicForCert, nil, amopResponse)
+	if err != nil {
+		return err
+	}
+	responseMessage.uuid = msg.uuid
+	err = hc.sendMessageNoResponse(responseMessage)
+	if err != nil {
+		return fmt.Errorf("response message failed")
+	}
+
+	hc.topicMu.RLock()
+	handler, ok := hc.topicHandlers[pushChannelPrefix+requestAuthInfo.Topic]
+	hc.topicMu.RUnlock()
+	if ok {
+		go handler(msg.body)
+		return nil
+	}
+	return fmt.Errorf("unsubscribed topic %s", requestAuthInfo.Topic)
 }
 
 func (hc *channelSession) processMessages() {
@@ -669,8 +929,18 @@ func (hc *channelSession) processMessages() {
 			}
 			hc.mu.Unlock()
 			switch msg.typeN {
-			case amopResponse, rpcMessage, clientHandshake:
+			case rpcMessage, clientHandshake:
 				// fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
+			case amopResponse:
+				hc.messageMu.RLock()
+				handler, ok := hc.messageHandlers[msg.uuid]
+				hc.messageMu.RUnlock()
+				if ok {
+					hc.messageMu.Lock()
+					delete(hc.messageHandlers, msg.uuid)
+					hc.messageMu.Unlock()
+					go handler(msg.body)
+				}
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
 				hc.mu.Lock()
@@ -684,7 +954,12 @@ func (hc *channelSession) processMessages() {
 			case blockNotify:
 				hc.updateBlockNumber(msg)
 			case amopPushRandom, amopMultiCast:
-				err := hc.processTopicResponse(msg)
+				err := hc.processTopicMessage(msg)
+				if err != nil {
+					continue
+				}
+			case amopAuthTopic:
+				err := hc.processAuthTopicMessage(msg)
 				if err != nil {
 					continue
 				}
@@ -745,3 +1020,15 @@ func (t *channelServerConn) RemoteAddr() string {
 
 // SetWriteDeadline does nothing and always returns nil.
 func (t *channelServerConn) SetWriteDeadline(time.Time) error { return nil }
+
+func generateRandomNum() string {
+	// Max random value, a 130-bits integer, i.e 2^130 - 1
+	max := new(big.Int)
+	max.Exp(big.NewInt(2), big.NewInt(130), nil).Sub(max, big.NewInt(1))
+	// Generate cryptographically strong pseudo-random between 0 - max
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		panic("generate random number failed")
+	}
+	return n.Text(16)
+}

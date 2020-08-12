@@ -15,7 +15,7 @@ LOG_INFO() {
 calculate_coverage() {
     # start blockchain demo
     curl -LO https://raw.githubusercontent.com/FISCO-BCOS/FISCO-BCOS/master/tools/build_chain.sh && chmod u+x build_chain.sh
-    bash build_chain.sh -l 127.0.0.1:4 -o nodes
+    bash build_chain.sh -v 2.5.0 -l 127.0.0.1:4 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
     bash nodes/127.0.0.1/start_all.sh
 
