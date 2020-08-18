@@ -236,8 +236,43 @@ integration_gm()
     LOG_INFO "integration_gm testing pass."
 }
 
+integration_amop() {
+    LOG_INFO "integration_amop testing..."
+    bash nodes/127.0.0.1/start_all.sh
+
+    execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
+    execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    nohup ./unicast_publisher 127.0.0.1:20200 hello > output.file 2>&1 &
+    nohup ./subscriber 127.0.0.1:20201 hello > subscriber0.out 2>&1 &
+    sleep 13s
+    cat subscriber0.out
+    if ! grep "hello, FISCO BCOS" ./subscriber0.out >> /dev/null ;then LOG_ERROR "amop unique broadcast failed." && exit 1;fi
+    pid=$(ps -ef | grep -v grep | grep unicast_publisher | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    LOG_INFO "amop unique broadcast test success!"
+
+    execute_cmd "go build -o multicast_publisher examples/amop/multicast_pub/publisher.go"
+    nohup ./multicast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
+    nohup ./subscriber 127.0.0.1:20203 hello1 > subscriber1.out 2>&1 &
+    sleep 13s
+    cat subscriber1.out
+    if ! grep "hello, FISCO BCOS" ./subscriber1.out >> /dev/null ;then LOG_ERROR "amop multi broadcast failed." && exit 1;fi
+    pid=$(ps -ef | grep -v grep | grep multicast_publisher | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    LOG_INFO "amop multi broadcast test success!"
+
+    bash nodes/127.0.0.1/stop_all.sh
+    LOG_INFO "integration_amop testing pass."
+}
+
 check_env
 compile_and_ut
 get_build_chain
 integration_std
+integration_amop
+
 if [ -z "${macOS}" ];then integration_gm ; fi
