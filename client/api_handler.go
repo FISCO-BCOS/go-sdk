@@ -116,7 +116,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		if err != nil {
 			return nil, err
 		}
-
+		// FIXME: how to prevent endless loop
 		// timer to wait transaction on-chain
 		queryTicker := time.NewTicker(time.Second)
 		defer queryTicker.Stop()

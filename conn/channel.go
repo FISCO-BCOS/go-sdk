@@ -67,6 +67,8 @@ type channelSession struct {
 	nodeInfo         nodeInfo
 	closeOnce        sync.Once
 	closed           chan interface{}
+	endpoint         string
+	tlsConfig        *tls.Config
 }
 
 const (
@@ -126,6 +128,7 @@ type handshakeResponse struct {
 
 type channelResponse struct {
 	Message *channelMessage
+	Err     error
 	Notify  chan interface{}
 }
 
@@ -341,7 +344,8 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte)),
 			messageHandlers: make(map[string]func([]byte)),
-			nodeInfo:        nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{})}
+			nodeInfo:        nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
+			tlsConfig: config}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
 			fmt.Printf("handshake channel protocol failed, use default protocol version")
@@ -417,6 +421,9 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	}
 	msgBytes := rpcMsg.Encode()
 
+	if hc.c == nil {
+		return nil, errors.New("connection unavailable, trying to reconnect")
+	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
 		return nil, err
@@ -431,6 +438,9 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	response = hc.responses[rpcMsg.uuid]
 	delete(hc.responses, rpcMsg.uuid)
 	hc.mu.Unlock()
+	if response.Err != nil { // connection unavailable, trying to reconnect
+		return nil, response.Err
+	}
 	if response.Message.errorCode != 0 {
 		return nil, errors.New("response error:" + string(response.Message.errorCode))
 	}
@@ -461,6 +471,9 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 		hc.mu.Unlock()
 	}()
 	msgBytes := rpcMsg.Encode()
+	if hc.c == nil {
+		return nil, errors.New("connection unavailable, trying to reconnect")
+	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
 		return nil, err
@@ -471,6 +484,9 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	response = hc.responses[rpcMsg.uuid]
 	delete(hc.responses, rpcMsg.uuid)
 	hc.mu.Unlock()
+	if response.Err != nil { // connection unavailable, trying to reconnect
+		return nil, response.Err
+	}
 	if response.Message.errorCode != 0 {
 		return nil, errors.New("response error:" + string(response.Message.errorCode))
 	}
@@ -488,6 +504,9 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	hc.mu.RLock()
 	receiptResponse = hc.receiptResponses[rpcMsg.uuid]
 	hc.mu.RUnlock()
+	if response.Err != nil { // connection unavailable, trying to reconnect
+		return nil, response.Err
+	}
 	if receiptResponse.Message.errorCode != 0 {
 		return nil, errors.New("response error:" + string(receiptResponse.Message.errorCode))
 	}
@@ -496,6 +515,9 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 
 func (hc *channelSession) sendMessageNoResponse(msg *channelMessage) error {
 	msgBytes := msg.Encode()
+	if hc.c == nil {
+		return errors.New("connection unavailable, trying to reconnect")
+	}
 	_, err := hc.c.Write(msgBytes)
 	if err != nil {
 		return err
@@ -509,6 +531,9 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 	hc.mu.Lock()
 	hc.responses[msg.uuid] = response
 	hc.mu.Unlock()
+	if hc.c == nil {
+		return nil, errors.New("connection unavailable, trying to reconnect")
+	}
 	_, err := hc.c.Write(msgBytes)
 	if err != nil {
 		return nil, err
@@ -522,6 +547,9 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 	hc.mu.Lock()
 	response = hc.responses[msg.uuid]
 	hc.mu.Unlock()
+	if response.Err != nil { // connection unavailable, trying to reconnect
+		return nil, response.Err
+	}
 	switch response.Message.errorCode {
 	case success:
 		_ = struct{}{}
@@ -905,12 +933,46 @@ func (hc *channelSession) processMessages() {
 	for {
 		select {
 		case <-hc.closed:
-			return
+			// fmt.Println("exit from processMessage")
+			// delete old network
+			_ = hc.c.Close()
+			hc.c = nil
+			// return err for responses and receiptResponses
+			hc.mu.Lock()
+			for _, response := range hc.responses {
+				response.Err = errors.New("connection unavailable, trying to reconnect")
+				response.Notify <- struct{}{}
+			}
+			for _, receiptResponse := range hc.receiptResponses {
+				receiptResponse.Err = errors.New("connection unavailable, trying to reconnect")
+				receiptResponse.Notify <- struct{}{}
+			}
+			hc.mu.Unlock()
+			// delete messageHandler
+			hc.messageMu.Lock()
+			for key := range hc.messageHandlers {
+				delete(hc.messageHandlers, key)
+			}
+			hc.messageMu.Unlock()
+			// re-connect network
+			for {
+				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
+				if err != nil {
+					continue
+				}
+				hc.c = con
+				hc.closed = make(chan interface{})
+				err = hc.sendSubscribedTopics() // re-subscribe topic
+				if err != nil {
+					log.Printf("re-subscriber topic failed when successfully re-connect network")
+				}
+				break
+			}
 		default:
 			receiveBuf := make([]byte, 4096)
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				// fmt.Printf("channel Read error:%v", err)
+				// fmt.Printf("channel Read error:%v\n", err)
 				hc.Close()
 				continue
 			}
