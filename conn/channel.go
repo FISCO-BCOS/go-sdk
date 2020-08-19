@@ -962,11 +962,16 @@ func (hc *channelSession) processMessages() {
 				}
 				hc.c = con
 				hc.closed = make(chan interface{})
+				hc.nodeInfo.Protocol = 1
+				go hc.processMessages()
+				if err = hc.handshakeChannel(); err != nil {
+					fmt.Printf("handshake channel protocol failed, use default protocol version")
+				}
 				err = hc.sendSubscribedTopics() // re-subscribe topic
 				if err != nil {
-					log.Printf("re-subscriber topic failed when successfully re-connect network")
+					log.Printf("re-subscriber topic failed")
 				}
-				break
+				return
 			}
 		default:
 			receiveBuf := make([]byte, 4096)
@@ -1040,7 +1045,7 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 		response := strings.Split(string(topic.data), ",")
 		blockNumber, err = strconv.ParseInt(response[1], 10, 32)
 		if err != nil {
-			fmt.Print("v1 block notify parse blockNumber failed")
+			fmt.Printf("v1 block notify parse blockNumber failed, %v\n", string(topic.data))
 			return
 		}
 	} else {
@@ -1050,7 +1055,7 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 		}
 		err = json.Unmarshal(topic.data, &notify)
 		if err != nil {
-			fmt.Print("block notify parse blockNumber failed")
+			fmt.Printf("block notify parse blockNumber failed, %v\n", string(topic.data))
 			return
 		}
 		blockNumber = notify.BlockNumber
