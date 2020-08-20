@@ -652,7 +652,7 @@ var getSystemConfigByKeyCmd = &cobra.Command{
 	Short: "[configurationItem]                Get the system configuration through key-value",
 	Long: `Returns the system configuration through key-value.
 Arguments:
-[key to query]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num", "rpbft_epoch_block_num".
+[key to query]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num", "rpbft_epoch_block_num", "consensus_timeout".
 
 For example:
 
@@ -663,8 +663,14 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if args[0] != "tx_count_limit" && args[0] != "tx_gas_limit" {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit] and [tx_gas_limit]")
+		configMap := make(map[string]struct{})
+		configMap["tx_count_limit"] = struct{}{}
+		configMap["tx_gas_limit"] = struct{}{}
+		configMap["rpbft_epoch_sealer_num"] = struct{}{}
+		configMap["rpbft_epoch_block_num"] = struct{}{}
+		configMap["consensus_timeout"] = struct{}{}
+		if _, ok := configMap[args[0]]; !ok {
+			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
 			return
 		}
 		key := args[0]
