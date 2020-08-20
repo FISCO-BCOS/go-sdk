@@ -437,7 +437,7 @@ var getTransactionByBlockHashAndIndexCmd = &cobra.Command{
 	Long: `Returns transaction information based on block hash and transaction index inside the block.
 Arguments:
        [blockHash]: block hash string.
-[transactionIndex]: index for the transaction that must be encoded in hex format(prefix with "0x").
+[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
 
 For example:
 
@@ -451,12 +451,6 @@ For more information please refer:
 		_, err := isValidHex(args[0])
 		if err != nil {
 			fmt.Println(err)
-			return
-		}
-
-		// starts with "0x"
-		if !strings.HasPrefix(args[1], "0x") {
-			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
 			return
 		}
 
@@ -483,7 +477,7 @@ var getTransactionByBlockNumberAndIndexCmd = &cobra.Command{
 	Long: `Returns transaction information based on block number and transaction index inside the block.
 Arguments:
      [blockNumber]: block number encoded in decimal format or in hex(prefix with "0x").
-[transactionIndex]: index for the transaction that must be encoded in hex format(prefix with "0x").
+[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
 
 For example:
 
@@ -494,15 +488,15 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := isValidNumber(args[0])
+		bnum, err := isValidNumber(args[0])
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		// starts with "0x"
-		if !strings.HasPrefix(args[1], "0x") {
-			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
+		_, err = isOutOfRange(bnum)
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
 
