@@ -30,6 +30,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("grantCommitteeMember failed, chaingovernance.NewService err, err: %v\n", err)
@@ -65,6 +69,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("revokeCommitteeMember failed, chaingovernance.NewService err: %v\n", err)
@@ -132,6 +140,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("queryCommitteeMemberWeight failed, chaingovernance.NewService err: %v\n", err)
@@ -164,6 +176,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		num, err := strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Printf("updateCommitteeMemberWeight failed, strconv.Atoi err: %v\n", err)
@@ -280,6 +296,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("grantOperator failed, chaingovernance.NewService err, err: %v\n", err)
@@ -315,6 +335,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("revokeOperator failed, chaingovernance.NewService err: %v\n", err)
@@ -383,6 +407,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("freezeAccount failed, chaingovernance.NewService err: %v\n", err)
@@ -419,6 +447,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("unfreezeAccount failed, chaingovernance.NewService err: %v\n", err)
@@ -454,6 +486,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
 			fmt.Printf("getAccountStatus failed, chaingovernance.NewService err: %v\n", err)
