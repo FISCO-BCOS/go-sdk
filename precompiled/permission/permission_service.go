@@ -177,8 +177,8 @@ func (service *Service) ListSysConfigManager() ([]Info, error) {
 	return service.list(SysConfig)
 }
 
-// GrantWrite grants the permission of writing contract
-func (service *Service) GrantWrite(contractAddress common.Address, accountAddress common.Address) (int64, error) {
+// GrantContractWritePermission grants the permission of writing contract
+func (service *Service) GrantContractWritePermission(contractAddress common.Address, accountAddress common.Address) (int64, error) {
 	_, receipt, err := service.permission.GrantWrite(service.permissionAuth, contractAddress, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("GrantWrite grant failed: %v", err)
@@ -186,8 +186,8 @@ func (service *Service) GrantWrite(contractAddress common.Address, accountAddres
 	return parseReturnValue(receipt, "grantWrite")
 }
 
-// RevokeWrite revokes the permission of writing contract
-func (service *Service) RevokeWrite(contractAddress common.Address, accountAddress common.Address) (int64, error) {
+// RevokeContractWritePermission revokes the permission of writing contract
+func (service *Service) RevokeContractWritePermission(contractAddress common.Address, accountAddress common.Address) (int64, error) {
 	_, receipt, err := service.permission.RevokeWrite(service.permissionAuth, contractAddress, accountAddress)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("RevokeWrite revoke failed: %v", err)
@@ -195,8 +195,8 @@ func (service *Service) RevokeWrite(contractAddress common.Address, accountAddre
 	return parseReturnValue(receipt, "revokeWrite")
 }
 
-// QueryPermission queries the accounts that have the permission of writing contract
-func (service *Service) QueryPermission(contractAddress common.Address) ([]Info, error) {
+// ListContractWritePermission queries the accounts that have the permission of writing contract
+func (service *Service) ListContractWritePermission(contractAddress common.Address) ([]Info, error) {
 	opts := &bind.CallOpts{From: service.permissionAuth.From}
 	permissionInfo, err := service.permission.QueryPermission(opts, contractAddress)
 	if err != nil {

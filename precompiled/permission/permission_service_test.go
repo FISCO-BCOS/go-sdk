@@ -326,40 +326,40 @@ func TestRevokeSysConfigManager(t *testing.T) {
 	t.Logf("TestRevokeSysConfigManager revoke result: %v", result)
 }
 
-func TestGrantWrite(t *testing.T) {
-	result, err := service.GrantWrite(common.HexToAddress(contractAddress), common.HexToAddress(permissionAdd))
+func TestGrantContractWritePermission(t *testing.T) {
+	result, err := service.GrantContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(permissionAdd))
 	if err != nil {
-		t.Fatalf("TestGrantWrite failed: %v", err)
+		t.Fatalf("TestGrantContractWritePermission failed: %v", err)
 	}
 	if result != standardOutput {
-		t.Fatalf("TestGrantWrite failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
+		t.Fatalf("TestGrantContractWritePermission failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("TestGrantWrite: %v", result)
+	t.Logf("TestGrantContractWritePermission: %v", result)
 }
 
 func TestQueryPermission(t *testing.T) {
-	listResult, err := service.QueryPermission(common.HexToAddress(contractAddress))
+	listResult, err := service.ListContractWritePermission(common.HexToAddress(contractAddress))
 	if err != nil {
-		t.Fatalf("TestQueryPermission failed: %v", err)
+		t.Fatalf("TestListContractWritePermission failed: %v", err)
 	}
 	if len(listResult) != 1 {
-		t.Fatalf("TestQueryPermission failed, the length of listResult %v is inconsistent with \"1\"", len(listResult))
+		t.Fatalf("TestListContractWritePermission failed, the length of listResult %v is inconsistent with \"1\"", len(listResult))
 	}
 	if listResult[0].Address != "0xfbb18d54e9ee57529cda8c7c52242efe879f064f" {
-		t.Fatalf("TestListSysConfigManager failed, the address %v is inconsistent with \"0xfbb18d54e9ee57529cda8c7c52242efe879f064f\"", listResult[0].Address)
+		t.Fatalf("TestListContractWritePermission failed, the address %v is inconsistent with \"0xfbb18d54e9ee57529cda8c7c52242efe879f064f\"", listResult[0].Address)
 	}
 	for i := 0; i < len(listResult); i++ {
-		t.Logf("TestQueryPermission: %v", listResult[i])
+		t.Logf("TestListContractWritePermission: %v", listResult[i])
 	}
 }
 
-func TestRevokeWrite(t *testing.T) {
-	result, err := service.RevokeWrite(common.HexToAddress(contractAddress), common.HexToAddress(permissionAdd))
+func TestRevokeContractWritePermission(t *testing.T) {
+	result, err := service.RevokeContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(permissionAdd))
 	if err != nil {
-		t.Fatalf("TestRevokeWrite failed: %v", err)
+		t.Fatalf("TestRevokeContractWritePermission failed: %v", err)
 	}
 	if result != standardOutput {
-		t.Fatalf("TestRevokeWrite failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
+		t.Fatalf("TestRevokeContractWritePermission failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
 	}
-	t.Logf("TestRevokeWrite revoke result: %v", result)
+	t.Logf("TestRevokeContractWritePermission revoke result: %v", result)
 }

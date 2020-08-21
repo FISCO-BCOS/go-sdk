@@ -685,8 +685,8 @@ For more information please refer:
 	},
 }
 
-var grantWrite = &cobra.Command{
-	Use:   "grantWrite",
+var grantContractWritePermission = &cobra.Command{
+	Use:   "grantContractWritePermission",
 	Short: "[contractAddress] [accountAddress] Grant permission for write contract by address",
 	Long: `Grant permission for system configuration by address.
 Arguments:
@@ -695,7 +695,7 @@ Arguments:
 
 For example:
 
-    [grantWrite] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353] [0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F]
+    [grantContractWritePermission] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353] [0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F]
 `,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -714,7 +714,7 @@ For example:
 			fmt.Printf("grantWrite failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
-		result, err := permissionService.GrantWrite(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
+		result, err := permissionService.GrantContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
 		if err != nil {
 			fmt.Printf("grantWrite failed, permissionService.GrantWrite err: %v\n", err)
 			return
@@ -727,8 +727,8 @@ For example:
 	},
 }
 
-var revokeWrite = &cobra.Command{
-	Use:   "revokeWrite",
+var revokeContractWritePermission = &cobra.Command{
+	Use:   "revokeContractWritePermission",
 	Short: "[contractAddress] [accountAddress] Revoke permission for write contract by address",
 	Long: `Revoke permission for write contract by address.
 Arguments:
@@ -737,7 +737,7 @@ Arguments:
 
 For example:
 
-	[revokeWrite] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353] [0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F]
+	[revokeContractWritePermission] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353] [0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F]
 `,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -756,7 +756,7 @@ For example:
 			fmt.Printf("revokeWrite failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
-		result, err := permissionService.RevokeWrite(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
+		result, err := permissionService.RevokeContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
 		if err != nil {
 			fmt.Printf("revokeWrite failed, permissionService.RevokeWrite err: %v\n", err)
 			return
@@ -769,8 +769,8 @@ For example:
 	},
 }
 
-var queryPermission = &cobra.Command{
-	Use:   "queryPermission",
+var listContractWritePermission = &cobra.Command{
+	Use:   "listContractWritePermission",
 	Short: "[contractAddress]                  Query permission for write contract by address",
 	Long: `Query permission for write contract by address.
 Arguments:
@@ -778,7 +778,7 @@ Arguments:
 
 For example:
 
-	[queryPermission] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353]
+	[listContractWritePermission] [0xBEAB43be5B1Cc361495D61A5f53e4AC01ecac353]
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -792,7 +792,7 @@ For example:
 			fmt.Printf("queryPermission failed, permission.NewPermissionService err:%v", err)
 			return
 		}
-		managers, err := permissionService.QueryPermission(common.HexToAddress(contractAddress))
+		managers, err := permissionService.ListContractWritePermission(common.HexToAddress(contractAddress))
 		if err != nil {
 			fmt.Printf("queryPermission failed, permissionService.QueryPermission err: %v", err)
 			return
@@ -820,5 +820,5 @@ func init() {
 	// the permission of system configuration
 	rootCmd.AddCommand(grantSysConfigManager, revokeSysConfigManager, listSysConfigManager)
 	// the permission of writing contract
-	rootCmd.AddCommand(grantWrite, revokeWrite, queryPermission)
+	rootCmd.AddCommand(grantContractWritePermission, revokeContractWritePermission, listContractWritePermission)
 }
