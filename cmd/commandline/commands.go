@@ -285,10 +285,8 @@ For more information please refer:
 		}
 
 		if len(args) == 1 {
-			bhash = args[0]
 			includeTx = true
 		} else {
-			bhash = args[0]
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
@@ -296,6 +294,8 @@ For more information please refer:
 			}
 			includeTx = _includeTx
 		}
+
+		bhash = args[0]
 		peers, err := RPC.GetBlockByHash(context.Background(), bhash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
@@ -330,12 +330,15 @@ For more information please refer:
 			fmt.Println(err)
 			return
 		}
+		_, err = isBlockNumberOutOfRange(bnum)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		if len(args) == 1 {
-			bnumber = args[0]
 			includeTx = true
 		} else {
-			bnumber = args[0]
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
@@ -344,12 +347,7 @@ For more information please refer:
 			includeTx = _includeTx
 		}
 
-		_, err = isOutOfRange(bnum)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
+		bnumber = args[0]
 		block, err := RPC.GetBlockByNumber(context.Background(), bnumber, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
@@ -381,7 +379,7 @@ For more information please refer:
 			return
 		}
 
-		_, err = isOutOfRange(bnum)
+		_, err = isBlockNumberOutOfRange(bnum)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -494,7 +492,7 @@ For more information please refer:
 			return
 		}
 
-		_, err = isOutOfRange(bnum)
+		_, err = isBlockNumberOutOfRange(bnum)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -707,7 +705,7 @@ func toDecimal(hex string) (int, error) {
 	i := new(big.Int)
 	var flag bool
 	i, flag = i.SetString(hex, 16) // octal
-	if flag != true {
+	if !flag {
 		return -1, fmt.Errorf("Cannot parse hex string to Int")
 	}
 	return int(i.Uint64()), nil
@@ -723,11 +721,11 @@ func isValidNumber(str string) (int, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
 		// is hex string
-		_, err = strconv.ParseInt(str[2:len(str)], 16, 64)
+		_, err = strconv.ParseInt(str[2:], 16, 64)
 		if err != nil {
 			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
 		}
-		bnum, err = toDecimal(str[2:len(str)])
+		bnum, err = toDecimal(str[2:])
 		if err != nil {
 			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
 		}
@@ -756,7 +754,7 @@ func isValidHex(str string) (bool, error) {
 	return false, fmt.Errorf("Arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
 }
 
-func isOutOfRange(bnum int) (bool, error) {
+func isBlockNumberOutOfRange(bnum int) (bool, error) {
 	// compare with the current block number
 	curr, err := RPC.GetBlockNumber(context.Background())
 	if err != nil {
