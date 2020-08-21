@@ -12,7 +12,7 @@ var setSystemConfigByKey = &cobra.Command{
 	Short: "[system_configuration_item]        Set the system configuration through key-value",
 	Long: `Returns the system configuration through key-value.
 Arguments:
-	  [key]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num" and "rpbft_epoch_block_num".
+	  [key]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num", "rpbft_epoch_block_num", "consensus_timeout".
 [key value]: the value of corresponding key.
 
 For example:
@@ -29,8 +29,9 @@ For more information please refer:
 		configMap["tx_gas_limit"] = struct{}{}
 		configMap["rpbft_epoch_sealer_num"] = struct{}{}
 		configMap["rpbft_epoch_block_num"] = struct{}{}
+		configMap["consensus_timeout"] = struct{}{}
 		if _, ok := configMap[args[0]]; !ok {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num] and [rpbft_epoch_block_num]")
+			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
 			return
 		}
 		key := args[0]

@@ -26,6 +26,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		contractLifeCycleService, err := contractlifecycle.NewService(RPC)
 		if err != nil {
 			fmt.Printf("freezeContract failed, contractlifecycle.NewService err: %v\n", err)
@@ -61,6 +65,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		contractLifeCycleService, err := contractlifecycle.NewService(RPC)
 		if err != nil {
 			fmt.Printf("unfreezeContract failed, contractlifecycle.NewService err: %v\n", err)
@@ -97,7 +105,19 @@ For more information please refer:
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		accountAddress := args[1]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		contractLifeCycleService, err := contractlifecycle.NewService(RPC)
 		if err != nil {
 			fmt.Printf("grantContractStatusManager failed, contractlifecycle.NewService err: %v\n", err)
@@ -133,6 +153,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		contractLifeCycleService, err := contractlifecycle.NewService(RPC)
 		if err != nil {
 			fmt.Printf("getContractStatus failed, contractlifecycle.NewService err: %v\n", err)
@@ -168,6 +192,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		contractLifeCycleService, err := contractlifecycle.NewService(RPC)
 		if err != nil {
 			fmt.Printf("listContractStatusManager failed, contractlifecycle.NewService err: %v\n", err)

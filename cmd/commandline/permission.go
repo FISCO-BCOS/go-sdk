@@ -28,6 +28,10 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
 		accountAddress := args[1]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantUserTableManager failed, permission.NewPermissionService err:%v\n", err)
@@ -65,6 +69,10 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
 		accountAddress := args[1]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeUserTableManager failed, permission.NewPermissionService err:%v\n", err)
@@ -136,6 +144,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
@@ -171,6 +183,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
@@ -242,6 +258,10 @@ For more information please refer:
 			return
 		}
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantPermissionManager failed, permission.NewPermissionService err:%v\n", err)
@@ -281,6 +301,10 @@ For more information please refer:
 			return
 		}
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokePermissionManager failed, permission.NewPermissionService err:%v\n", err)
@@ -348,6 +372,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantNodeManager failed, permission.NewPermissionService err:%v\n", err)
@@ -383,6 +411,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeNodeManager failed, permission.NewPermissionService err:%v\n", err)
@@ -450,6 +482,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantCNSManager failed, permission.NewPermissionService err:%v\n", err)
@@ -485,6 +521,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeCNSManager failed, permission.NewPermissionService err:%v\n", err)
@@ -552,6 +592,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
@@ -587,6 +631,10 @@ For more information please refer:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
@@ -652,7 +700,15 @@ For example:
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		accountAddress := args[1]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("grantWrite failed, permission.NewPermissionService err:%v\n", err)
@@ -686,7 +742,15 @@ For example:
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		accountAddress := args[1]
+		if !IsValidAccount(accountAddress) {
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("revokeWrite failed, permission.NewPermissionService err:%v\n", err)
@@ -719,6 +783,10 @@ For example:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
+		if !IsValidAccount(contractAddress) {
+			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			return
+		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
 			fmt.Printf("queryPermission failed, permission.NewPermissionService err:%v", err)
