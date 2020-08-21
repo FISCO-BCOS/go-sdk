@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/conn"
@@ -30,7 +31,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -120,16 +120,19 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		// timer to wait transaction on-chain
 		queryTicker := time.NewTicker(time.Second)
 		defer queryTicker.Stop()
-		logger := log.New("hash", tx.Hash())
 		for {
 			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
 			if receipt != nil {
 				return receipt, nil
 			}
 			if err != nil {
-				logger.Trace("Receipt retrieval failed", "err", err)
+				errorStr := fmt.Sprintf("%s", err)
+				if strings.Contains(errorStr, "connection refused") {
+					return nil, err
+				}
+				fmt.Printf("Receipt retrieval failed, err: %v\n", err)
 			} else {
-				logger.Trace("Transaction not yet mined")
+				fmt.Println("Transaction not yet mined")
 			}
 			// Wait for the next round.
 			select {

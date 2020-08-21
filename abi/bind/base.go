@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -108,26 +107,14 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	tx, _, err := c.transact(opts, nil, append(bytecode, input...))
+	tx, receipt, err := c.transact(opts, nil, append(bytecode, input...))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	var address common.Address
-	timeTick := 0
-	// wait for the result of deployment
-	for range time.Tick(time.Second) {
-		address, err = c.transactor.GetContractAddress(ensureContext(opts.Context), tx.Hash().Hex())
-		if err != nil {
-			timeTick++
-		}
-		if timeTick == 15 {
-			return common.Address{}, nil, nil, fmt.Errorf("time out for the contract deployment: %+v", err)
-		}
-		if err == nil {
-			break
-		}
+	if receipt == nil {
+		return common.Address{}, nil, nil, errors.New("deploy failed, receipt is nil")
 	}
-	c.address = address
+	c.address = receipt.ContractAddress
 	return c.address, tx, c, nil
 }
 
