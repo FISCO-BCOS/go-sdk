@@ -282,6 +282,14 @@ func (c *Client) PushTopicDataToALL(topic string, data []byte) error {
 //	return c.apiHandler.PushAuthTopicDataToALL(topic, data)
 //}
 
+func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {
+	return c.apiHandler.SubscribeBlockNumberNotify(uint64(c.groupID), handler)
+}
+
+func (c *Client) UnsubscribeBlockNumberNotify() error {
+	return c.apiHandler.UnsubscribeBlockNumberNotify(uint64(c.groupID))
+}
+
 // GetGroupID returns the groupID of the client
 func (c *Client) GetGroupID() *big.Int {
 	return big.NewInt(int64(c.groupID))

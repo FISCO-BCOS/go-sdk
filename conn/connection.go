@@ -352,6 +352,16 @@ func (c *Connection) PushAuthTopicDataToALL(topic string, data []byte) error {
 	return hc.pushAuthTopicDataToALL(topic, data)
 }
 
+func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribeBlockNumberNotify(groupID, handler)
+}
+
+func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.unSubscribeBlockNumberNotify(groupID)
+}
+
 // BatchCall sends all given requests as a single batch and waits for the server
 // to return a response for all of them.
 //

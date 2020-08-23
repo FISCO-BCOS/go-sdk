@@ -58,17 +58,19 @@ type channelSession struct {
 	mu        sync.RWMutex
 	responses map[string]*channelResponse
 	// receiptsMutex sync.Mutex
-	receiptResponses map[string]*channelResponse
-	topicMu          sync.RWMutex
-	topicHandlers    map[string]func([]byte)
-	messageMu        sync.RWMutex
-	messageHandlers  map[string]func([]byte)
-	buf              []byte
-	nodeInfo         nodeInfo
-	closeOnce        sync.Once
-	closed           chan interface{}
-	endpoint         string
-	tlsConfig        *tls.Config
+	receiptResponses    map[string]*channelResponse
+	topicMu             sync.RWMutex
+	topicHandlers       map[string]func([]byte)
+	messageMu           sync.RWMutex
+	messageHandlers     map[string]func([]byte)
+	blockNotifyMu       sync.RWMutex
+	blockNotifyHandlers map[uint64]func(int64)
+	buf                 []byte
+	nodeInfo            nodeInfo
+	closeOnce           sync.Once
+	closed              chan interface{}
+	endpoint            string
+	tlsConfig           *tls.Config
 }
 
 const (
@@ -343,8 +345,9 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte)),
-			messageHandlers: make(map[string]func([]byte)),
-			nodeInfo:        nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
+			messageHandlers:     make(map[string]func([]byte)),
+			blockNotifyHandlers: make(map[uint64]func(int64)),
+			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
 			tlsConfig: config}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
@@ -1040,7 +1043,12 @@ func (hc *channelSession) processMessages() {
 
 func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 	var blockNumber int64
+	var groupID uint64
 	topic, err := decodeTopic(msg.body)
+	if err != nil {
+		fmt.Printf("decodeTopic msg.body failed, err: %v\n", err)
+		return
+	}
 	if hc.nodeInfo.Protocol == 1 {
 		response := strings.Split(string(topic.data), ",")
 		blockNumber, err = strconv.ParseInt(response[1], 10, 32)
@@ -1048,10 +1056,15 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 			fmt.Printf("v1 block notify parse blockNumber failed, %v\n", string(topic.data))
 			return
 		}
+		groupID, err = strconv.ParseUint(response[0], 10, 32)
+		if err != nil {
+			fmt.Printf("v1 block notify parse GroupID failed, %v\n", string(topic.data))
+			return
+		}
 	} else {
 		var notify struct {
-			GroupID     uint  `json:"groupID"`
-			BlockNumber int64 `json:"blockNumber"`
+			GroupID     uint64 `json:"groupID"`
+			BlockNumber int64  `json:"blockNumber"`
 		}
 		err = json.Unmarshal(topic.data, &notify)
 		if err != nil {
@@ -1059,9 +1072,41 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 			return
 		}
 		blockNumber = notify.BlockNumber
+		groupID = notify.GroupID
 	}
 	// fmt.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
 	hc.nodeInfo.blockNumber = blockNumber
+	fmt.Printf("basic block on-chain notification, %v ", blockNumber)
+
+	if handler, ok := hc.blockNotifyHandlers[groupID]; ok {
+		go handler(blockNumber)
+	}
+}
+
+func (hc *channelSession) subscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+	if _, ok := hc.blockNotifyHandlers[groupID]; ok {
+		return errors.New("the group's blockchain notification has been subscribed")
+	}
+	hc.blockNotifyMu.Lock()
+	hc.blockNotifyHandlers[groupID] = handler
+	hc.blockNotifyMu.Unlock()
+	if err := hc.subscribeTopic("_block_notify_"+strconv.Itoa(int(groupID)), func(i []byte) {}); err != nil {
+		return fmt.Errorf("subscriber group block nofity failed")
+	}
+	return nil
+}
+
+func (hc *channelSession) unSubscribeBlockNumberNotify(groupID uint64) error {
+	if _, ok := hc.blockNotifyHandlers[groupID]; !ok {
+		return errors.New("group on-chain block notification does not exist")
+	}
+	if err := hc.unsubscribeTopic("_block_notify_" + strconv.Itoa(int(groupID))); err != nil {
+		return err
+	}
+	hc.blockNotifyMu.Lock()
+	delete(hc.blockNotifyHandlers, groupID)
+	hc.blockNotifyMu.Unlock()
+	return nil
 }
 
 // channelServerConn turns a Channel connection into a Conn.
