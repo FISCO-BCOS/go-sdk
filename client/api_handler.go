@@ -198,6 +198,14 @@ func (api *APIHandler) PushAuthTopicDataToALL(topic string, data []byte) error {
 	return api.Connection.PushAuthTopicDataToALL(topic, data)
 }
 
+func (api *APIHandler) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+	return api.Connection.SubscribeBlockNumberNotify(groupID, handler)
+}
+
+func (api *APIHandler) UnsubscribeBlockNumberNotify(groupID uint64) error {
+	return api.Connection.UnsubscribeBlockNumberNotify(groupID)
+}
+
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
 func (api *APIHandler) GetClientVersion(ctx context.Context) ([]byte, error) {
 	var raw interface{}
