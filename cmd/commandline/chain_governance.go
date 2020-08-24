@@ -182,7 +182,7 @@ For more information please refer:
 		}
 		num, err := strconv.Atoi(args[1])
 		if err != nil {
-			fmt.Printf("updateCommitteeMemberWeight failed, strconv.Atoi err: %v\n", err)
+			fmt.Println("weight should be integer")
 			return
 		}
 		if num < 1 {
@@ -226,7 +226,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		num, err := strconv.Atoi(args[0])
 		if err != nil {
-			fmt.Printf("updateThreshold failed, strconv.Atoi err: %v\n", err)
+			fmt.Println("threshold should be integer")
 			return
 		}
 		if num < 0 || num > 99 {

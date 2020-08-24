@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -78,17 +79,25 @@ type callResult struct {
 
 // Call invoke the call method of rpc api
 func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
-	var hex hexutil.Bytes
+	var hexBytes hexutil.Bytes
 	var cr *callResult
 	err := api.CallContext(ctx, &cr, "call", groupID, toCallArg(msg))
 	if err != nil {
 		return nil, err
 	}
 	if cr.Status != "0x0" {
-		return nil, fmt.Errorf("call error of status %s", cr.Status)
+		var errorMessage string
+		if len(cr.Output) >= 138 {
+			outputBytes, err := hex.DecodeString(cr.Output[2:])
+			if err != nil {
+				return nil, fmt.Errorf("call error of status %s, hex.DecodeString failed", cr.Status)
+			}
+			errorMessage = string(outputBytes[68:])
+		}
+		return nil, fmt.Errorf("call error of status %s, %v", cr.Status, errorMessage)
 	}
-	hex = common.FromHex(cr.Output)
-	return hex, nil
+	hexBytes = common.FromHex(cr.Output)
+	return hexBytes, nil
 }
 
 // SendRawTransaction injects a signed transaction into the pending pool for execution.
