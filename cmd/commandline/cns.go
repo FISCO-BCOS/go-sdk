@@ -44,6 +44,11 @@ For more information please refer:
 			fmt.Printf("queryCNS failed, cnsService.QueryCnsByName or cnsService.QueryCnsByNameAndVersion err: %v\n", err)
 			return
 		}
+		if len(args) == 1 && len(infos) == 0 {
+			fmt.Printf("contract %v is not existed\n", args[0])
+		} else if len(args) == 2 && len(infos) == 0 {
+			fmt.Printf("contract %v, version %v is not existed\n", args[0], args[1])
+		}
 		// abi info is not printed
 		for i := 0; i < len(infos); i++ {
 			fmt.Println("name: " + infos[i].Name + ", version: " + infos[i].Version + ", address: " + infos[i].Address)
