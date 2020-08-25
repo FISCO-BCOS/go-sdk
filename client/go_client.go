@@ -240,6 +240,10 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*t
 	return c.apiHandler.SendRawTransaction(ctx, c.groupID, tx)
 }
 
+func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
+	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx, handler)
+}
+
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {

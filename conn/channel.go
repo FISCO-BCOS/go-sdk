@@ -35,6 +35,7 @@ import (
 	"time"
 
 	tls "github.com/FISCO-BCOS/crypto/tls"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
 )
@@ -63,6 +64,8 @@ type channelSession struct {
 	topicHandlers       map[string]func([]byte)
 	messageMu           sync.RWMutex
 	messageHandlers     map[string]func([]byte)
+	asyncMu             sync.RWMutex
+	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
 	blockNotifyHandlers map[uint64]func(int64)
 	buf                 []byte
@@ -346,6 +349,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte)),
 			messageHandlers:     make(map[string]func([]byte)),
+			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
 			tlsConfig: config}
@@ -460,7 +464,6 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	if err != nil {
 		return nil, err
 	}
-
 	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	receiptResponse := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	hc.mu.Lock()
@@ -482,7 +485,6 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 		return nil, err
 	}
 	<-response.Notify
-
 	hc.mu.Lock()
 	response = hc.responses[rpcMsg.uuid]
 	delete(hc.responses, rpcMsg.uuid)
@@ -501,19 +503,67 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 		return nil, fmt.Errorf("send transaction error, code=%d, message=%s", respmsg.Error.Code, respmsg.Error.Message)
 	}
 	// fmt.Printf("sendTransaction reveived response,seq:%s message:%s\n ", rpcMsg.uuid, respmsg.Result)
-
 	<-receiptResponse.Notify
-
 	hc.mu.RLock()
 	receiptResponse = hc.receiptResponses[rpcMsg.uuid]
 	hc.mu.RUnlock()
-	if response.Err != nil { // connection unavailable, trying to reconnect
+	if receiptResponse.Err != nil { // connection unavailable, trying to reconnect
 		return nil, response.Err
 	}
 	if receiptResponse.Message.errorCode != 0 {
 		return nil, errors.New("response error:" + string(receiptResponse.Message.errorCode))
 	}
 	return receiptResponse.Message.body, nil
+}
+
+func (hc *channelSession) asyncSendTransaction(msg interface{}, handler func(*types.Receipt, error)) error {
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	var rpcMsg *channelMessage
+	rpcMsg, err = newChannelMessage(rpcMessage, body)
+	if err != nil {
+		return err
+	}
+
+	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
+	hc.mu.Lock()
+	hc.responses[rpcMsg.uuid] = response
+	hc.asyncHandlers[rpcMsg.uuid] = handler
+	hc.mu.Unlock()
+	defer func() {
+		hc.mu.Lock()
+		delete(hc.responses, rpcMsg.uuid)
+		hc.mu.Unlock()
+	}()
+	msgBytes := rpcMsg.Encode()
+	if hc.c == nil {
+		return errors.New("connection unavailable, trying to reconnect")
+	}
+	_, err = hc.c.Write(msgBytes)
+	if err != nil {
+		return err
+	}
+	<-response.Notify
+
+	hc.mu.Lock()
+	response = hc.responses[rpcMsg.uuid]
+	hc.mu.Unlock()
+	if response.Err != nil { // connection unavailable, trying to reconnect
+		return response.Err
+	}
+	if response.Message.errorCode != 0 {
+		return errors.New("response error:" + string(response.Message.errorCode))
+	}
+	var responseMsg jsonrpcMessage
+	if err := json.NewDecoder(bytes.NewReader(response.Message.body)).Decode(&responseMsg); err != nil {
+		return err
+	}
+	if responseMsg.Error != nil {
+		return fmt.Errorf("async-send transaction error, code=%d, message=%s", responseMsg.Error.Code, responseMsg.Error.Message)
+	}
+	return nil
 }
 
 func (hc *channelSession) sendMessageNoResponse(msg *channelMessage) error {
@@ -957,6 +1007,13 @@ func (hc *channelSession) processMessages() {
 				delete(hc.messageHandlers, key)
 			}
 			hc.messageMu.Unlock()
+			// delete asyncHandler
+			hc.asyncMu.Lock()
+			for key, handler := range hc.asyncHandlers {
+				handler(nil, errors.New("connection unavailable, trying to reconnect"))
+				delete(hc.asyncHandlers, key)
+			}
+			hc.asyncMu.Unlock()
 			// re-connect network
 			for {
 				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
@@ -1017,10 +1074,34 @@ func (hc *channelSession) processMessages() {
 				if receipt, ok := hc.receiptResponses[msg.uuid]; ok {
 					receipt.Message = msg
 					receipt.Notify <- struct{}{}
-				} else {
-					fmt.Printf("error %+v", receipt)
 				}
 				hc.mu.Unlock()
+				hc.asyncMu.Lock()
+				if handler, ok := hc.asyncHandlers[msg.uuid]; ok {
+					if msg.errorCode != 0 {
+						go handler(nil, errors.New("response error:"+string(msg.errorCode)))
+					} else {
+						var receipt = new(types.Receipt)
+						var anonymityReceipt = &struct {
+							types.Receipt
+							Status string `json:"status"`
+						}{}
+						err := json.Unmarshal(msg.body, anonymityReceipt)
+						if err != nil {
+							go handler(nil, fmt.Errorf("json.Unmarshal failed, err%v", err))
+							continue
+						}
+						status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+						if err != nil {
+							go handler(nil, fmt.Errorf("strconv.ParseInt failed: "+fmt.Sprint(err)))
+						}
+						receipt = &anonymityReceipt.Receipt
+						receipt.Status = int(status)
+						go handler(receipt, nil)
+					}
+					delete(hc.asyncHandlers, msg.uuid)
+				}
+				hc.asyncMu.Unlock()
 			case blockNotify:
 				hc.updateBlockNumber(msg)
 			case amopPushRandom, amopMultiCast:
@@ -1076,7 +1157,6 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 	}
 	// fmt.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
 	hc.nodeInfo.blockNumber = blockNumber
-	fmt.Printf("basic block on-chain notification, %v ", blockNumber)
 
 	if handler, ok := hc.blockNotifyHandlers[groupID]; ok {
 		go handler(blockNumber)

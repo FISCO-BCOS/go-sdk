@@ -118,6 +118,17 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	return c.address, tx, c, nil
 }
 
+func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error), abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, error) {
+	// Otherwise try to deploy the contract
+	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
+
+	input, err := c.abi.Pack("", params...)
+	if err != nil {
+		return nil, err
+	}
+	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
+}
+
 // Call invokes the (constant) contract method with params as input values and
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
@@ -181,6 +192,15 @@ func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...in
 	return c.transact(opts, &c.address, input)
 }
 
+func (c *BoundContract) AsyncTransact(opts *TransactOpts, handler func(*types.Receipt, error), method string, params ...interface{}) (*types.Transaction, error) {
+	// Otherwise pack up the parameters and invoke the contract
+	input, err := c.abi.Pack(method, params...)
+	if err != nil {
+		return nil, err
+	}
+	return c.asyncTransact(opts, &c.address, input, handler)
+}
+
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types.Receipt, error) {
@@ -190,6 +210,29 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
+	signedTx, err := c.generateSignedTx(opts, contract, input)
+	if err != nil {
+		return nil, nil, err
+	}
+	var receipt *types.Receipt
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
+		return nil, nil, err
+	}
+	return signedTx, receipt, nil
+}
+
+func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
+	signedTx, err := c.generateSignedTx(opts, contract, input)
+	if err != nil {
+		return nil, err
+	}
+	if err = c.transactor.AsyncSendTransaction(ensureContext(opts.Context), signedTx, handler); err != nil {
+		return nil, err
+	}
+	return signedTx, nil
+}
+
+func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
 
 	// Ensure a valid value field and resolve the account nonce
@@ -204,7 +247,7 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	nonce, err := rand.Int(rand.Reader, max)
 	if err != nil {
 		//error handling
-		return nil, nil, fmt.Errorf("failed to generate nonce: %v", err)
+		return nil, fmt.Errorf("failed to generate nonce: %v", err)
 	}
 
 	// Figure out the gas allowance and gas price values
@@ -219,9 +262,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 		// Gas estimation cannot succeed without code for method invocations
 		if contract != nil {
 			if code, err := c.transactor.PendingCodeAt(ensureContext(opts.Context), c.address); err != nil {
-				return nil, nil, err
+				return nil, err
 			} else if len(code) == 0 {
-				return nil, nil, ErrNoCode
+				return nil, ErrNoCode
 			}
 		}
 		// If the contract surely has code (or code is not needed), we set a default value to the transaction
@@ -231,19 +274,19 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	var blockLimit *big.Int
 	blockLimit, err = c.transactor.GetBlockLimit(ensureContext(opts.Context))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var chainID *big.Int
 	chainID, err = c.transactor.GetChainID(ensureContext(opts.Context))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var groupID *big.Int
 	groupID = c.transactor.GetGroupID()
 	if groupID == nil {
-		return nil, nil, fmt.Errorf("failed to get the group ID")
+		return nil, fmt.Errorf("failed to get the group ID")
 	}
 
 	// Create the transaction, sign it and schedule it for execution
@@ -256,17 +299,13 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
 	}
 	if opts.Signer == nil {
-		return nil, nil, errors.New("no signer to authorize the transaction with")
+		return nil, errors.New("no signer to authorize the transaction with")
 	}
 	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	var receipt *types.Receipt
-	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
-		return nil, nil, err
-	}
-	return signedTx, receipt, nil
+	return signedTx, nil
 }
 
 // FilterLogs filters contract logs for past blocks, returning the necessary

@@ -31,6 +31,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
 var (
@@ -305,6 +306,21 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	default:
 		return json.Unmarshal(resp.Result, &result)
 	}
+}
+
+func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {
+	msg, err := c.newMessage(method, args...)
+	if err != nil {
+		return err
+	}
+	hc := c.writeConn.(*channelSession)
+	if !c.isHTTP {
+		err = hc.asyncSendTransaction(msg, handler)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Connection) SubscribeTopic(topic string, handler func([]byte)) error {
