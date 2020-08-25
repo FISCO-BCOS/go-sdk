@@ -179,6 +179,10 @@ func (_Config *ConfigTransactor) SetValueByKey(opts *bind.TransactOpts, key stri
 	return _Config.contract.Transact(opts, "setValueByKey", key, value)
 }
 
+func (_Config *ConfigTransactor) AsyncSetValueByKey(handler func(*types.Receipt, error), opts *bind.TransactOpts, key string, value string) (*types.Transaction, error) {
+	return _Config.contract.AsyncTransact(opts, handler, "setValueByKey", key, value)
+}
+
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
 // Solidity: function setValueByKey(string key, string value) returns(int256)
@@ -186,9 +190,17 @@ func (_Config *ConfigSession) SetValueByKey(key string, value string) (*types.Tr
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
 }
 
+func (_Config *ConfigSession) AsyncSetValueByKey(handler func(*types.Receipt, error), key string, value string) (*types.Transaction, error) {
+	return _Config.Contract.AsyncSetValueByKey(handler, &_Config.TransactOpts, key, value)
+}
+
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
 // Solidity: function setValueByKey(string key, string value) returns(int256)
 func (_Config *ConfigTransactorSession) SetValueByKey(key string, value string) (*types.Transaction, *types.Receipt, error) {
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
+}
+
+func (_Config *ConfigTransactorSession) AsyncSetValueByKey(handler func(*types.Receipt, error), key string, value string) (*types.Transaction, error) {
+	return _Config.Contract.AsyncSetValueByKey(handler, &_Config.TransactOpts, key, value)
 }
