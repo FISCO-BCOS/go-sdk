@@ -116,7 +116,6 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		if err != nil {
 			return nil, err
 		}
-		// FIXME: how to prevent endless loop
 		// timer to wait transaction on-chain
 		queryTicker := time.NewTicker(time.Second)
 		defer queryTicker.Stop()
@@ -158,6 +157,43 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		receipt.Status = int(status)
 		return receipt, nil
 	}
+}
+
+func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
+	data, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		fmt.Printf("rlp encode tx error!")
+		return err
+	}
+	if api.IsHTTP() {
+		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil
+		}
+		var receipt *types.Receipt
+		go func() {
+			for {
+				receipt, err = api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+				if receipt != nil {
+					handler(receipt, nil)
+					return
+				}
+				if err != nil {
+					errorStr := fmt.Sprintf("%s", err)
+					if strings.Contains(errorStr, "connection refused") {
+						handler(nil, errors.New("connection refused"))
+						return
+					}
+				}
+			}
+		}()
+	} else {
+		err = api.AsyncSendTransaction(ctx, handler, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.

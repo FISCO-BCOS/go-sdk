@@ -78,3 +78,11 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, er
 	}
 	return errorCode, errorCodeToError(errorCode)
 }
+
+func (s *SystemConfigService) AsyncSetValueByKey(handler func(*types.Receipt, error), key string, value string) (*types.Transaction, error) {
+	tx, err := s.systemConfig.AsyncSetValueByKey(handler, s.client.GetTransactOpts(), key, value)
+	if err != nil {
+		return tx, fmt.Errorf("AsyncSetValueByKey failed, err: %v", err)
+	}
+	return tx, nil
+}
