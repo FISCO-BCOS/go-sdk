@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -254,37 +255,37 @@ func (c *Client) SubscribeTopic(topic string, handler func([]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
-//func (c *Client) SubscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
-//	return c.apiHandler.SubscribeAuthTopic(topic, privateKey, handler)
-//}
-//
-//func (c *Client) PublishAuthTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
-//	return c.apiHandler.PublishAuthTopic(topic, publicKey, handler)
-//}
+func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
+}
+
+func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+	return c.apiHandler.PublishPrivateTopic(topic, publicKey, handler)
+}
 
 func (c *Client) UnsubscribeTopic(topic string) error {
 	return c.apiHandler.UnsubscribeTopic(topic)
 }
 
-//func (c *Client) UnsubscribeAuthTopic(topic string) error {
-//	return c.apiHandler.UnsubscribeAuthTopic(topic)
-//}
-
-func (c *Client) PushTopicDataRandom(topic string, data []byte) error {
-	return c.apiHandler.PushTopicDataRandom(topic, data)
+func (c *Client) UnsubscribePrivateTopic(topic string) error {
+	return c.apiHandler.UnsubscribePrivateTopic(topic)
 }
 
-func (c *Client) PushTopicDataToALL(topic string, data []byte) error {
-	return c.apiHandler.PushTopicDataToALL(topic, data)
+func (c *Client) SendAMOPMsg(topic string, data []byte) error {
+	return c.apiHandler.SendAMOPMsg(topic, data)
 }
 
-//func (c *Client) PushAuthTopicDataRandom(topic string, data []byte) error {
-//	return c.apiHandler.PushAuthTopicDataRandom(topic, data)
-//}
-//
-//func (c *Client) PushAuthTopicDataToALL(topic string, data []byte) error {
-//	return c.apiHandler.PushAuthTopicDataToALL(topic, data)
-//}
+func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
+	return c.apiHandler.BroadcastAMOPMsg(topic, data)
+}
+
+func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) error {
+	return c.apiHandler.SendAMOPPrivateMsg(topic, data)
+}
+
+func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+	return c.apiHandler.BroadcastAMOPPrivateMsg(topic, data)
+}
 
 func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {
 	return c.apiHandler.SubscribeBlockNumberNotify(uint64(c.groupID), handler)

@@ -328,14 +328,14 @@ func (c *Connection) SubscribeTopic(topic string, handler func([]byte)) error {
 	return hc.subscribeTopic(topic, handler)
 }
 
-func (c *Connection) SubscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.subscribeAuthTopic(topic, privateKey, handler)
+	return hc.subscribePrivateTopic(topic, privateKey, handler)
 }
 
-func (c *Connection) PublishAuthTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.publishAuthTopic(topic, publicKey, handler)
+	return hc.publishPrivateTopic(topic, publicKey, handler)
 }
 
 func (c *Connection) UnsubscribeTopic(topic string) error {
@@ -343,29 +343,29 @@ func (c *Connection) UnsubscribeTopic(topic string) error {
 	return hc.unsubscribeTopic(topic)
 }
 
-func (c *Connection) UnsubscribeAuthTopic(topic string) error {
+func (c *Connection) UnsubscribePrivateTopic(topic string) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.unsubscribeAuthTopic(topic)
+	return hc.unsubscribePrivateTopic(topic)
 }
 
-func (c *Connection) PushTopicDataRandom(topic string, data []byte) error {
+func (c *Connection) SendAMOPMsg(topic string, data []byte) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.pushTopicDataRandom(topic, data)
+	return hc.sendAMOPMsg(topic, data)
 }
 
-func (c *Connection) PushTopicDataToALL(topic string, data []byte) error {
+func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.pushTopicDataToALL(topic, data)
+	return hc.broadcastAMOPMsg(topic, data)
 }
 
-func (c *Connection) PushAuthTopicDataRandom(topic string, data []byte) error {
+func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.pushAuthTopicDataRandom(topic, data)
+	return hc.sendAMOPPrivateMsg(topic, data)
 }
 
-func (c *Connection) PushAuthTopicDataToALL(topic string, data []byte) error {
+func (c *Connection) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
 	hc := c.writeConn.(*channelSession)
-	return hc.pushAuthTopicDataToALL(topic, data)
+	return hc.broadcastAMOPPrivateMsg(topic, data)
 }
 
 func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
@@ -700,4 +700,13 @@ func (c *Connection) read(codec ServerCodec) {
 // IsHTTP returns whether is HTTP
 func (c *Connection) IsHTTP() bool {
 	return c.isHTTP
+}
+
+// GetBlockLimit returns BlockLimit
+func (c *Connection) GetBlockNumber() int64 {
+	hc, ok := c.writeConn.(*channelSession)
+	if !ok {
+		return 0
+	}
+	return hc.nodeInfo.blockNumber
 }
