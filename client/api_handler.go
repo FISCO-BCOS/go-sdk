@@ -39,7 +39,8 @@ type APIHandler struct {
 }
 
 const (
-	indent = "  "
+	indent           = "  "
+	BlockLimit int64 = 600
 )
 
 // NewAPIHandler create a new API handler
@@ -120,7 +121,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 				if strings.Contains(errorStr, "connection refused") {
 					return nil, err
 				}
-				fmt.Printf("Receipt retrieval failed, err: %v\n", err)
+				//fmt.Printf("Receipt retrieval failed, err: %v\n", err)
 			} else {
 				fmt.Println("Transaction not yet mined")
 			}
@@ -202,36 +203,36 @@ func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte)) error 
 	return api.Connection.SubscribeTopic(topic, handler)
 }
 
-func (api *APIHandler) SubscribeAuthTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
-	return api.Connection.SubscribeAuthTopic(topic, privateKey, handler)
+func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+	return api.Connection.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
-func (api *APIHandler) PublishAuthTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
-	return api.Connection.PublishAuthTopic(topic, publicKey, handler)
+func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
+	return api.Connection.PublishPrivateTopic(topic, publicKey, handler)
 }
 
 func (api *APIHandler) UnsubscribeTopic(topic string) error {
 	return api.Connection.UnsubscribeTopic(topic)
 }
 
-func (api *APIHandler) UnsubscribeAuthTopic(topic string) error {
-	return api.Connection.UnsubscribeAuthTopic(topic)
+func (api *APIHandler) UnsubscribePrivateTopic(topic string) error {
+	return api.Connection.UnsubscribePrivateTopic(topic)
 }
 
-func (api *APIHandler) PushTopicDataRandom(topic string, data []byte) error {
-	return api.Connection.PushTopicDataRandom(topic, data)
+func (api *APIHandler) SendAMOPMsg(topic string, data []byte) error {
+	return api.Connection.SendAMOPMsg(topic, data)
 }
 
-func (api *APIHandler) PushTopicDataToALL(topic string, data []byte) error {
-	return api.Connection.PushTopicDataToALL(topic, data)
+func (api *APIHandler) BroadcastAMOPMsg(topic string, data []byte) error {
+	return api.Connection.BroadcastAMOPMsg(topic, data)
 }
 
-func (api *APIHandler) PushAuthTopicDataRandom(topic string, data []byte) error {
-	return api.Connection.PushAuthTopicDataRandom(topic, data)
+func (api *APIHandler) SendAMOPPrivateMsg(topic string, data []byte) error {
+	return api.Connection.SendAMOPPrivateMsg(topic, data)
 }
 
-func (api *APIHandler) PushAuthTopicDataToALL(topic string, data []byte) error {
-	return api.Connection.PushAuthTopicDataToALL(topic, data)
+func (api *APIHandler) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+	return api.Connection.BroadcastAMOPPrivateMsg(topic, data)
 }
 
 func (api *APIHandler) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
@@ -297,13 +298,22 @@ func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) ([]byte,
 
 // GetBlockLimit returns the blocklimit for current blocknumber
 func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID int) (*big.Int, error) {
-	defaultNumber := big.NewInt(500)
+	var blockLimit *big.Int
+	if !api.IsHTTP() {
+		blockNumber := api.Connection.GetBlockNumber()
+		if blockNumber != 0 {
+			blockLimit = big.NewInt(blockNumber + BlockLimit)
+			return blockLimit, nil
+		}
+	}
+	defaultNumber := big.NewInt(BlockLimit)
 	var raw hexutil.Big
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
 		return nil, err
 	}
-	return defaultNumber.Add(defaultNumber, (*big.Int)(&raw)), nil
+	blockLimit = defaultNumber.Add(defaultNumber, (*big.Int)(&raw))
+	return blockLimit, nil
 }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
