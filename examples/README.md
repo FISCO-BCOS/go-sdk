@@ -1,4 +1,6 @@
-# AMOP 使用案例
+# 开发案例
+
+## AMOP 开发案例
 
 AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联盟链提供一个安全高效的消息信道，联盟链中的各个机构，只要部署了区块链节点，无论是共识节点还是观察节点，均可使用AMOP进行通讯，AMOP有如下优势：
 
@@ -14,7 +16,7 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
 
 -   搭建单群组四节点区块链网络，可参考：[安装](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
-## 单播案例
+### 单播案例
 
 **单播** 指的是节点从监听同一 Topic 的多个订阅者中随机抽取一个订阅者转发消息
 
@@ -47,7 +49,7 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
 
 > 注意：控制台输出 *PushTopicDataRandom failed, err: sendMessage failed, err: error code 100, remote peer unavailable* 表示网络中没有对应的 topic 消息订阅者
 
-## 多播案例
+### 多播案例
 
 **多播** 指的时节点向监听同一个 Topic 的所有订阅者转发消息。只要网络正常，即使没有监听 Topic 的订阅者，消息发布者也会收到消息发送成功的网络回包
 
@@ -76,3 +78,120 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
       2020/08/10 22:54:14 received: hello, FISCO BCOS, I am multi broadcast publisher! 4
       2020/08/10 22:54:16 received: hello, FISCO BCOS, I am multi broadcast publisher! 5
     ```
+
+### 身份验证单播案例
+
+常规场景中，任何一个监听了某topic的接收者都能接受到发送者推送的消息。但在某些场景下，发送者只希望特定的接收者能接收到消息，不希望无关的接收者能任意的监听此topic。针对此类场景，FISCO BCOS 推出了 topic 认证功能。 认证功能是指对于特定的topic消息，只允许通过认证的接收者接收消息。详细请参考：[Topic认证功能](https://fisco-bcos-doc-qiubing.readthedocs.io/en/latest/docs/manual/amop_protocol.html#topic)
+
+-   启动 AMOP 消息订阅者：
+
+    ```shell
+    # go run examples/amop_auth/sub/subscriber.go [endpoint] [topic]
+    > go run examples/amop_auth/sub/subscriber.go 127.0.0.1:20201 hello
+    
+    Subscriber success
+    2020/08/27 15:59:33 received: Hi, FISCO BCOS! 0
+    2020/08/27 15:59:35 received: Hi, FISCO BCOS! 1
+    2020/08/27 15:59:37 received: Hi, FISCO BCOS! 2
+    2020/08/27 15:59:39 received: Hi, FISCO BCOS! 3
+    ```
+  
+
+-   运行 AMOP 消息发布者：
+
+    ```shell
+    # go run examples/amop_auth/unicast_pub/publisher.go [endpoint] [topic]
+    > go run examples/amop_auth/unicast_pub/publisher.go 127.0.0.1:20200 hello
+    
+    publish topic success
+    2020/08/27 15:59:33 publish message: Hi, FISCO BCOS! 0 
+    2020/08/27 15:59:35 publish message: Hi, FISCO BCOS! 1 
+    2020/08/27 15:59:37 publish message: Hi, FISCO BCOS! 2 
+    2020/08/27 15:59:39 publish message: Hi, FISCO BCOS! 3
+    ```
+
+### 身份验证多播案例
+
+同理，FISCO BCOS 支持带身份验证的消息多播功能
+
+-   启动 AMOP 消息订阅者：
+
+    ```shell
+    # go run examples/amop_auth/sub/subscriber.go [endpoint] [topic]
+    > go run examples/amop_auth/sub/subscriber.go 127.0.0.1:20201 hello
+    
+    Subscriber success
+    2020/08/27 16:02:39 received: Hi, FISCO BCOS! 1
+    2020/08/27 16:02:41 received: Hi, FISCO BCOS! 2
+    2020/08/27 16:02:43 received: Hi, FISCO BCOS! 3
+    2020/08/27 16:02:45 received: Hi, FISCO BCOS! 4
+    ```
+
+-   运行 AMOP 消息发布者：
+
+    ```shell
+    # go run examples/amop_auth/multicast_pub/publisher.go [endpoint] [topic]
+    > go run examples/amop_auth/multicast_pub/publisher.go 127.0.0.1:20200 hello
+    
+    publish topic success
+    2020/08/27 16:02:37 publish message: Hi, FISCO BCOS! 0 
+    2020/08/27 16:02:39 publish message: Hi, FISCO BCOS! 1 
+    2020/08/27 16:02:41 publish message: Hi, FISCO BCOS! 2 
+    2020/08/27 16:02:43 publish message: Hi, FISCO BCOS! 3 
+    2020/08/27 16:02:45 publish message: Hi, FISCO BCOS! 4
+    ```
+
+## 合约开发案例
+
+在利用SDK进行项目开发时，对智能合约进行操作需要利用go-sdk的abigen工具将Solidity智能合约转换为Go文件代码。整体上主要包含六个流程：
+
+-   准备需要编译的智能合约
+-   配置好相应版本的solc编译器
+-   构建go-sdk的合约编译工具abigen
+-   编译生成go文件
+-   准备建立ssl连接需要的证书
+-   使用生成的go文件进行合约部署、调用
+
+详细可参考：[合约开发样例](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/contractExamples.html)
+
+### 使用同步接口调用合约案例
+
+本案例使用 KVTableTest.sol 合约文件，部署该合约会创建一张 KV 表，表中有 "id","item_price,item_name" 三个字段以及 Set 和 Get 两个方法，有关该合约内容以及使用该合约编译生成 go 模板文件的详细说明可参考：[KVTableTest样例](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/contractExamples.html#kvtabletest)
+
+执行以下语句，部署和调用合约：
+
+```shell
+> go run examples/kvtable_test_sync/main.go 
+
+  -------------------starting deploy contract-----------------------
+  contract address:  0x2b4173B18Fd0f88Fb5525f1b657e51c18aBf3D82
+  transaction hash:  0xee1b9ddc38f15ec0cac55c7ee3edcc4c8a497b9f22db421dca8206febc8a1f33
+  
+  -------------------starting invoke Set to insert info-----------------------
+  tx sent: 0x57452ea0a231c05a709644b1878179630b9ffb9bd51cad3d00446d3d95aeb9ed
+  seted lines: 1
+  
+  -------------------starting invoke Get to query info-----------------------
+  id: 100010001001, item_price: 6000, item_name: Laptop
+```
+
+### 使用异步接口调用合约案例
+
+异步合约开发案例指的是通过 sol 合约文件编译、生成 go 模板文件之后，调用 go 文件中提供的异步接口部署合约、修改数据，可以极大的提高交易并发量。详细可阅读源码
+
+执行以下语句，部署和调用合约：
+
+```shell
+> go run examples/kvtable_test_async/main.go 
+
+  -------------------starting deploy contract-----------------------
+  transaction hash:  0x39ad5ed85f6493a4c73248fe65196a69316bbbfedebe87bbd5e108a703b74419
+  contract address:  0x974f2B3f93a6eDeB1DCB915Fa58b6931E3229F13
+  
+  -------------------starting invoke Set to insert info-----------------------
+  tx sent: 0x161835e0a379a085b1cd4f046b9668745ff09815142608e32dff6aa75dc26274
+  seted lines: 1
+  
+  -------------------starting invoke Get to query info-----------------------
+  id: 100010001001, item_price: 6000, item_name: Laptop
+```

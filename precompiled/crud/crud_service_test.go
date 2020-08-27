@@ -1,22 +1,29 @@
 package crud
 
 import (
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 )
 
 const (
-	tableName   = "t_test"
-	key         = "name"
-	valueFields = "item_id, item_name"
+	tableName         = "t_test"
+	tableNameForAsync = "t_test_async"
+	key               = "name"
+	valueFields       = "item_id, item_name"
+	timeout           = 1 * time.Second
 )
 
 var (
 	service *Service
+	channel = make(chan int)
 )
 
 func getClient(t *testing.T) *client.Client {
@@ -56,6 +63,39 @@ func TestCreateTable(t *testing.T) {
 	t.Logf("result: %d\n", result)
 }
 
+func TestAsyncCreateTable(t *testing.T) {
+	handler := func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("receive receipt failed, %v\n", err)
+		}
+		var bigNum *big.Int
+		bigNum, err = precompiled.ParseBigIntFromOutput(TableFactoryABI, "createTable", receipt)
+		if err != nil {
+			t.Fatalf("parseReturnValue failed, err: %v\n", err)
+		}
+		result, err := precompiled.BigIntToInt64(bigNum)
+		if err != nil {
+			t.Fatalf("%v\n", err)
+		}
+		if result != 0 {
+			t.Fatalf("TestAsyncCreateTable failed, the result \"%v\" is inconsistent with \"0\"", result)
+		}
+		t.Logf("result: %d\n", result)
+		channel <- 0
+	}
+
+	_, err := service.AsyncCreateTable(handler, tableNameForAsync, key, valueFields)
+	if err != nil {
+		t.Fatalf("create table failed: %v", err)
+	}
+	select {
+	case <-channel:
+		return
+	case <-time.After(timeout):
+		t.Fatal("timeout")
+	}
+}
+
 func TestInsert(t *testing.T) {
 	var insertResults int64
 	insertEntry := NewEntry()
@@ -72,6 +112,42 @@ func TestInsert(t *testing.T) {
 		t.Fatalf("TestInsert failed, the insertResults \"%v\" is inconsistent with \"5\"", insertResults)
 	}
 	t.Logf("insertResults: %d\n", insertResults)
+}
+
+func TestAsyncInsert(t *testing.T) {
+	handler := func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("receive receipt failed, %v\n", err)
+		}
+		var bigNum *big.Int
+		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "insert", receipt)
+		if err != nil {
+			t.Fatalf("parseReturnValue failed, err: %v\n", err)
+		}
+		result, err := precompiled.BigIntToInt64(bigNum)
+		if err != nil {
+			t.Fatalf("%v\n", err)
+		}
+		if result != 1 {
+			t.Fatalf("TestAsyncInsert failed, the result \"%v\" is inconsistent with \"1\"", result)
+		}
+		t.Logf("result: %d\n", result)
+		channel <- 0
+	}
+
+	insertEntry := NewEntry()
+	insertEntry.Put("item_id", "1")
+	insertEntry.Put("item_name", "apple")
+	_, err := service.AsyncInsert(handler, tableNameForAsync, "fruit", insertEntry)
+	if err != nil {
+		t.Fatalf("insert table failed: %v", err)
+	}
+	select {
+	case <-channel:
+		return
+	case <-time.After(timeout):
+		t.Fatal("timeout")
+	}
 }
 
 func TestSelect(t *testing.T) {
@@ -111,6 +187,44 @@ func TestUpdate(t *testing.T) {
 	t.Logf("updateResult: %d", updateResult)
 }
 
+func TestAsyncUpdate(t *testing.T) {
+	handler := func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("receive receipt failed, %v\n", err)
+		}
+		var bigNum *big.Int
+		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "update", receipt)
+		if err != nil {
+			t.Fatalf("parseReturnValue failed, err: %v\n", err)
+		}
+		result, err := precompiled.BigIntToInt64(bigNum)
+		if err != nil {
+			t.Fatalf("%v\n", err)
+		}
+		if result != 1 {
+			t.Fatalf("TestAsyncUpdate failed, the result \"%v\" is inconsistent with \"1\"", result)
+		}
+		t.Logf("result: %d\n", result)
+		channel <- 0
+	}
+
+	updateEntry := NewEntry()
+	updateEntry.Put("item_id", "1")
+	updateEntry.Put("item_name", "orange")
+	updateCondition := NewCondition()
+	updateCondition.EQ("item_id", "1")
+	_, err := service.AsyncUpdate(handler, tableNameForAsync, "fruit", updateEntry, updateCondition)
+	if err != nil {
+		t.Fatalf("update table failed: %v", err)
+	}
+	select {
+	case <-channel:
+		return
+	case <-time.After(timeout):
+		t.Fatal("timeout")
+	}
+}
+
 func TestRemove(t *testing.T) {
 	removeCondition := NewCondition()
 	removeCondition.EQ("item_id", "1")
@@ -122,6 +236,41 @@ func TestRemove(t *testing.T) {
 		t.Fatalf("TestRemove failed, the removeResult \"%v\" is not inconsistent with \"5\"", removeResult)
 	}
 	t.Logf("removeResult: %d\n", removeResult)
+}
+
+func TestAsyncRemove(t *testing.T) {
+	handler := func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("receive receipt failed, %v\n", err)
+		}
+		var bigNum *big.Int
+		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "remove", receipt)
+		if err != nil {
+			t.Fatalf("parseReturnValue failed, err: %v\n", err)
+		}
+		result, err := precompiled.BigIntToInt64(bigNum)
+		if err != nil {
+			t.Fatalf("%v\n", err)
+		}
+		if result != 1 {
+			t.Fatalf("TestAsyncRemove failed, the result \"%v\" is inconsistent with \"1\"", result)
+		}
+		t.Logf("result: %d\n", result)
+		channel <- 0
+	}
+
+	removeCondition := NewCondition()
+	removeCondition.EQ("item_id", "1")
+	_, err := service.AsyncRemove(handler, tableNameForAsync, "fruit", removeCondition)
+	if err != nil {
+		t.Fatalf("remove data failed: %v", err)
+	}
+	select {
+	case <-channel:
+		return
+	case <-time.After(timeout):
+		t.Fatal("timeout")
+	}
 }
 
 func TestDesc(t *testing.T) {
