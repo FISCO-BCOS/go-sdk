@@ -179,6 +179,10 @@ func (_TableFactory *TableFactoryTransactor) CreateTable(opts *bind.TransactOpts
 	return _TableFactory.contract.Transact(opts, "createTable", tableName, key, valueField)
 }
 
+func (_TableFactory *TableFactoryTransactor) AsyncCreateTable(handler func(*types.Receipt, error), opts *bind.TransactOpts, tableName string, key string, valueField string) (*types.Transaction, error) {
+	return _TableFactory.contract.AsyncTransact(opts, handler, "createTable", tableName, key, valueField)
+}
+
 // CreateTable is a paid mutator transaction binding the contract method 0x56004b6a.
 //
 // Solidity: function createTable(string tableName, string key, string valueField) returns(int256)
@@ -186,9 +190,17 @@ func (_TableFactory *TableFactorySession) CreateTable(tableName string, key stri
 	return _TableFactory.Contract.CreateTable(&_TableFactory.TransactOpts, tableName, key, valueField)
 }
 
+func (_TableFactory *TableFactorySession) AsyncCreateTable(handler func(*types.Receipt, error), tableName string, key string, valueField string) (*types.Transaction, error) {
+	return _TableFactory.Contract.AsyncCreateTable(handler, &_TableFactory.TransactOpts, tableName, key, valueField)
+}
+
 // CreateTable is a paid mutator transaction binding the contract method 0x56004b6a.
 //
 // Solidity: function createTable(string tableName, string key, string valueField) returns(int256)
 func (_TableFactory *TableFactoryTransactorSession) CreateTable(tableName string, key string, valueField string) (*types.Transaction, *types.Receipt, error) {
 	return _TableFactory.Contract.CreateTable(&_TableFactory.TransactOpts, tableName, key, valueField)
+}
+
+func (_TableFactory *TableFactoryTransactorSession) AsyncCreateTable(handler func(*types.Receipt, error), tableName string, key string, valueField string) (*types.Transaction, error) {
+	return _TableFactory.Contract.AsyncCreateTable(handler, &_TableFactory.TransactOpts, tableName, key, valueField)
 }

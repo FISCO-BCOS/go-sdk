@@ -235,11 +235,19 @@ func (_Crud *CrudTransactor) Insert(opts *bind.TransactOpts, tableName string, k
 	return _Crud.contract.Transact(opts, "insert", tableName, key, entry, arg3)
 }
 
+func (_Crud *CrudTransactor) AsyncInsert(handler func(*types.Receipt, error), opts *bind.TransactOpts, tableName string, key string, entry string, arg3 string) (*types.Transaction, error) {
+	return _Crud.contract.AsyncTransact(opts, handler, "insert", tableName, key, entry, arg3)
+}
+
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
 //
 // Solidity: function insert(string tableName, string key, string entry, string ) returns(int256)
 func (_Crud *CrudSession) Insert(tableName string, key string, entry string, arg3 string) (*types.Transaction, *types.Receipt, error) {
 	return _Crud.Contract.Insert(&_Crud.TransactOpts, tableName, key, entry, arg3)
+}
+
+func (_Crud *CrudSession) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry string, arg3 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncInsert(handler, &_Crud.TransactOpts, tableName, key, entry, arg3)
 }
 
 // Insert is a paid mutator transaction binding the contract method 0xa216464b.
@@ -249,11 +257,19 @@ func (_Crud *CrudTransactorSession) Insert(tableName string, key string, entry s
 	return _Crud.Contract.Insert(&_Crud.TransactOpts, tableName, key, entry, arg3)
 }
 
+func (_Crud *CrudTransactorSession) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry string, arg3 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncInsert(handler, &_Crud.TransactOpts, tableName, key, entry, arg3)
+}
+
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
 //
 // Solidity: function remove(string tableName, string key, string condition, string ) returns(int256)
 func (_Crud *CrudTransactor) Remove(opts *bind.TransactOpts, tableName string, key string, condition string, arg3 string) (*types.Transaction, *types.Receipt, error) {
 	return _Crud.contract.Transact(opts, "remove", tableName, key, condition, arg3)
+}
+
+func (_Crud *CrudTransactor) AsyncRemove(handler func(*types.Receipt, error), opts *bind.TransactOpts, tableName string, key string, condition string, arg3 string) (*types.Transaction, error) {
+	return _Crud.contract.AsyncTransact(opts, handler, "remove", tableName, key, condition, arg3)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
@@ -263,11 +279,19 @@ func (_Crud *CrudSession) Remove(tableName string, key string, condition string,
 	return _Crud.Contract.Remove(&_Crud.TransactOpts, tableName, key, condition, arg3)
 }
 
+func (_Crud *CrudSession) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string, condition string, arg3 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncRemove(handler, &_Crud.TransactOpts, tableName, key, condition, arg3)
+}
+
 // Remove is a paid mutator transaction binding the contract method 0xa72a1e65.
 //
 // Solidity: function remove(string tableName, string key, string condition, string ) returns(int256)
 func (_Crud *CrudTransactorSession) Remove(tableName string, key string, condition string, arg3 string) (*types.Transaction, *types.Receipt, error) {
 	return _Crud.Contract.Remove(&_Crud.TransactOpts, tableName, key, condition, arg3)
+}
+
+func (_Crud *CrudTransactorSession) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string, condition string, arg3 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncRemove(handler, &_Crud.TransactOpts, tableName, key, condition, arg3)
 }
 
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
@@ -277,6 +301,10 @@ func (_Crud *CrudTransactor) Update(opts *bind.TransactOpts, tableName string, k
 	return _Crud.contract.Transact(opts, "update", tableName, key, entry, condition, arg4)
 }
 
+func (_Crud *CrudTransactor) AsyncUpdate(handler func(*types.Receipt, error), opts *bind.TransactOpts, tableName string, key string, entry string, condition string, arg4 string) (*types.Transaction, error) {
+	return _Crud.contract.AsyncTransact(opts, handler, "update", tableName, key, entry, condition, arg4)
+}
+
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
 //
 // Solidity: function update(string tableName, string key, string entry, string condition, string ) returns(int256)
@@ -284,9 +312,17 @@ func (_Crud *CrudSession) Update(tableName string, key string, entry string, con
 	return _Crud.Contract.Update(&_Crud.TransactOpts, tableName, key, entry, condition, arg4)
 }
 
+func (_Crud *CrudSession) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, entry string, condition string, arg4 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncUpdate(handler, &_Crud.TransactOpts, tableName, key, entry, condition, arg4)
+}
+
 // Update is a paid mutator transaction binding the contract method 0x2dca76c1.
 //
 // Solidity: function update(string tableName, string key, string entry, string condition, string ) returns(int256)
 func (_Crud *CrudTransactorSession) Update(tableName string, key string, entry string, condition string, arg4 string) (*types.Transaction, *types.Receipt, error) {
 	return _Crud.Contract.Update(&_Crud.TransactOpts, tableName, key, entry, condition, arg4)
+}
+
+func (_Crud *CrudTransactorSession) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, entry string, condition string, arg4 string) (*types.Transaction, error) {
+	return _Crud.Contract.AsyncUpdate(handler, &_Crud.TransactOpts, tableName, key, entry, condition, arg4)
 }

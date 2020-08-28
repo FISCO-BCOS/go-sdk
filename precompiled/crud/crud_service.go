@@ -87,6 +87,10 @@ func (service *Service) CreateTable(tableName string, key string, valueFields st
 	return parseReturnValue(receipt, "createTable")
 }
 
+func (service *Service) AsyncCreateTable(handler func(*types.Receipt, error), tableName string, key string, valueFields string) (*types.Transaction, error) {
+	return service.tableFactory.AsyncCreateTable(handler, service.crudAuth, tableName, key, valueFields)
+}
+
 // Insert entry
 func (service *Service) Insert(tableName string, key string, entry *Entry) (int64, error) {
 	if len(key) > TableKeyMaxLength {
@@ -102,6 +106,18 @@ func (service *Service) Insert(tableName string, key string, entry *Entry) (int6
 		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
 	}
 	return parseReturnValue(receipt, "insert")
+}
+
+func (service *Service) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry *Entry) (*types.Transaction, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	// change to string
+	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
+	}
+	return service.crud.AsyncInsert(handler, service.crudAuth, tableName, key, string(entryJSON[:]), "")
 }
 
 // Update entry
@@ -126,6 +142,24 @@ func (service *Service) Update(tableName string, key string, entry *Entry, condi
 	return parseReturnValue(receipt, "update")
 }
 
+func (service *Service) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, entry *Entry, condition *Condition) (*types.Transaction, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	// change to string
+	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
+	}
+	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
+	}
+
+	return service.crud.AsyncUpdate(handler, service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
+
+}
+
 func (service *Service) Remove(tableName string, key string, condition *Condition) (int64, error) {
 	if len(key) > TableKeyMaxLength {
 		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
@@ -140,6 +174,18 @@ func (service *Service) Remove(tableName string, key string, condition *Conditio
 		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
 	}
 	return parseReturnValue(receipt, "remove")
+}
+
+func (service *Service) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string, condition *Condition) (*types.Transaction, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
+	}
+
+	return service.crud.AsyncRemove(handler, service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 }
 
 // Select entry
