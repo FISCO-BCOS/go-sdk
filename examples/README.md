@@ -45,7 +45,7 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
       2020/08/11 21:21:56 publish message: hello, FISCO BCOS, I am unique broadcast publisher! 3
     ```
 
-## 多播案例
+### 多播案例
 
 **多播** 指的是节点向监听相同 Topic 的所有订阅者转发消息。只要网络正常，即使没有监听 Topic 的订阅者，消息发布者也会收到节点消息推送成功的响应包，流程详细可参考 [多播时序图](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/design/p2p/p2p.html#id12)
 
@@ -61,12 +61,6 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
       2020/08/11 21:23:58 received: hello, FISCO BCOS, I am multi broadcast publisher! 2
       2020/08/11 21:24:00 received: hello, FISCO BCOS, I am multi broadcast publisher! 3
     ```
-
-> 注意：控制台输出 *PushTopicDataRandom failed, err: sendMessage failed, err: error code 100, remote peer unavailable* 表示网络中没有对应的 topic 消息订阅者
-
-### 多播案例
-
-**多播** 指的时节点向监听同一个 Topic 的所有订阅者转发消息。只要网络正常，即使没有监听 Topic 的订阅者，消息发布者也会收到消息发送成功的网络回包
 
 -   运行 AMOP 消息发布者：
 
