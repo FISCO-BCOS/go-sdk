@@ -1035,7 +1035,11 @@ func (hc *channelSession) processMessages() {
 			hc.mu.Lock()
 			if response, ok := hc.responses[msg.uuid]; ok {
 				response.Message = msg
-				response.Notify <- struct{}{}
+				if response.Notify != nil {
+					response.Notify <- struct{}{}
+					close(response.Notify)
+				}
+				response.Notify = nil
 			}
 			hc.mu.Unlock()
 			switch msg.typeN {
