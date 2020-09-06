@@ -24,9 +24,6 @@ var ChainID int64
 // URL default
 var URL string
 
-// PrivateKey default
-var PrivateKey = "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58"
-
 // GetClient is used for test, it will be init by a config file later.
 func getClient(config *conf.Config) *client.Client {
 	// RPC API
@@ -40,20 +37,24 @@ func getClient(config *conf.Config) *client.Client {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "console",
-	Short: "console is a command line tool for FISCO BCOS 2.0.0",
-	Long: `console is a Golang client for FISCO BCOS 2.0.0 and it supports the JSON-RPC 
+	Use:     "console",
+	Short:   "console is a command line tool for FISCO BCOS 2.2.0",
+	Version: "0.10.0",
+	Long: `console is a Golang client for FISCO BCOS 2.2.0 and it supports the JSON-RPC
 service and the contract operations(e.g. deploying && writing contracts).
 
-Also, console can be used as a Go package for FISCO BCOS that just simply adding 
+Also, console can be used as a Go package for FISCO BCOS that just simply adding
 the import statement:
 
-    import "github.com/FISCO-BCOS/go-sdk" 
-or 
+    import "github.com/FISCO-BCOS/go-sdk"
+or
     import "github.com/FISCO-BCOS/go-sdk/client" # using the client package
 
 Please access the github site for more details:
-    https://github.com/FISCO-BCOS/go-sdk.`,
+	https://github.com/FISCO-BCOS/go-sdk.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -66,20 +67,6 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.toml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -216,8 +216,8 @@ func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.Pri
 	return api.Connection.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
-func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
-	return api.Connection.PublishPrivateTopic(topic, publicKey, handler)
+func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+	return api.Connection.PublishPrivateTopic(topic, publicKey)
 }
 
 func (api *APIHandler) UnsubscribeTopic(topic string) error {

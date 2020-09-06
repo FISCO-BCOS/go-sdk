@@ -255,22 +255,6 @@ func (c *Client) SubscribeTopic(topic string, handler func([]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
-func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
-	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
-}
-
-func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey, handler func([]byte)) error {
-	return c.apiHandler.PublishPrivateTopic(topic, publicKey, handler)
-}
-
-func (c *Client) UnsubscribeTopic(topic string) error {
-	return c.apiHandler.UnsubscribeTopic(topic)
-}
-
-func (c *Client) UnsubscribePrivateTopic(topic string) error {
-	return c.apiHandler.UnsubscribePrivateTopic(topic)
-}
-
 func (c *Client) SendAMOPMsg(topic string, data []byte) error {
 	return c.apiHandler.SendAMOPMsg(topic, data)
 }
@@ -279,12 +263,28 @@ func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
 	return c.apiHandler.BroadcastAMOPMsg(topic, data)
 }
 
+func (c *Client) UnsubscribeTopic(topic string) error {
+	return c.apiHandler.UnsubscribeTopic(topic)
+}
+
+func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
+}
+
+func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+	return c.apiHandler.PublishPrivateTopic(topic, publicKey)
+}
+
 func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) error {
 	return c.apiHandler.SendAMOPPrivateMsg(topic, data)
 }
 
 func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
 	return c.apiHandler.BroadcastAMOPPrivateMsg(topic, data)
+}
+
+func (c *Client) UnsubscribePrivateTopic(topic string) error {
+	return c.apiHandler.UnsubscribePrivateTopic(topic)
 }
 
 func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {

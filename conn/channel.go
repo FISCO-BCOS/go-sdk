@@ -678,10 +678,7 @@ func (hc *channelSession) subscribeTopic(topic string, handler func([]byte)) err
 	return hc.sendSubscribedTopics()
 }
 
-func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.PublicKey, handler func([]byte)) error {
-	if handler == nil {
-		return errors.New("handler is nil")
-	}
+func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.PublicKey) error {
 	var authTopicName = needVerifyPrefix + topic
 	if _, ok := hc.topicHandlers[authTopicName]; ok {
 		return errors.New("already subscribed to topic " + topic)
@@ -690,7 +687,6 @@ func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.
 		return fmt.Errorf("the length of real topic %s exceeds 254, because of prefix \"#!$VerifyChannel_\", \"#!$TopicNeedVerify_\" and \"_{uuid}\"", authChannelPrefix+authTopicName+"_92be6ce4dbd311eaae5a983b8fda4e0e")
 	}
 	hc.topicMu.Lock()
-	hc.topicHandlers[authTopicName] = handler
 	hc.topicHandlers[pushChannelPrefix+authTopicName] = func(data []byte) {
 		// generate random number and send it to node
 		var authInfo requestAuth

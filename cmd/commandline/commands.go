@@ -3,7 +3,9 @@ package commandline
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 
@@ -405,11 +407,11 @@ Arguments:
 [transactionHash]: hash string.
 
 For example:
-	
+
     [getTransactionByHash] [0x7536cf1286b5ce6c110cd4fea5c891467884240c9af366d678eb4191e1c31c6f]
-	
+
 For more information please refer:
-	
+
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -675,10 +677,64 @@ For more information please refer:
 	},
 }
 
+var completionCmd = &cobra.Command{
+	Use:   "completion [bash|zsh|fish|powershell]",
+	Short: "Generate completion script",
+	Long: `To load completions:
+
+Bash:
+
+$ source <(yourprogram completion bash)
+
+# To load completions for each session, execute once:
+Linux:
+  $ yourprogram completion bash > /etc/bash_completion.d/yourprogram
+MacOS:
+  $ yourprogram completion bash > /usr/local/etc/bash_completion.d/yourprogram
+
+Zsh:
+
+$ source <(yourprogram completion zsh)
+
+# To load completions for each session, execute once:
+$ yourprogram completion zsh > "${fpath[1]}/_yourprogram"
+
+Fish:
+
+$ yourprogram completion fish | source
+
+# To load completions for each session, execute once:
+$ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
+`,
+	DisableFlagsInUseLine: true,
+	Hidden:                true,
+	PersistentPreRun:      nil,
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	Args:                  cobra.ExactValidArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		switch args[0] {
+		case "bash":
+			err := cmd.Root().GenBashCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case "zsh":
+			err := cmd.Root().GenZshCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case "powershell":
+			err := cmd.Root().GenPowerShellCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	},
+}
+
 func init() {
 	// add common command
-	// TODO: test the bash scripts
-	// rootCmd.AddCommand(bashCompletionCmd, zshCompletionCmd)
+	rootCmd.AddCommand(completionCmd)
 	// add node command
 	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
@@ -690,15 +746,21 @@ func init() {
 	rootCmd.AddCommand(getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
+	// add contract command
+
+	// cobra.OnInitialize(initConfig)
+	helpCmd, _, _ := rootCmd.Find([]string{"help"})
+	helpCmd.PersistentPreRun = nil
+
 	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// commandsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.toml)")
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// commandsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Cobra also supports local flags, which will only run
+	// when this action is called directly.
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func toDecimal(hex string) (int, error) {

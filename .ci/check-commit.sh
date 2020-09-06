@@ -7,7 +7,7 @@ SHELL_FOLDER=$(
     pwd
 )
 
-# check_script=gofmt -e -s -w 
+# check_script=gofmt -e -s -w
 check_script="goimports -d"
 commit_limit=2
 file_limit=35
@@ -86,6 +86,7 @@ function check_PR_limit() {
     local commits=$(git rev-list --count HEAD^..HEAD)
     if [ ${commit_limit} -lt ${commits} ]; then
         LOG_ERROR "${commits} commits, limit is ${commit_limit}"
+        git --no-pager log -"${commits}"
         exit 1
     fi
     local unique_commit=$(git log --format=%s HEAD^..HEAD | sort -u | wc -l)

@@ -161,9 +161,8 @@ EOF
 
 get_build_chain()
 {
-    # latest_version=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "\"v2\.[0-9]\.[0-9]\"" | sort -u | tail -n 1 | cut -d \" -f 4)
-    # curl -LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh && chmod u+x build_chain.sh
-    curl -LO https://raw.githubusercontent.com/FISCO-BCOS/FISCO-BCOS/master/tools/build_chain.sh && chmod u+x build_chain.sh
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
 precompiled_test(){
@@ -190,7 +189,7 @@ integration_std()
     execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
-    bash build_chain.sh -v 2.5.0 -l 127.0.0.1:4 -o nodes
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
     bash nodes/127.0.0.1/start_all.sh
     if [ -z "$(./hello | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
@@ -223,7 +222,7 @@ integration_gm()
     execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
-    bash build_chain.sh -v 2.5.0 -l 127.0.0.1:4 -g -o nodes_gm
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -g -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./
     bash nodes_gm/127.0.0.1/start_all.sh
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
