@@ -3,12 +3,13 @@ set -e
 
 source="https://github.com/FISCO-BCOS/solidity/releases/download"
 cdn_link_header="https://osp-1257653870.cos.ap-guangzhou.myqcloud.com/FISCO-BCOS/solidity/releases"
-install_path="${HOME}/.fisco"
+install_path="${HOME}/.fisco/solc"
 version="0.4.25"
 OS="linux"
 crypto=
 extension=
 download_timeout=240
+versions=(0.4.25 0.5.2 0.6.10)
 
 LOG_WARN()
 {
@@ -56,7 +57,12 @@ parse_params()
 {
     while getopts "v:o:gh" option;do
         case $option in
-        v) [ -n "$OPTARG" ] && version="$OPTARG";;
+        v) [ -n "$OPTARG" ] && version="$OPTARG"
+            if ! echo "${versions[*]}" | grep -i "${version}" &>/dev/null; then
+                LOG_WARN "${version} is not supported. Please set one of ${versions[*]}"
+                exit 1;
+            fi
+        ;;
         o) [ -n "$OPTARG" ] && install_path="$OPTARG";;
         g) crypto="-gm";;
         h) help;;

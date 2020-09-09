@@ -160,6 +160,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 	}
 }
 
+// AsyncSendTransaction send transaction async
 func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
@@ -208,11 +209,11 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	return r, err
 }
 
-func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte)) error {
+func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return api.Connection.SubscribeTopic(topic, handler)
 }
 
-func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
 	return api.Connection.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
@@ -228,7 +229,7 @@ func (api *APIHandler) UnsubscribePrivateTopic(topic string) error {
 	return api.Connection.UnsubscribePrivateTopic(topic)
 }
 
-func (api *APIHandler) SendAMOPMsg(topic string, data []byte) error {
+func (api *APIHandler) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
 	return api.Connection.SendAMOPMsg(topic, data)
 }
 
@@ -236,7 +237,7 @@ func (api *APIHandler) BroadcastAMOPMsg(topic string, data []byte) error {
 	return api.Connection.BroadcastAMOPMsg(topic, data)
 }
 
-func (api *APIHandler) SendAMOPPrivateMsg(topic string, data []byte) error {
+func (api *APIHandler) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
 	return api.Connection.SendAMOPPrivateMsg(topic, data)
 }
 

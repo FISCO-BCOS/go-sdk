@@ -323,12 +323,12 @@ func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*typ
 	return nil
 }
 
-func (c *Connection) SubscribeTopic(topic string, handler func([]byte)) error {
+func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	hc := c.writeConn.(*channelSession)
 	return hc.subscribeTopic(topic, handler)
 }
 
-func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
 	hc := c.writeConn.(*channelSession)
 	return hc.subscribePrivateTopic(topic, privateKey, handler)
 }
@@ -348,7 +348,7 @@ func (c *Connection) UnsubscribePrivateTopic(topic string) error {
 	return hc.unsubscribePrivateTopic(topic)
 }
 
-func (c *Connection) SendAMOPMsg(topic string, data []byte) error {
+func (c *Connection) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
 	hc := c.writeConn.(*channelSession)
 	return hc.sendAMOPMsg(topic, data)
 }
@@ -358,7 +358,7 @@ func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
 	return hc.broadcastAMOPMsg(topic, data)
 }
 
-func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) error {
+func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
 	hc := c.writeConn.(*channelSession)
 	return hc.sendAMOPPrivateMsg(topic, data)
 }

@@ -241,6 +241,7 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*t
 	return c.apiHandler.SendRawTransaction(ctx, c.groupID, tx)
 }
 
+// AsyncSendTransaction send transaction async
 func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx, handler)
 }
@@ -251,11 +252,11 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash.Hex())
 }
 
-func (c *Client) SubscribeTopic(topic string, handler func([]byte)) error {
+func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
-func (c *Client) SendAMOPMsg(topic string, data []byte) error {
+func (c *Client) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
 	return c.apiHandler.SendAMOPMsg(topic, data)
 }
 
@@ -267,7 +268,7 @@ func (c *Client) UnsubscribeTopic(topic string) error {
 	return c.apiHandler.UnsubscribeTopic(topic)
 }
 
-func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte)) error {
+func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
@@ -275,7 +276,7 @@ func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey)
 	return c.apiHandler.PublishPrivateTopic(topic, publicKey)
 }
 
-func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) error {
+func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
 	return c.apiHandler.SendAMOPPrivateMsg(topic, data)
 }
 

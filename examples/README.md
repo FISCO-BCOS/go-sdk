@@ -65,8 +65,8 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
 -   运行 AMOP 消息发布者：
 
     ```shell
-    # go run examples/amop/multicast_pub/publisher.go [endpoint] [topic]
-    > go run examples/amop/multicast_pub/publisher.go 127.0.0.1:20200 hello
+    # go run examples/amop/broadcast_pub/publisher.go [endpoint] [topic]
+    > go run examples/amop/broadcast_pub/publisher.go 127.0.0.1:20200 hello
 
       2020/08/11 21:23:54 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 0
       2020/08/11 21:23:56 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 1

@@ -17,7 +17,7 @@ const (
 	privateKey3 = "13e3531ac291bcf5674acd1c8c7c77b725dc9bf56242b02ef76bf970190412aa"
 )
 
-func onPush(data []byte) {
+func onPush(data []byte, response *[]byte) {
 	log.Printf("received: %s\n", string(data))
 }
 

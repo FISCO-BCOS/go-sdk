@@ -11,7 +11,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/conf"
 )
 
-func onPush(data []byte) {
+func onPush(data []byte, response *[]byte) {
 	log.Printf("received: %s\n", string(data))
 }
 
