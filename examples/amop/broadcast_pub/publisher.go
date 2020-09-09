@@ -28,7 +28,7 @@ func main() {
 	message := "hello, FISCO BCOS, I am multi broadcast publisher!"
 	for i := 0; i < 1000; i++ {
 		log.Printf("publish message: %s ", message+" "+strconv.Itoa(i))
-		err = c.SendAMOPMsg(topic, []byte(message+" "+strconv.Itoa(i)))
+		err = c.BroadcastAMOPMsg(topic, []byte(message+" "+strconv.Itoa(i)))
 		time.Sleep(2 * time.Second)
 		if err != nil {
 			log.Printf("PushTopicDataRandom failed, err: %v\n", err)

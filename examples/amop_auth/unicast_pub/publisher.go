@@ -57,7 +57,10 @@ func main() {
 	go func() {
 		for i := 0; i < 1000; i++ {
 			log.Printf("publish message: %s ", message+" "+strconv.Itoa(i))
-			err = c.SendAMOPPrivateMsg(topic, []byte(message+" "+strconv.Itoa(i)))
+			response, err := c.SendAMOPPrivateMsg(topic, []byte(message+" "+strconv.Itoa(i)))
+			if len(response) != 0 {
+				log.Printf("    response is: %s ", string(response))
+			}
 			time.Sleep(2 * time.Second)
 			if err != nil {
 				log.Printf("PushAuthTopicDataRandom failed, err: %v\n", err)
