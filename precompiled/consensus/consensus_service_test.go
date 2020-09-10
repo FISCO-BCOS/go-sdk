@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"encoding/hex"
 	"os"
 	"regexp"
 	"testing"
@@ -20,9 +21,9 @@ var (
 )
 
 func getClient(t *testing.T) *client.Client {
+	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: "b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62",
-		NodeURL:    "http://localhost:8545"}
+		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)

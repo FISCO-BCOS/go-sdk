@@ -18,9 +18,9 @@ const sm2Addr = "00d6bbe6a5b391f0eb24885c8ee833f0b756f6db"
 const sigData = "message digest    message digest"
 const signKeyHex = "3945208F7B2144B13F36E38AC6D39F95889393692860B51A42FB81EF4DF7C5B8"
 
-func TestHexToECDSA(t *testing.T) {
-	private, _ := HexToECDSA(sm2Hex)
-	pubKey := ECDSAPubBytes(&private.PublicKey)
+func TestHexToSM2(t *testing.T) {
+	private, _ := HexToSM2(sm2Hex)
+	pubKey := SM2PubBytes(&private.PublicKey)
 	b, _ := hex.DecodeString(sm2pubHex)
 	for i, v := range b {
 		if v != pubKey[i] {
@@ -32,7 +32,7 @@ func TestHexToECDSA(t *testing.T) {
 	if sm2Addr != hex.EncodeToString(addr[:]) {
 		t.Fatalf("address mismatch, want: %s have: %s", sm2Addr, hex.EncodeToString(addr[:]))
 	}
-	pem, err := ECDSAToPem(private)
+	pem, err := SM2ToPEM(private)
 	if err != nil {
 		t.Fatalf("pem generate error: %v", err)
 	}
@@ -86,13 +86,13 @@ func TestHexToECDSA(t *testing.T) {
 // 	if len(hexKey) < 64 {
 // 		return nil, fmt.Errorf("hex private key is required to be exactly 64 bytes (%d)", len(hexKey))
 // 	}
-// 	key, err := HexToECDSA(hexKey)
+// 	key, err := HexToSM2(hexKey)
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	pubBytes := ECDSAPubBytes(&key.PublicKey)
+// 	pubBytes := SM2PubBytes(&key.PublicKey)
 
-// 	pem, err := ECDSAToPem(key)
+// 	pem, err := SM2ToPEM(key)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -124,11 +124,11 @@ func TestHexToECDSA(t *testing.T) {
 
 // func verify(src, sig []byte, hexKey string) error {
 
-// 	key, err := HexToECDSA(hexKey)
+// 	key, err := HexToSM2(hexKey)
 // 	if err != nil {
 // 		return err
 // 	}
-// 	pem, err := ECDSAToPem(key)
+// 	pem, err := SM2ToPEM(key)
 // 	if err != nil {
 // 		return err
 // 	}

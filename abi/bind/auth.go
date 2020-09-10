@@ -97,15 +97,15 @@ func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
 
 // NewSMCryptoTransactor is a utility method to easily create a transaction signer
 // from a single sm2p256v1 private key.
-func NewSMCryptoTransactor(hexKey string) *TransactOpts {
-	keyAddr := smcrypto.HexKeyToAddress(hexKey)
+func NewSMCryptoTransactor(sm2Key []byte) *TransactOpts {
+	keyAddr := smcrypto.SM2KeyToAddress(sm2Key)
 	return &TransactOpts{
 		From: keyAddr,
 		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			if address != keyAddr {
 				return nil, errors.New("not authorized to sign this account")
 			}
-			signature, err := smcrypto.Sign(tx.SM3HashNonSig().Bytes(), hexKey)
+			signature, err := smcrypto.Sign(tx.SM3HashNonSig().Bytes(), sm2Key)
 			if err != nil {
 				return nil, err
 			}

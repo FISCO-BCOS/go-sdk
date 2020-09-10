@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -26,23 +27,33 @@ var (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		log.Fatal("the number of arguments is not equal 1")
+	privateKey, _ := crypto.HexToECDSA(privateKey1)
+	if len(os.Args) == 4 {
+		fmt.Printf("use user specified private key %s\n", os.Args[3])
+		keyBytes, _, err := conf.LoadECPrivateKeyFromPEM(os.Args[3])
+		if err != nil {
+			fmt.Printf("parse private key failed, err: %v\n", err)
+			return
+		}
+		privateKey, err = crypto.ToECDSA(keyBytes)
+		if err != nil {
+			fmt.Printf("HexToECDSA failed, err: %v\n", err)
+			return
+		}
+	} else if len(os.Args) < 3 {
+		log.Fatal("the number of arguments less than 3")
 	}
+
 	endpoint := os.Args[1]
 	topic := os.Args[2]
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: 1,
-		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
-		NodeURL:    endpoint}
+	signKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
+		IsSMCrypto: false, GroupID: 1, PrivateKey: signKey, NodeURL: endpoint}
 	c, err := client.Dial(config)
 	if err != nil {
 		log.Fatalf("init client failed, err: %v\n", err)
 	}
 
-	privateKey, err := crypto.HexToECDSA(privateKey1)
-	if err != nil {
-		log.Fatalf("hex to ECDSA failed, err: %v", privateKey)
-	}
 	err = c.SubscribePrivateTopic(topic, privateKey, onPush)
 	if err != nil {
 		log.Fatalf("SubscribeAuthTopic failed, err: %v\n", err)

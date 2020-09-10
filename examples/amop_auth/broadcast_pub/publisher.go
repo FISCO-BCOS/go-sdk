@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -21,9 +22,9 @@ func main() {
 	}
 	endpoint := os.Args[1]
 	topic := os.Args[2]
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: 1,
-		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
-		NodeURL:    endpoint}
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
+		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
 	c, err := client.Dial(config)
 	if err != nil {
 		log.Fatalf("init publisher failed, err: %v\n", err)
