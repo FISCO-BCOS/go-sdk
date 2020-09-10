@@ -19,7 +19,7 @@ type Config struct {
 	Key        string
 	Cert       string
 	IsSMCrypto bool
-	PrivateKey string
+	PrivateKey []byte
 	GroupID    int
 	NodeURL    string
 }
@@ -84,7 +84,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 	}
 	if viper.IsSet("Account") {
 		accountKeyFile := viper.GetString("Account.KeyFile")
-		keyHex, curve, _, err := LoadECPrivateKeyFromPEM(accountKeyFile)
+		keyBytes, curve, err := LoadECPrivateKeyFromPEM(accountKeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("parse private key failed, err: %v", err)
 		}
@@ -94,7 +94,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 		if !config.IsSMCrypto && curve != secp256k1 {
 			return nil, fmt.Errorf("must use secp256k1 private key, but found %s", curve)
 		}
-		config.PrivateKey = keyHex
+		config.PrivateKey = keyBytes
 	} else {
 		return nil, fmt.Errorf("network has not been set")
 	}

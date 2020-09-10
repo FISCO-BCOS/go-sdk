@@ -390,7 +390,7 @@ func (c *Connection) BatchCall(b []BatchElem) error {
 	return c.BatchCallContext(ctx, b)
 }
 
-// BatchCall sends all given requests as a single batch and waits for the server
+// BatchCallContext sends all given requests as a single batch and waits for the server
 // to return a response for all of them. The wait duration is bounded by the
 // context's deadline.
 //
@@ -702,7 +702,7 @@ func (c *Connection) IsHTTP() bool {
 	return c.isHTTP
 }
 
-// GetBlockLimit returns BlockLimit
+// GetBlockNumber returns BlockLimit
 func (c *Connection) GetBlockNumber() int64 {
 	hc, ok := c.writeConn.(*channelSession)
 	if !ok {

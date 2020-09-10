@@ -1,6 +1,7 @@
 package crud
 
 import (
+	"encoding/hex"
 	"math/big"
 	"os"
 	"strconv"
@@ -27,9 +28,9 @@ var (
 )
 
 func getClient(t *testing.T) *client.Client {
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: "145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58",
-		NodeURL:    "http://localhost:8545"}
+		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)

@@ -120,7 +120,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
 	} else {
-		privateKey, err := crypto.HexToECDSA(config.PrivateKey)
+		privateKey, err := crypto.ToECDSA(config.PrivateKey)
 		if err != nil {
 			log.Fatal(err)
 		}
