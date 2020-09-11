@@ -16,10 +16,15 @@ package client
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -35,7 +40,8 @@ type APIHandler struct {
 }
 
 const (
-	indent = "  "
+	indent           = "  "
+	BlockLimit int64 = 600
 )
 
 // NewAPIHandler create a new API handler
@@ -74,30 +80,122 @@ type callResult struct {
 
 // Call invoke the call method of rpc api
 func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
-	var hex hexutil.Bytes
+	var hexBytes hexutil.Bytes
 	var cr *callResult
 	err := api.CallContext(ctx, &cr, "call", groupID, toCallArg(msg))
 	if err != nil {
 		return nil, err
 	}
 	if cr.Status != "0x0" {
-		return nil, fmt.Errorf("call error of status %s", cr.Status)
+		var errorMessage string
+		if len(cr.Output) >= 138 {
+			outputBytes, err := hex.DecodeString(cr.Output[2:])
+			if err != nil {
+				return nil, fmt.Errorf("call error of status %s, hex.DecodeString failed", cr.Status)
+			}
+			errorMessage = string(outputBytes[68:])
+		}
+		return nil, fmt.Errorf("call error of status %s, %v", cr.Status, errorMessage)
 	}
-	hex = common.FromHex(cr.Output)
-	return hex, nil
+	hexBytes = common.FromHex(cr.Output)
+	return hexBytes, nil
 }
 
 // SendRawTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) error {
+func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) (*types.Receipt, error) {
+	data, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		fmt.Printf("rlp encode tx error!")
+		return nil, err
+	}
+	var receipt *types.Receipt
+	if api.IsHTTP() {
+		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil, err
+		}
+		// timer to wait transaction on-chain
+		queryTicker := time.NewTicker(time.Second)
+		defer queryTicker.Stop()
+		for {
+			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+			if receipt != nil {
+				return receipt, nil
+			}
+			if err != nil {
+				errorStr := fmt.Sprintf("%s", err)
+				if strings.Contains(errorStr, "connection refused") {
+					return nil, err
+				}
+				//fmt.Printf("Receipt retrieval failed, err: %v\n", err)
+			} else {
+				fmt.Println("Transaction not yet mined")
+			}
+			// Wait for the next round.
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-queryTicker.C:
+			}
+		}
+	} else {
+		var anonymityReceipt = &struct {
+			types.Receipt
+			Status string `json:"status"`
+		}{}
+		err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil, err
+		}
+		status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+		if err != nil {
+			return nil, fmt.Errorf("SendRawTransaction failed, strconv.ParseInt err: " + fmt.Sprint(err))
+		}
+		receipt = &anonymityReceipt.Receipt
+		receipt.Status = int(status)
+		return receipt, nil
+	}
+}
+
+// AsyncSendTransaction send transaction async
+func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
 		return err
 	}
-	return api.CallContext(ctx, nil, "sendRawTransaction", groupID, common.ToHex(data))
+	if api.IsHTTP() {
+		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return nil
+		}
+		var receipt *types.Receipt
+		go func() {
+			for {
+				receipt, err = api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+				if receipt != nil {
+					handler(receipt, nil)
+					return
+				}
+				if err != nil {
+					errorStr := fmt.Sprintf("%s", err)
+					if strings.Contains(errorStr, "connection refused") {
+						handler(nil, errors.New("connection refused"))
+						return
+					}
+				}
+			}
+		}()
+	} else {
+		err = api.AsyncSendTransaction(ctx, handler, "sendRawTransaction", groupID, hexutil.Encode(data))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
@@ -105,12 +203,54 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHash common.Hash) (*types.Receipt, error) {
 	var r *types.Receipt
 	err := api.CallContext(ctx, &r, "getTransactionReceipt", groupID, txHash.Hex())
-	if err == nil {
-		if r == nil {
-			return nil, errors.New("Transaction not found")
-		}
+	if err == nil && r == nil {
+		return nil, fmt.Errorf("TransactionReceipt failed, transaction not found, txHash is: %v, receipt is: %+v", txHash.Hex(), r)
 	}
 	return r, err
+}
+
+func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
+	return api.Connection.SubscribeTopic(topic, handler)
+}
+
+func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
+	return api.Connection.SubscribePrivateTopic(topic, privateKey, handler)
+}
+
+func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+	return api.Connection.PublishPrivateTopic(topic, publicKey)
+}
+
+func (api *APIHandler) UnsubscribeTopic(topic string) error {
+	return api.Connection.UnsubscribeTopic(topic)
+}
+
+func (api *APIHandler) UnsubscribePrivateTopic(topic string) error {
+	return api.Connection.UnsubscribePrivateTopic(topic)
+}
+
+func (api *APIHandler) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
+	return api.Connection.SendAMOPMsg(topic, data)
+}
+
+func (api *APIHandler) BroadcastAMOPMsg(topic string, data []byte) error {
+	return api.Connection.BroadcastAMOPMsg(topic, data)
+}
+
+func (api *APIHandler) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
+	return api.Connection.SendAMOPPrivateMsg(topic, data)
+}
+
+func (api *APIHandler) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+	return api.Connection.BroadcastAMOPPrivateMsg(topic, data)
+}
+
+func (api *APIHandler) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+	return api.Connection.SubscribeBlockNumberNotify(groupID, handler)
+}
+
+func (api *APIHandler) UnsubscribeBlockNumberNotify(groupID uint64) error {
+	return api.Connection.UnsubscribeBlockNumberNotify(groupID)
 }
 
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
@@ -133,23 +273,23 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 	}
 
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return nil, errors.New("GetChainID Json respond does not satisfy the type assertion: map[string]interface{}")
 	}
 	var temp interface{}
 	temp, ok = m["Chain Id"]
-	if ok != true {
-		return nil, errors.New("Json respond does not contains the key : Chain Id")
+	if !ok {
+		return nil, errors.New("JSON respond does not contains the key : Chain Id")
 	}
 	var strChainid string
 	strChainid, ok = temp.(string)
-	if ok != true {
+	if !ok {
 		return nil, errors.New("type assertion for Chain Id is wrong: not a string")
 	}
 	convertor := new(big.Int)
 	var chainid *big.Int
 	chainid, ok = convertor.SetString(strChainid, 10)
-	if ok != true {
+	if !ok {
 		return nil, errors.New("big.Int.SetString(): error for Chain Id")
 	}
 	return chainid, nil
@@ -168,13 +308,22 @@ func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) ([]byte,
 
 // GetBlockLimit returns the blocklimit for current blocknumber
 func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID int) (*big.Int, error) {
-	defaultNumber := big.NewInt(500)
+	var blockLimit *big.Int
+	if !api.IsHTTP() {
+		blockNumber := api.Connection.GetBlockNumber()
+		if blockNumber != 0 {
+			blockLimit = big.NewInt(blockNumber + BlockLimit)
+			return blockLimit, nil
+		}
+	}
+	defaultNumber := big.NewInt(BlockLimit)
 	var raw hexutil.Big
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
 		return nil, err
 	}
-	return defaultNumber.Add(defaultNumber, (*big.Int)(&raw)), nil
+	blockLimit = defaultNumber.Add(defaultNumber, (*big.Int)(&raw))
+	return blockLimit, nil
 }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
@@ -351,11 +500,23 @@ func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
 func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, txhash string) (*types.Receipt, error) {
 	var raw *types.Receipt
-	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txhash)
+	var anonymityReceipt = &struct {
+		types.Receipt
+		Status string `json:"status"`
+	}{}
+	err := api.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", groupID, txhash)
 	if err != nil {
 		return nil, err
 	}
-	// js, err := json.MarshalIndent(raw, "", indent)
+	if len(anonymityReceipt.Status) < 2 {
+		return nil, fmt.Errorf("transaction %v is not on-chain", txhash)
+	}
+	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+	if err != nil {
+		return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
+	}
+	raw = &anonymityReceipt.Receipt
+	raw.Status = int(status)
 	return raw, err
 }
 
@@ -368,17 +529,17 @@ func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txha
 		return contractAddress, err
 	}
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return contractAddress, fmt.Errorf("GetContractAddress Json respond does not satisfy the type assertion: map[string]interface{}, %+v", raw)
 	}
 	var temp interface{}
 	temp, ok = m["contractAddress"]
-	if ok != true {
+	if !ok {
 		return contractAddress, errors.New("Json respond does not contains the key : contractAddress")
 	}
 	var strContractAddress string
 	strContractAddress, ok = temp.(string)
-	if ok != true {
+	if !ok {
 		return contractAddress, errors.New("type assertion for Chain Id is wrong: not a string")
 	}
 	return common.HexToAddress(strContractAddress), nil

@@ -54,7 +54,10 @@ generate_main() {
 cat << EOF >> "${output}"
 
 func main() {
-	configs := conf.ParseConfig("config.toml")
+	configs, err := conf.ParseConfigFile("config.toml")
+	if err != nil {
+		log.Fatalf("ParseConfigFile failed, err: %v", err)
+	}
 	client, err := client.Dial(&configs[0])
 	if err != nil {
 		fmt.Printf("Dial Client failed, err:%v", err)
@@ -83,7 +86,7 @@ cat << EOF >> "${output}"
 		return
 	}
 	fmt.Printf("Get: %s\n", ret)
-	_, err = hello.Set("fisco")
+	_, _, err = hello.Set("fisco")
 	if err != nil {
 		fmt.Printf("hello.Set failed: %v", err)
 		return
@@ -112,7 +115,7 @@ cat << EOF >> "${output}"
 		return
 	}
 	fmt.Printf("Get: %d\n", ret)
-	_, err = counter.Set(big.NewInt(111))
+	_, _, err = counter.Set(big.NewInt(111))
 	if err != nil {
 		fmt.Printf("counter.Set failed: %v", err)
 		return
@@ -136,7 +139,7 @@ cat << EOF >> "${output}"
 		fmt.Printf("counter.Version() failed, expected 0 (got %d)", ret)
 		return
 	}
-	_, err = counter.Add()
+	_, _, err = counter.Add()
 	if err != nil {
 		fmt.Printf("counter.Add() failed: %v", err)
 		return
@@ -158,9 +161,8 @@ EOF
 
 get_build_chain()
 {
-    # latest_version=$(curl -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "\"v2\.[0-9]\.[0-9]\"" | sort -u | tail -n 1 | cut -d \" -f 4)
-    # curl -LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh && chmod u+x build_chain.sh
-    curl -LO https://raw.githubusercontent.com/FISCO-BCOS/FISCO-BCOS/master/tools/build_chain.sh && chmod u+x build_chain.sh
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
 precompiled_test(){
@@ -187,7 +189,7 @@ integration_std()
     execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
-    bash build_chain.sh -l 127.0.0.1:4 -o nodes
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
     bash nodes/127.0.0.1/start_all.sh
     if [ -z "$(./hello | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
@@ -220,7 +222,7 @@ integration_gm()
     execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
-    bash build_chain.sh -l 127.0.0.1:4 -g -o nodes_gm
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -g -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./
     bash nodes_gm/127.0.0.1/start_all.sh
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
@@ -233,8 +235,43 @@ integration_gm()
     LOG_INFO "integration_gm testing pass."
 }
 
+integration_amop() {
+    LOG_INFO "integration_amop testing..."
+    bash nodes/127.0.0.1/start_all.sh
+
+    execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
+    execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    nohup ./unicast_publisher 127.0.0.1:20200 hello > output.file 2>&1 &
+    nohup ./subscriber 127.0.0.1:20201 hello > subscriber0.out 2>&1 &
+    sleep 13s
+    cat subscriber0.out
+    if ! grep "hello, FISCO BCOS" ./subscriber0.out >> /dev/null ;then LOG_ERROR "amop unique broadcast failed." && exit 1;fi
+    pid=$(ps -ef | grep -v grep | grep unicast_publisher | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    LOG_INFO "amop unique broadcast test success!"
+
+    execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    nohup ./broadcast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
+    nohup ./subscriber 127.0.0.1:20203 hello1 > subscriber1.out 2>&1 &
+    sleep 13s
+    cat subscriber1.out
+    if ! grep "hello, FISCO BCOS" ./subscriber1.out >> /dev/null ;then LOG_ERROR "amop multi broadcast failed." && exit 1;fi
+    pid=$(ps -ef | grep -v grep | grep broadcast_publisher | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
+    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    LOG_INFO "amop multi broadcast test success!"
+
+    bash nodes/127.0.0.1/stop_all.sh
+    LOG_INFO "integration_amop testing pass."
+}
+
 check_env
 compile_and_ut
 get_build_chain
 integration_std
+integration_amop
+
 if [ -z "${macOS}" ];then integration_gm ; fi

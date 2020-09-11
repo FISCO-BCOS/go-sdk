@@ -8,33 +8,6 @@ import (
 )
 
 const (
-	Success = iota
-	Unknown
-	BadRLP
-	InvalidFormat
-	OutOfGasIntrinsic
-	InvalidSignature
-	InvalidNonce
-	NotEnoughCash
-	OutOfGasBase
-	BlockGasLimitReached
-	BadInstruction
-	BadJumpDestination
-	OutOfGas
-	OutOfStack
-	StackUnderflow
-	NonceCheckFail
-	BlockLimitCheckFail
-	FilterCheckFail
-	NoDeployPermission
-	NoCallPermission
-	NoTxPermission
-	PrecompiledError
-	RevertInstruction
-	InvalidZeroSignatureFormat
-	AddressAlreadyUsed
-	PermissionDenied
-	CallAddressError
 
 	// precompile
 	BCOS_RC1 string = "2.0.0-rc1"
@@ -79,99 +52,6 @@ const (
 
 	BCOS_VERSION string = ""
 )
-
-// GetStatusMessage returns the status message
-func GetStatusMessage(status int) string {
-	var message string
-	switch status {
-	case Success:
-		message = "success"
-		break
-	case Unknown:
-		message = "unknown"
-		break
-	case BadRLP:
-		message = "bad RLP"
-		break
-	case InvalidFormat:
-		message = "invalid format"
-		break
-	case OutOfGasIntrinsic:
-		message = "out of gas intrinsic"
-		break
-	case InvalidSignature:
-		message = "invalid signature"
-		break
-	case InvalidNonce:
-		message = "invalid nonce"
-		break
-	case NotEnoughCash:
-		message = "not enough cash"
-		break
-	case OutOfGasBase:
-		message = "out of gas base"
-		break
-	case BlockGasLimitReached:
-		message = "block gas limit reached"
-		break
-	case BadInstruction:
-		message = "bad instruction"
-		break
-	case BadJumpDestination:
-		message = "bad jump destination"
-		break
-	case OutOfGas:
-		message = "out of gas"
-		break
-	case OutOfStack:
-		message = "out of stack"
-		break
-	case StackUnderflow:
-		message = "stack underflow"
-		break
-	case NonceCheckFail:
-		message = "nonce check fail"
-		break
-	case BlockLimitCheckFail:
-		message = "block limit check fail"
-		break
-	case FilterCheckFail:
-		message = "filter check fail"
-		break
-	case NoDeployPermission:
-		message = "no deploy permission"
-		break
-	case NoCallPermission:
-		message = "no call permission"
-		break
-	case NoTxPermission:
-		message = "no tx permission"
-		break
-	case PrecompiledError:
-		message = "precompiled error"
-		break
-	case RevertInstruction:
-		message = "revert instruction"
-		break
-	case InvalidZeroSignatureFormat:
-		message = "invalid zero signature format"
-		break
-	case AddressAlreadyUsed:
-		message = "address already used"
-		break
-	case PermissionDenied:
-		message = "permission denied"
-		break
-	case CallAddressError:
-		message = "call address error"
-		break
-	default:
-		message = strconv.Itoa(status)
-		break
-	}
-
-	return message
-}
 
 // TransferToJson returns the message json according to the status code
 func TransferToJson(code int) (string, error) {

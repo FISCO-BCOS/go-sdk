@@ -1,30 +1,14 @@
-/*
-Copyright © 2019 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-//Package commandline is implement of console
 package commandline
 
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/precompiled/config"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 )
@@ -91,7 +75,7 @@ var newAccountCmd = &cobra.Command{
 
 var getClientVersionCmd = &cobra.Command{
 	Use:   "getClientVersion",
-	Short: "                                 Get the blockchain version",
+	Short: "                                   Get the blockchain version",
 	Long:  `Returns the specific FISCO BCOS version that runs on the node you connected.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -106,7 +90,7 @@ var getClientVersionCmd = &cobra.Command{
 
 var getGroupIDCmd = &cobra.Command{
 	Use:   "getGroupID",
-	Short: "                                 Get the group ID of the client",
+	Short: "                                   Get the group ID of the client",
 	Long:  `Returns the group ID that the console had connected to.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -117,7 +101,7 @@ var getGroupIDCmd = &cobra.Command{
 
 var getBlockNumberCmd = &cobra.Command{
 	Use:   "getBlockNumber",
-	Short: "                                 Get the latest block height of the blockchain",
+	Short: "                                   Get the latest block height of the blockchain",
 	Long: `Returns the latest block height in the specified group.
 The block height is encoded in hex`,
 	Args: cobra.NoArgs,
@@ -140,7 +124,7 @@ The block height is encoded in hex`,
 
 var getPbftViewCmd = &cobra.Command{
 	Use:   "getPbftView",
-	Short: "                                 Get the latest PBFT view(PBFT consensus only)",
+	Short: "                                   Get the latest PBFT view(PBFT consensus only)",
 	Long: `Returns the latest PBFT view in the specified group where the node is located.
 The PBFT view is encoded in hex`,
 	Args: cobra.NoArgs,
@@ -156,7 +140,7 @@ The PBFT view is encoded in hex`,
 
 var getSealerListCmd = &cobra.Command{
 	Use:   "getSealerList",
-	Short: "                                 Get the sealers' ID list",
+	Short: "                                   Get the sealers' ID list",
 	Long:  `Returns an ID list of the sealer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -171,7 +155,7 @@ var getSealerListCmd = &cobra.Command{
 
 var getObserverListCmd = &cobra.Command{
 	Use:   "getObserverList",
-	Short: "                                 Get the observers' ID list",
+	Short: "                                   Get the observers' ID list",
 	Long:  `Returns an ID list of observer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -186,7 +170,7 @@ var getObserverListCmd = &cobra.Command{
 
 var getConsensusStatusCmd = &cobra.Command{
 	Use:   "getConsensusStatus",
-	Short: "                                 Get consensus status of nodes",
+	Short: "                                   Get consensus status of nodes",
 	Long:  `Returns consensus status information within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -201,7 +185,7 @@ var getConsensusStatusCmd = &cobra.Command{
 
 var getSyncStatusCmd = &cobra.Command{
 	Use:   "getSyncStatus",
-	Short: "                                 Get synchronization status of nodes",
+	Short: "                                   Get synchronization status of nodes",
 	Long:  `Returns synchronization status information within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -216,7 +200,7 @@ var getSyncStatusCmd = &cobra.Command{
 
 var getPeersCmd = &cobra.Command{
 	Use:   "getPeers",
-	Short: "                                 Get the connected peers' information",
+	Short: "                                   Get the connected peers' information",
 	Long:  `Returns the information of connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -231,7 +215,7 @@ var getPeersCmd = &cobra.Command{
 
 var getGroupPeersCmd = &cobra.Command{
 	Use:   "getGroupPeers",
-	Short: "                                 Get all peers' ID within the group",
+	Short: "                                   Get all peers' ID within the group",
 	Long:  `Returns an ID list of consensus nodes and observer nodes within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -246,7 +230,7 @@ var getGroupPeersCmd = &cobra.Command{
 
 var getNodeIDListCmd = &cobra.Command{
 	Use:   "getNodeIDList",
-	Short: "                                 Get ID list of nodes",
+	Short: "                                   Get ID list of nodes",
 	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -261,7 +245,7 @@ var getNodeIDListCmd = &cobra.Command{
 
 var getGroupListCmd = &cobra.Command{
 	Use:   "getGroupList",
-	Short: "                                 Get ID list of groups that the node belongs",
+	Short: "                                   Get ID list of groups that the node belongs",
 	Long:  `Returns an ID list of groups that the node belongs.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -278,7 +262,7 @@ var getGroupListCmd = &cobra.Command{
 
 var getBlockByHashCmd = &cobra.Command{
 	Use:   "getBlockByHash",
-	Short: "[blockHash]   [true/false]       Query the block by its hash",
+	Short: "[blockHash]   [true/false]         Query the block by its hash",
 	Long: `Returns the block information according to the block hash.
 Arguments:
           [blockHash]: hash string
@@ -303,10 +287,8 @@ For more information please refer:
 		}
 
 		if len(args) == 1 {
-			bhash = args[0]
 			includeTx = true
 		} else {
-			bhash = args[0]
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
@@ -314,6 +296,8 @@ For more information please refer:
 			}
 			includeTx = _includeTx
 		}
+
+		bhash = args[0]
 		peers, err := RPC.GetBlockByHash(context.Background(), bhash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
@@ -325,7 +309,7 @@ For more information please refer:
 
 var getBlockByNumberCmd = &cobra.Command{
 	Use:   "getBlockByNumber",
-	Short: "[blockNumber] [true/false]       Query the block by its number",
+	Short: "[blockNumber] [true/false]         Query the block by its number",
 	Long: `Returns the block information according to the block number.
 Arguments:
        [blockNumber]: can be input in a decimal or in hex(prefix with "0x").
@@ -348,12 +332,15 @@ For more information please refer:
 			fmt.Println(err)
 			return
 		}
+		_, err = isBlockNumberOutOfRange(bnum)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		if len(args) == 1 {
-			bnumber = args[0]
 			includeTx = true
 		} else {
-			bnumber = args[0]
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
@@ -362,12 +349,7 @@ For more information please refer:
 			includeTx = _includeTx
 		}
 
-		_, err = isOutOfRange(bnum)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
+		bnumber = args[0]
 		block, err := RPC.GetBlockByNumber(context.Background(), bnumber, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
@@ -379,7 +361,7 @@ For more information please refer:
 
 var getBlockHashByNumberCmd = &cobra.Command{
 	Use:   "getBlockHashByNumber",
-	Short: "[blockNumber]                    Query the block hash by its number",
+	Short: "[blockNumber]                      Query the block hash by its number",
 	Long: `Returns the block hash according to the block number.
 Arguments:
 [blockNumber]: can be input in a decimal format or in hex(prefix with "0x").
@@ -399,7 +381,7 @@ For more information please refer:
 			return
 		}
 
-		_, err = isOutOfRange(bnum)
+		_, err = isBlockNumberOutOfRange(bnum)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -419,17 +401,17 @@ For more information please refer:
 
 var getTransactionByHashCmd = &cobra.Command{
 	Use:   "getTransactionByHash",
-	Short: "[transactionHash]                Query the transaction by its hash",
+	Short: "[transactionHash]                  Query the transaction by its hash",
 	Long: `Returns the transaction according to the transaction hash.
 Arguments:
 [transactionHash]: hash string.
 
 For example:
-	
+
     [getTransactionByHash] [0x7536cf1286b5ce6c110cd4fea5c891467884240c9af366d678eb4191e1c31c6f]
-	
+
 For more information please refer:
-	
+
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -451,11 +433,11 @@ For more information please refer:
 
 var getTransactionByBlockHashAndIndexCmd = &cobra.Command{
 	Use:   `getTransactionByBlockHashAndIndex`,
-	Short: "[blockHash]   [transactionIndex] Query the transaction by block hash and transaction index",
+	Short: "[blockHash]   [transactionIndex]   Query the transaction by block hash and transaction index",
 	Long: `Returns transaction information based on block hash and transaction index inside the block.
 Arguments:
        [blockHash]: block hash string.
-[transactionIndex]: index for the transaction that must be encoded in hex format(prefix with "0x").
+[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
 
 For example:
 
@@ -469,12 +451,6 @@ For more information please refer:
 		_, err := isValidHex(args[0])
 		if err != nil {
 			fmt.Println(err)
-			return
-		}
-
-		// starts with "0x"
-		if !strings.HasPrefix(args[1], "0x") {
-			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
 			return
 		}
 
@@ -497,11 +473,11 @@ For more information please refer:
 
 var getTransactionByBlockNumberAndIndexCmd = &cobra.Command{
 	Use:   "getTransactionByBlockNumberAndIndex",
-	Short: "[blockNumber] [transactionIndex] Query the transaction by block number and transaction index",
+	Short: "[blockNumber] [transactionIndex]   Query the transaction by block number and transaction index",
 	Long: `Returns transaction information based on block number and transaction index inside the block.
 Arguments:
      [blockNumber]: block number encoded in decimal format or in hex(prefix with "0x").
-[transactionIndex]: index for the transaction that must be encoded in hex format(prefix with "0x").
+[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
 
 For example:
 
@@ -512,15 +488,15 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := isValidNumber(args[0])
+		bnum, err := isValidNumber(args[0])
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		// starts with "0x"
-		if !strings.HasPrefix(args[1], "0x") {
-			fmt.Println("Arguments error: Not a valid hex string, please check your inpunt: ", args[1], info)
+		_, err = isBlockNumberOutOfRange(bnum)
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
 
@@ -543,7 +519,7 @@ For more information please refer:
 
 var getTransactionReceiptCmd = &cobra.Command{
 	Use:   "getTransactionReceipt",
-	Short: "[transactionHash]                Query the transaction receipt by transaction hash",
+	Short: "[transactionHash]                  Query the transaction receipt by transaction hash",
 	Long: `Returns transaction receipt information based on transaction hash.
 Arguments:
 [transactionHash]: transaction hash string.
@@ -575,7 +551,7 @@ For more information please refer:
 
 var getPendingTransactionsCmd = &cobra.Command{
 	Use:   "getPendingTransactions",
-	Short: "                                 Get the pending transactions",
+	Short: "                                   Get the pending transactions",
 	Long:  `Return the transactions that are pending for packaging.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -590,7 +566,7 @@ var getPendingTransactionsCmd = &cobra.Command{
 
 var getPendingTxSizeCmd = &cobra.Command{
 	Use:   "getPendingTxSize",
-	Short: "                                 Get the count of pending transactions",
+	Short: "                                   Get the count of pending transactions",
 	Long:  `Return the total count of pending transactions.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -614,7 +590,7 @@ var getPendingTxSizeCmd = &cobra.Command{
 
 var getCodeCmd = &cobra.Command{
 	Use:   "getCode",
-	Short: "[contract address]               Get the contract data from contract address",
+	Short: "[contract address]                 Get the contract data from contract address",
 	Long: `Return contract data queried according to contract address.
 Arguments:
 [contract address]: contract hash string.
@@ -652,7 +628,7 @@ For more information please refer:
 
 var getTotalTransactionCountCmd = &cobra.Command{
 	Use:   "getTotalTransactionCount",
-	Short: "                                 Get the totoal transactions and the latest block height",
+	Short: "                                   Get the totoal transactions and the latest block height",
 	Long:  `Returns the current total number of transactions and block height.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -667,10 +643,10 @@ var getTotalTransactionCountCmd = &cobra.Command{
 
 var getSystemConfigByKeyCmd = &cobra.Command{
 	Use:   "getSystemConfigByKey",
-	Short: "[tx_count_limit/tx_gas_limit]    Get the system configuration through key-value",
+	Short: "[configurationItem]                Get the system configuration through key-value",
 	Long: `Returns the system configuration through key-value.
 Arguments:
-[key to query]: currently only support two key: "tx_count_limit" and "tx_gas_limit".
+[key to query]: currently only support four key: "tx_count_limit", "tx_gas_limit", "rpbft_epoch_sealer_num", "rpbft_epoch_block_num", "consensus_timeout".
 
 For example:
 
@@ -681,8 +657,14 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if args[0] != "tx_count_limit" && args[0] != "tx_gas_limit" {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit] and [tx_gas_limit]")
+		configMap := make(map[string]struct{})
+		configMap["tx_count_limit"] = struct{}{}
+		configMap["tx_gas_limit"] = struct{}{}
+		configMap["rpbft_epoch_sealer_num"] = struct{}{}
+		configMap["rpbft_epoch_block_num"] = struct{}{}
+		configMap["consensus_timeout"] = struct{}{}
+		if _, ok := configMap[args[0]]; !ok {
+			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
 			return
 		}
 		key := args[0]
@@ -695,49 +677,64 @@ For more information please refer:
 	},
 }
 
-// ======= contract operation =====
+var completionCmd = &cobra.Command{
+	Use:   "completion [bash|zsh|fish|powershell]",
+	Short: "Generate completion script",
+	Long: `To load completions:
 
-var setSystemConfigByKeyCmd = &cobra.Command{
-	Use:   "setSystemConfigByKey",
-	Short: "[tx_count_limit/tx_gas_limit]    Set the system configuration through key-value",
-	Long: `Returns the system configuration through key-value.
-Arguments:
-	  [key]: currently only support two key: "tx_count_limit" and "tx_gas_limit".
-[key value]: the value of corresponding key.
+Bash:
 
-For example:
+$ source <(yourprogram completion bash)
 
-    [setSystemConfigByKey] [tx_count_limit] 10000
+# To load completions for each session, execute once:
+Linux:
+  $ yourprogram completion bash > /etc/bash_completion.d/yourprogram
+MacOS:
+  $ yourprogram completion bash > /usr/local/etc/bash_completion.d/yourprogram
 
-For more information please refer:
+Zsh:
 
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.ExactArgs(2),
+$ source <(yourprogram completion zsh)
+
+# To load completions for each session, execute once:
+$ yourprogram completion zsh > "${fpath[1]}/_yourprogram"
+
+Fish:
+
+$ yourprogram completion fish | source
+
+# To load completions for each session, execute once:
+$ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
+`,
+	DisableFlagsInUseLine: true,
+	Hidden:                true,
+	PersistentPreRun:      nil,
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	Args:                  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if args[0] != "tx_count_limit" && args[0] != "tx_gas_limit" {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit] and [tx_gas_limit]")
-			return
+		switch args[0] {
+		case "bash":
+			err := cmd.Root().GenBashCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case "zsh":
+			err := cmd.Root().GenZshCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case "powershell":
+			err := cmd.Root().GenPowerShellCompletion(os.Stdout)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-		key := args[0]
-		value := args[1]
-		sysConfig, err := config.NewSystemConfigService(RPC)
-		if err != nil {
-			fmt.Printf("init systemConfigPrecompiled failed: %v\n", err)
-			return
-		}
-		_, err = sysConfig.SetValueByKey(key, value)
-		if err != nil {
-			fmt.Printf("SetValueByKey failed: %v\n", err)
-			return
-		}
-		fmt.Printf("Result: \n%s\n", value)
 	},
 }
 
 func init() {
 	// add common command
-	// TODO: test the bash scripts
-	// rootCmd.AddCommand(bashCompletionCmd, zshCompletionCmd)
+	rootCmd.AddCommand(completionCmd)
 	// add node command
 	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
@@ -750,23 +747,27 @@ func init() {
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
 	// add contract command
-	rootCmd.AddCommand(setSystemConfigByKeyCmd)
+
+	// cobra.OnInitialize(initConfig)
+	helpCmd, _, _ := rootCmd.Find([]string{"help"})
+	helpCmd.PersistentPreRun = nil
+
 	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// commandsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.toml)")
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// commandsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Cobra also supports local flags, which will only run
+	// when this action is called directly.
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func toDecimal(hex string) (int, error) {
 	i := new(big.Int)
 	var flag bool
 	i, flag = i.SetString(hex, 16) // octal
-	if flag != true {
+	if !flag {
 		return -1, fmt.Errorf("Cannot parse hex string to Int")
 	}
 	return int(i.Uint64()), nil
@@ -782,11 +783,11 @@ func isValidNumber(str string) (int, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
 		// is hex string
-		_, err = strconv.ParseInt(str[2:len(str)], 16, 64)
+		_, err = strconv.ParseInt(str[2:], 16, 64)
 		if err != nil {
 			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
 		}
-		bnum, err = toDecimal(str[2:len(str)])
+		bnum, err = toDecimal(str[2:])
 		if err != nil {
 			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
 		}
@@ -815,7 +816,7 @@ func isValidHex(str string) (bool, error) {
 	return false, fmt.Errorf("Arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
 }
 
-func isOutOfRange(bnum int) (bool, error) {
+func isBlockNumberOutOfRange(bnum int) (bool, error) {
 	// compare with the current block number
 	curr, err := RPC.GetBlockNumber(context.Background())
 	if err != nil {

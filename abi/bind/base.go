@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -108,27 +107,26 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	tx, err := c.transact(opts, nil, append(bytecode, input...))
+	tx, receipt, err := c.transact(opts, nil, append(bytecode, input...))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	var address common.Address
-	timeTick := 0
-	// wait for the result of deployment
-	for range time.Tick(time.Second) {
-		address, err = c.transactor.GetContractAddress(ensureContext(opts.Context), tx.Hash().Hex())
-		if err != nil {
-			timeTick++
-		}
-		if timeTick == 15 {
-			return common.Address{}, nil, nil, fmt.Errorf("time out for the contract deployment: %+v", err)
-		}
-		if err == nil {
-			break
-		}
+	if receipt == nil {
+		return common.Address{}, nil, nil, errors.New("deploy failed, receipt is nil")
 	}
-	c.address = address
+	c.address = receipt.ContractAddress
 	return c.address, tx, c, nil
+}
+
+func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error), abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, error) {
+	// Otherwise try to deploy the contract
+	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
+
+	input, err := c.abi.Pack("", params...)
+	if err != nil {
+		return nil, err
+	}
+	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -185,24 +183,56 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	// Otherwise pack up the parameters and invoke the contract
+	input, err := c.abi.Pack(method, params...)
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.transact(opts, &c.address, input)
+}
+
+func (c *BoundContract) AsyncTransact(opts *TransactOpts, handler func(*types.Receipt, error), method string, params ...interface{}) (*types.Transaction, error) {
 	// Otherwise pack up the parameters and invoke the contract
 	input, err := c.abi.Pack(method, params...)
 	if err != nil {
 		return nil, err
 	}
-	return c.transact(opts, &c.address, input)
+	return c.asyncTransact(opts, &c.address, input, handler)
 }
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, error) {
+func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return c.transact(opts, &c.address, nil)
 }
 
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
-func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
+func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
+	signedTx, err := c.generateSignedTx(opts, contract, input)
+	if err != nil {
+		return nil, nil, err
+	}
+	var receipt *types.Receipt
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
+		return nil, nil, err
+	}
+	return signedTx, receipt, nil
+}
+
+func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
+	signedTx, err := c.generateSignedTx(opts, contract, input)
+	if err != nil {
+		return nil, err
+	}
+	if err = c.transactor.AsyncSendTransaction(ensureContext(opts.Context), signedTx, handler); err != nil {
+		return nil, err
+	}
+	return signedTx, nil
+}
+
+func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
 
 	// Ensure a valid value field and resolve the account nonce
@@ -273,9 +303,6 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	}
 	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
 	if err != nil {
-		return nil, err
-	}
-	if err := c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
 		return nil, err
 	}
 	return signedTx, nil

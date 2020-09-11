@@ -16,12 +16,14 @@ package client
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -38,17 +40,15 @@ type Client struct {
 	apiHandler        *APIHandler
 	groupID           int
 	chainID           int64
-	compatibleVersion string
+	compatibleVersion int
 	auth              *bind.TransactOpts
 	callOpts          *bind.CallOpts
 	smCrypto          bool
 }
 
 const (
-	//V210 is node version v2.1.0
-	V210 = "2.1.0"
-	//V220 is node version v2.2.0
-	V220 = "2.2.0"
+	//V2_5_0 is node version v2.5.0
+	V2_5_0 int = 0x02050000
 )
 
 // Dial connects a client to the given URL and groupID.
@@ -75,29 +75,52 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 		return nil, fmt.Errorf("%v", err)
 	}
 	var raw interface{}
-	json.Unmarshal(response, &raw)
+	err = json.Unmarshal(response, &raw)
+	if err != nil {
+		return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
+	}
 	m, ok := raw.(map[string]interface{})
-	if ok != true {
+	if !ok {
 		return nil, errors.New("parse response json to map error")
 	}
-	var compatibleVersion string
-	compatibleVersion, ok = m["Supported Version"].(string)
-	if ok != true {
-		return nil, errors.New("Json respond does not contains the key : Supported Version")
+
+	// get supported FISCO BCOS version
+	var compatibleVersionStr string
+	compatibleVersionStr, ok = m["Supported Version"].(string)
+	if !ok {
+		return nil, errors.New("JSON response does not contains the key : Supported Version")
 	}
+	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
+	if err != nil {
+		return nil, fmt.Errorf("DialContext failed, err: %v", err)
+	}
+
+	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
+	var fiscoBcosVersion string
+	fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
+	if !ok {
+		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
+	}
+	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
+	if nodeIsSupportedSM != config.IsSMCrypto {
+		return nil, fmt.Errorf("the SDK set SMCrypt=%v, but the node is mismatched", config.IsSMCrypto)
+	}
+
+	// get node chain ID
 	var nodeChainID int64
 	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
-	if ok != true {
-		return nil, errors.New("Json respond does not contains the key : Chain Id")
+	if err != nil {
+		return nil, errors.New("JSON response does not contains the key : Chain Id")
 	}
 	if config.ChainID != nodeChainID {
 		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	}
+
 	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
 	} else {
-		privateKey, err := crypto.HexToECDSA(config.PrivateKey)
+		privateKey, err := crypto.ToECDSA(config.PrivateKey)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -214,14 +237,63 @@ func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) 
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	return c.apiHandler.SendRawTransaction(ctx, c.groupID, tx)
+}
+
+// AsyncSendTransaction send transaction async
+func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
+	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx, handler)
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash.Hex())
+}
+
+func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
+	return c.apiHandler.SubscribeTopic(topic, handler)
+}
+
+func (c *Client) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
+	return c.apiHandler.SendAMOPMsg(topic, data)
+}
+
+func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
+	return c.apiHandler.BroadcastAMOPMsg(topic, data)
+}
+
+func (c *Client) UnsubscribeTopic(topic string) error {
+	return c.apiHandler.UnsubscribeTopic(topic)
+}
+
+func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
+	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
+}
+
+func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+	return c.apiHandler.PublishPrivateTopic(topic, publicKey)
+}
+
+func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
+	return c.apiHandler.SendAMOPPrivateMsg(topic, data)
+}
+
+func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+	return c.apiHandler.BroadcastAMOPPrivateMsg(topic, data)
+}
+
+func (c *Client) UnsubscribePrivateTopic(topic string) error {
+	return c.apiHandler.UnsubscribePrivateTopic(topic)
+}
+
+func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {
+	return c.apiHandler.SubscribeBlockNumberNotify(uint64(c.groupID), handler)
+}
+
+func (c *Client) UnsubscribeBlockNumberNotify() error {
+	return c.apiHandler.UnsubscribeBlockNumberNotify(uint64(c.groupID))
 }
 
 // GetGroupID returns the groupID of the client
@@ -234,6 +306,11 @@ func (c *Client) SetGroupID(newID int) {
 	c.groupID = newID
 }
 
+// GetCompatibleVersion returns the compatible version of FISCO BCOS
+func (c *Client) GetCompatibleVersion() int {
+	return c.compatibleVersion
+}
+
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
 func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
 	return c.apiHandler.GetClientVersion(ctx)
@@ -242,8 +319,7 @@ func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
 func (c *Client) GetChainID(ctx context.Context) (*big.Int, error) {
 	convertor := new(big.Int)
-	var chainid *big.Int
-	chainid = convertor.SetInt64(c.chainID)
+	var chainid = convertor.SetInt64(c.chainID)
 	return chainid, nil
 }
 
@@ -371,4 +447,21 @@ func (c *Client) GetTotalTransactionCount(ctx context.Context) ([]byte, error) {
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
 func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) ([]byte, error) {
 	return c.apiHandler.GetSystemConfigByKey(ctx, c.groupID, configKey)
+}
+
+func getVersionNumber(strVersion string) (int, error) {
+	strList := strings.Split(strVersion, ".")
+	if len(strList) != 3 {
+		return 0, fmt.Errorf("strList length must be 3")
+	}
+	var versionNumber int
+	for i := 0; i < len(strList); i++ {
+		num, err := strconv.Atoi(strList[i])
+		if err != nil {
+			return 0, fmt.Errorf("getVersionNumber failed, err: %v", err)
+		}
+		versionNumber += num
+		versionNumber = versionNumber << 8
+	}
+	return versionNumber, nil
 }

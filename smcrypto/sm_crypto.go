@@ -21,8 +21,8 @@ type sm2Signature struct {
 	S *big.Int
 }
 
-// ECDSAPubBytes return esdsa public key as slice
-func ECDSAPubBytes(pub *ecdsa.PublicKey) []byte {
+// SM2PubBytes return esdsa public key as slice
+func SM2PubBytes(pub *ecdsa.PublicKey) []byte {
 	if pub == nil || pub.X == nil || pub.Y == nil {
 		return nil
 	}
@@ -34,21 +34,29 @@ func ECDSAPubBytes(pub *ecdsa.PublicKey) []byte {
 
 // PubkeyToAddress calculate address from sm2p256v1 private key
 func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
-	pubBytes := ECDSAPubBytes(&p)
+	pubBytes := SM2PubBytes(&p)
 	sm3digest := sm3.Hash(pubBytes)
 	return common.BytesToAddress(sm3digest[12:])
 }
 
 // HexKeyToAddress calculate address from sm2p256v1 private key
 func HexKeyToAddress(hexKey string) common.Address {
-	key, _ := HexToECDSA(hexKey)
-	pubBytes := ECDSAPubBytes(&key.PublicKey)
+	key, _ := HexToSM2(hexKey)
+	pubBytes := SM2PubBytes(&key.PublicKey)
 	sm3digest := sm3.Hash(pubBytes)
 	return common.BytesToAddress(sm3digest[12:])
 }
 
-// toECDSA creates a private key with the given D value.
-func toECDSA(d []byte) (*ecdsa.PrivateKey, error) {
+// SM2KeyToAddress calculate address from sm2p256v1 private key
+func SM2KeyToAddress(privateKey []byte) common.Address {
+	key, _ := ToSM2(privateKey)
+	pubBytes := SM2PubBytes(&key.PublicKey)
+	sm3digest := sm3.Hash(pubBytes)
+	return common.BytesToAddress(sm3digest[12:])
+}
+
+// ToSM2 creates a private key with the given D value.
+func ToSM2(d []byte) (*ecdsa.PrivateKey, error) {
 	priv := new(ecdsa.PrivateKey)
 	curve := elliptic.Sm2p256v1()
 	curveOrder := curve.Params().N
@@ -81,26 +89,26 @@ func toECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 	return priv, nil
 }
 
-// HexToECDSA parses a secp256k1 private key.
-func HexToECDSA(hexkey string) (*ecdsa.PrivateKey, error) {
+// HexToSM2 parses a secp256k1 private key.
+func HexToSM2(hexkey string) (*ecdsa.PrivateKey, error) {
 	b, err := hex.DecodeString(hexkey)
 	if err != nil {
 		return nil, errors.New("invalid hex string")
 	}
-	return toECDSA(b)
+	return ToSM2(b)
 }
 
-// HexToPem parses a secp256k1 private key.
-func HexToPem(hexkey string) (string, error) {
-	key, err := HexToECDSA(hexkey)
+// HexToPEM parses a secp256k1 private key.
+func HexToPEM(hexkey string) (string, error) {
+	key, err := HexToSM2(hexkey)
 	if err != nil {
 		return "", err
 	}
-	return ECDSAToPem(key)
+	return SM2ToPEM(key)
 }
 
-// ECDSAToPem parses a secp256k1 private key.
-func ECDSAToPem(key *ecdsa.PrivateKey) (string, error) {
+// SM2ToPEM parses a secp256k1 private key.
+func SM2ToPEM(key *ecdsa.PrivateKey) (string, error) {
 	b, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
 		return "", fmt.Errorf("encode private key failed %w", err)
@@ -122,18 +130,18 @@ func ECDSAToPem(key *ecdsa.PrivateKey) (string, error) {
 // solution is to hash any input before calculating the signature.
 //
 // The produced signature is in the [R || S || V] format where V is public key.
-func Sign(hash []byte, hexKey string) (sig []byte, err error) {
+func Sign(hash, privateKey []byte) (sig []byte, err error) {
 	if len(hash) != 32 {
 		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
 	}
-	if len(hexKey) != 64 {
-		return nil, fmt.Errorf("hex private key is required to be exactly 64 bytes (%d)", len(hexKey))
+	if len(privateKey) != 32 {
+		return nil, fmt.Errorf("hex private key is required to be exactly 64 bytes (%d)", len(privateKey))
 	}
-	key, err := HexToECDSA(hexKey)
+	key, err := ToSM2(privateKey)
 	if err != nil {
 		return nil, err
 	}
-	pubBytes := ECDSAPubBytes(&key.PublicKey)
+	pubBytes := SM2PubBytes(&key.PublicKey)
 
 	r, s, err := SM2Sign(hash, key)
 	sig = make([]byte, 128)

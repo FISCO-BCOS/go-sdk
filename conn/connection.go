@@ -19,6 +19,7 @@ package conn
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 )
 
 var (
@@ -306,6 +308,76 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
+func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {
+	msg, err := c.newMessage(method, args...)
+	if err != nil {
+		return err
+	}
+	hc := c.writeConn.(*channelSession)
+	if !c.isHTTP {
+		err = hc.asyncSendTransaction(msg, handler)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribeTopic(topic, handler)
+}
+
+func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribePrivateTopic(topic, privateKey, handler)
+}
+
+func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.publishPrivateTopic(topic, publicKey)
+}
+
+func (c *Connection) UnsubscribeTopic(topic string) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.unsubscribeTopic(topic)
+}
+
+func (c *Connection) UnsubscribePrivateTopic(topic string) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.unsubscribePrivateTopic(topic)
+}
+
+func (c *Connection) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
+	hc := c.writeConn.(*channelSession)
+	return hc.sendAMOPMsg(topic, data)
+}
+
+func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.broadcastAMOPMsg(topic, data)
+}
+
+func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
+	hc := c.writeConn.(*channelSession)
+	return hc.sendAMOPPrivateMsg(topic, data)
+}
+
+func (c *Connection) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.broadcastAMOPPrivateMsg(topic, data)
+}
+
+func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribeBlockNumberNotify(groupID, handler)
+}
+
+func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.unSubscribeBlockNumberNotify(groupID)
+}
+
 // BatchCall sends all given requests as a single batch and waits for the server
 // to return a response for all of them.
 //
@@ -318,7 +390,7 @@ func (c *Connection) BatchCall(b []BatchElem) error {
 	return c.BatchCallContext(ctx, b)
 }
 
-// BatchCall sends all given requests as a single batch and waits for the server
+// BatchCallContext sends all given requests as a single batch and waits for the server
 // to return a response for all of them. The wait duration is bounded by the
 // context's deadline.
 //
@@ -623,4 +695,18 @@ func (c *Connection) read(codec ServerCodec) {
 		}
 		c.readOp <- readOp{msgs, batch}
 	}
+}
+
+// IsHTTP returns whether is HTTP
+func (c *Connection) IsHTTP() bool {
+	return c.isHTTP
+}
+
+// GetBlockNumber returns BlockLimit
+func (c *Connection) GetBlockNumber() int64 {
+	hc, ok := c.writeConn.(*channelSession)
+	if !ok {
+		return 0
+	}
+	return hc.nodeInfo.blockNumber
 }

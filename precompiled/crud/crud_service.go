@@ -1,8 +1,6 @@
 package crud
 
 import (
-	"context"
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -10,18 +8,51 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	TableKeyMaxLength int    = 255
-	SysTable          string = "_sys_tables_"
-	UserTablePrefix   string = "u_"
-	// UserTablePrefixOld   string = "_user_"
+	TableKeyMaxLength int = 255
+
+	//crud precompiled contract error code
+	conditionOperationUndefined int64 = -51502
+	parseConditionError         int64 = -51501
+	parseEntryError             int64 = -51500
 )
 
+// getErrorMessage returns the message of error code
+func getErrorMessage(errorCode int64) string {
+	var message string
+	switch errorCode {
+	case conditionOperationUndefined:
+		message = "condition operation undefined"
+	case parseConditionError:
+		message = "parse condition error"
+	case parseEntryError:
+		message = "parse entry error"
+	default:
+		message = ""
+	}
+	return message
+}
+
+// errorCodeToError judges whether the error code represents an error
+func errorCodeToError(errorCode int64) error {
+	var errorCodeMessage string
+	errorCodeMessage = precompiled.GetCommonErrorCodeMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	errorCodeMessage = getErrorMessage(errorCode)
+	if errorCodeMessage != "" {
+		return fmt.Errorf("error code: %v, error code message: %v", errorCode, errorCodeMessage)
+	}
+	return nil
+}
+
 // CRUDService is a precompile contract service.
-type CRUDService struct {
+type Service struct {
 	crud         *Crud
 	tableFactory *TableFactory
 	crudAuth     *bind.TransactOpts
@@ -29,13 +60,13 @@ type CRUDService struct {
 }
 
 // TableFactoryPrecompileAddress is the contract address of TableFactory
-var TableFactoryPrecompileAddress common.Address = common.HexToAddress("0x0000000000000000000000000000000000001001")
+var TableFactoryPrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001001")
 
 // CRUDPrecompileAddress is the contract address of CRUD
-var CRUDPrecompileAddress common.Address = common.HexToAddress("0x0000000000000000000000000000000000001002")
+var CRUDPrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001002")
 
 // NewCRUDService returns ptr of CRUDService
-func NewCRUDService(client *client.Client, privateKey *ecdsa.PrivateKey) (*CRUDService, error) {
+func NewCRUDService(client *client.Client) (*Service, error) {
 	crudInstance, err := NewCrud(CRUDPrecompileAddress, client)
 	if err != nil {
 		return nil, fmt.Errorf("construct CRUD failed: %+v", err)
@@ -44,53 +75,55 @@ func NewCRUDService(client *client.Client, privateKey *ecdsa.PrivateKey) (*CRUDS
 	if err != nil {
 		return nil, fmt.Errorf("construct TableFactor failed: %+v", err)
 	}
-	auth := bind.NewKeyedTransactor(privateKey)
-	auth.GasLimit = big.NewInt(30000000)
-	return &CRUDService{crud: crudInstance, tableFactory: tableInstance, crudAuth: auth, client: client}, nil
+	auth := client.GetTransactOpts()
+	return &Service{crud: crudInstance, tableFactory: tableInstance, crudAuth: auth, client: client}, nil
 }
 
-func (service *CRUDService) CreateTable(tableName string, key string, valueFields string) (int, error) {
-	tx, err := service.tableFactory.CreateTable(service.crudAuth, tableName, key, valueFields)
+func (service *Service) CreateTable(tableName string, key string, valueFields string) (int64, error) {
+	_, receipt, err := service.tableFactory.CreateTable(service.crudAuth, tableName, key, valueFields)
 	if err != nil {
-		return -1, fmt.Errorf("CRUDService CreateTable failed: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService CreateTable failed: %v", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
-	if err != nil {
-		return -1, fmt.Errorf("CRUDService wait for the transaction receipt failed: %v", err)
-	}
-	// handle receipt
-	return handleReceipt(receipt)
+	return parseReturnValue(receipt, "createTable")
+}
+
+func (service *Service) AsyncCreateTable(handler func(*types.Receipt, error), tableName string, key string, valueFields string) (*types.Transaction, error) {
+	return service.tableFactory.AsyncCreateTable(handler, service.crudAuth, tableName, key, valueFields)
 }
 
 // Insert entry
-func (service *CRUDService) Insert(tableName string, key string, entry *Entry) (int, error) {
+func (service *Service) Insert(tableName string, key string, entry *Entry) (int64, error) {
 	if len(key) > TableKeyMaxLength {
-		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	// change to string
 	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
 	if err != nil {
 		return -1, fmt.Errorf("change entry to json struct failed: %v", err)
 	}
-
-	tx, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
+	_, receipt, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
-	if err != nil {
-		return -1, fmt.Errorf("CRUDService wait for the transaction receipt failed: %v", err)
+	return parseReturnValue(receipt, "insert")
+}
+
+func (service *Service) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry *Entry) (*types.Transaction, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
-	// handle receipt
-	return handleReceipt(receipt)
+	// change to string
+	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
+	}
+	return service.crud.AsyncInsert(handler, service.crudAuth, tableName, key, string(entryJSON[:]), "")
 }
 
 // Update entry
-func (service *CRUDService) Update(tableName string, key string, entry *Entry, condition *Condition) (int, error) {
+func (service *Service) Update(tableName string, key string, entry *Entry, condition *Condition) (int64, error) {
 	if len(key) > TableKeyMaxLength {
-		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	// change to string
 	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
@@ -102,45 +135,63 @@ func (service *CRUDService) Update(tableName string, key string, entry *Entry, c
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
+	_, receipt, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
-	if err != nil {
-		return -1, fmt.Errorf("CRUDService wait for the transaction receipt failed: %v", err)
-	}
-	// handle receipt
-	return handleReceipt(receipt)
+	return parseReturnValue(receipt, "update")
 }
 
-func (service *CRUDService) Remove(tableName string, key string, condition *Condition) (int, error) {
+func (service *Service) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, entry *Entry, condition *Condition) (*types.Transaction, error) {
 	if len(key) > TableKeyMaxLength {
-		return -1, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	// change to string
+	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
+	}
+	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
+	}
+
+	return service.crud.AsyncUpdate(handler, service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
+
+}
+
+func (service *Service) Remove(tableName string, key string, condition *Condition) (int64, error) {
+	if len(key) > TableKeyMaxLength {
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
 	if err != nil {
 		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
 	}
 
-	tx, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
+	_, receipt, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
 	}
-	// wait for the mining
-	receipt, err := bind.WaitMined(context.Background(), service.client, tx)
-	if err != nil {
-		return -1, fmt.Errorf("CRUDService wait for the transaction receipt failed: %v", err)
+	return parseReturnValue(receipt, "remove")
+}
+
+func (service *Service) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string, condition *Condition) (*types.Transaction, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
-	// handle receipt
-	return handleReceipt(receipt)
+	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
+	if err != nil {
+		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
+	}
+
+	return service.crud.AsyncRemove(handler, service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 }
 
 // Select entry
-func (service *CRUDService) Select(tableName string, key string, condition *Condition) ([]map[string]string, error) {
+func (service *Service) Select(tableName string, key string, condition *Condition) ([]map[string]string, error) {
 	if len(key) > TableKeyMaxLength {
-		return nil, fmt.Errorf("The value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
 	if err != nil {
@@ -156,39 +207,37 @@ func (service *CRUDService) Select(tableName string, key string, condition *Cond
 	if err := json.Unmarshal([]byte(result), &results); err != nil {
 		return nil, fmt.Errorf("CRUDService: Unmarshal the Select result failed: %v", err)
 	}
-
 	return results, nil
 }
 
 // Desc is used for Table
-func (service *CRUDService) Desc(userTableName string) (string, string, error) {
-	tableName := SysTable
-	key := UserTablePrefix + userTableName
-	condition := NewCondition()
-	userTable, err := service.Select(tableName, key, condition)
+func (service *Service) Desc(userTableName string) (string, string, error) {
+	opts := &bind.CallOpts{From: service.crudAuth.From}
+	keyField, valueField, err := service.crud.Desc(opts, userTableName)
 	if err != nil {
-		return "", "", fmt.Errorf("select table failed: %v", err)
+		return "", "", fmt.Errorf("desc failed, select table error: %v", err)
 	}
-	if len(userTable) == 0 {
-		return "", "", fmt.Errorf("the table %s does not exist", tableName)
-	}
-	return userTable[0]["key_field"], userTable[0]["value_field"], nil
+	return keyField, valueField, nil
 }
 
-func handleReceipt(receipt *types.Receipt) (int, error) {
-	status := receipt.GetStatus()
-	if types.Success != status {
-		return -1, fmt.Errorf(types.GetStatusMessage(status))
+func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
+	errorMessage := receipt.GetErrorMessage()
+	if errorMessage != "" {
+		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
-	output := receipt.GetOutput()
-	if output != "0x" {
-		i := new(big.Int)
-		var flag bool
-		i, flag = i.SetString(output[2:], 16)
-		if !flag {
-			return -1, fmt.Errorf("handleReceipt: convert receipt output to int failed")
-		}
-		return int(i.Uint64()), nil
+	var bigNum *big.Int
+	var err error
+	if name == "createTable" {
+		bigNum, err = precompiled.ParseBigIntFromOutput(TableFactoryABI, name, receipt)
+	} else {
+		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, name, receipt)
 	}
-	return -1, fmt.Errorf("Transaction is handled failure")
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
+	}
+	errorCode, err := precompiled.BigIntToInt64(bigNum)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
+	}
+	return errorCode, errorCodeToError(errorCode)
 }
