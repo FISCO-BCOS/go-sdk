@@ -252,13 +252,13 @@ integration_amop() {
     if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
     LOG_INFO "amop unique broadcast test success!"
 
-    execute_cmd "go build -o multicast_publisher examples/amop/broadcast_pub/publisher.go"
-    nohup ./multicast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
+    execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    nohup ./broadcast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
     nohup ./subscriber 127.0.0.1:20203 hello1 > subscriber1.out 2>&1 &
     sleep 13s
     cat subscriber1.out
     if ! grep "hello, FISCO BCOS" ./subscriber1.out >> /dev/null ;then LOG_ERROR "amop multi broadcast failed." && exit 1;fi
-    pid=$(ps -ef | grep -v grep | grep multicast_publisher | awk '{print $2}')
+    pid=$(ps -ef | grep -v grep | grep broadcast_publisher | awk '{print $2}')
     if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
     pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
     if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
