@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -37,6 +36,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -747,7 +747,12 @@ func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.
 			return
 		}
 		var checkResult = 1 // 1 is false
-		digest := sha256.Sum256([]byte(randomData))
+		hw := sha3.NewLegacyKeccak256()
+		if _, err = hw.Write(randomData); err != nil {
+			log.Printf("keccak256 failed, err: %v\n", err)
+			return
+		}
+		digest := hw.Sum(nil)
 		for i := 0; i < len(publicKeys); i++ {
 			publicKeyBytes := crypto.FromECDSAPub(publicKeys[i])
 			if crypto.VerifySignature(publicKeyBytes, digest[:], signature[:len(signature)-1]) {
@@ -802,7 +807,12 @@ func (hc *channelSession) subscribePrivateTopic(topic string, privateKey *ecdsa.
 	hc.topicHandlers[topic] = handler
 	hc.topicHandlers[authChannelTopic] = func(data []byte, response *[]byte) {
 		// sign random number and send back
-		digest := sha256.Sum256([]byte(data))
+		hw := sha3.NewLegacyKeccak256()
+		if _, err = hw.Write(data); err != nil {
+			log.Printf("keccak256 failed, err: %v\n", err)
+			return
+		}
+		digest := hw.Sum(nil)
 		signature, err := crypto.Sign(digest[:], privateKey)
 		if err != nil {
 			log.Printf("sign random number failed, err: %v\n", err)
