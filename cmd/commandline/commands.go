@@ -749,8 +749,8 @@ func init() {
 	// add contract command
 
 	// cobra.OnInitialize(initConfig)
-	helpCmd, _, _ := rootCmd.Find([]string{"help"})
-	helpCmd.PersistentPreRun = nil
+
+	// FIXME: add a custom help command or find a way to make help command work without network
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
