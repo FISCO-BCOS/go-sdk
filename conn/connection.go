@@ -255,11 +255,14 @@ func (c *Connection) Close() {
 	if c.isHTTP {
 		return
 	}
-	select {
-	case c.close <- struct{}{}:
-		<-c.didClose
-	case <-c.didClose:
-	}
+	hc := c.writeConn.(*channelSession)
+	hc.Close()
+	// FIXME: remove substration releated code
+	// select {
+	// case c.close <- struct{}{}:
+	// 	<-c.didClose
+	// case <-c.didClose:
+	// }
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
