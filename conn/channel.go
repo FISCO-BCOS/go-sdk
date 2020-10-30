@@ -524,8 +524,11 @@ func (hc *channelSession) asyncSendTransaction(msg interface{}, handler func(*ty
 	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	hc.mu.Lock()
 	hc.responses[rpcMsg.uuid] = response
-	hc.asyncHandlers[rpcMsg.uuid] = handler
 	hc.mu.Unlock()
+
+	hc.asyncMu.Lock()
+	hc.asyncHandlers[rpcMsg.uuid] = handler
+	hc.asyncMu.Unlock()
 	defer func() {
 		hc.mu.Lock()
 		delete(hc.responses, rpcMsg.uuid)
