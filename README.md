@@ -21,12 +21,7 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 - [Golang](https://golang.org/), 版本需不低于`1.13.6`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
 - [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
-```
-cd ~/fisco/
-bash nodes/127.0.0.1/start_all.sh
-cp nodes/127.0.0.1/sdk/* console/conf/
-cd ~/fisco/console && bash start.sh #启动成功后，退出即可
-```
+
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
 # 配置文件说明(config.toml)
@@ -203,35 +198,8 @@ import (
     "github.com/FISCO-BCOS/go-sdk/store" // import store
 )
 
-func generateAccount() (string, string, string) {
-	privateKey, err := crypto.GenerateKey()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	privateKeyBytes := crypto.FromECDSA(privateKey)
-	privateKeyStr := hexutil.Encode(privateKeyBytes)[2:] // privateKey in hex without "0x"
-
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
-	}
-
-	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
-	publicKeyStr := hexutil.Encode(publicKeyBytes)[4:] // publicKey in hex without "0x"
-
-	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
-	addressStr := address // account address
-
-	return privateKeyStr, publicKeyStr, addressStr
-}
-
 func main(){
-	privateKeyStr, _, _ := generateAccount()
-	privateKey, _ := hex.DecodeString(privateKeyStr)
-	config := &conf.Config{IsHTTP: false, ChainID: 1, IsSMCrypto: false, GroupID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
-
+    config := &conf.ParseConfigFile("config.toml")[0]
     client, err := client.Dial(config)
     if err != nil {
         log.Fatal(err)
@@ -265,7 +233,7 @@ import (
 )
 
 func main() {
-	config := &conf.ParseConfig("config.toml")[0]
+	config := &conf.ParseConfigFile("config.toml")[0]
 	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
@@ -308,7 +276,7 @@ import (
 )
 
 func main() {
-	config := &conf.ParseConfig("config.toml")[0]
+	config := &conf.ParseConfigFile("config.toml")[0]
 	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
