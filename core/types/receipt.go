@@ -184,12 +184,12 @@ func (r *Receipt) GetOutput() string {
 
 // ParseErrorMessage gets unusual output value from Receipt
 func (r *Receipt) GetErrorMessage() string {
-	var status int
+	//var status int
 	var errorMessage string
 	if r.GetStatus() == Success {
 		return ""
 	}
-	errorMessage = getStatusMessage(status)
+	errorMessage = getStatusMessage(r.Status)
 	if len(r.Output) >= 138 { // 0x + 4 bytes funcName + 32 bytes offset + 32 bytes string length
 		outputBytes, err := hex.DecodeString(r.Output[2:])
 		if err != nil {
