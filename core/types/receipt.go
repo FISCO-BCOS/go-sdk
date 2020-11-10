@@ -184,7 +184,6 @@ func (r *Receipt) GetOutput() string {
 
 // ParseErrorMessage gets unusual output value from Receipt
 func (r *Receipt) GetErrorMessage() string {
-	//var status int
 	var errorMessage string
 	if r.GetStatus() == Success {
 		return ""
