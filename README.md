@@ -195,52 +195,61 @@ import (
 
     "github.com/FISCO-BCOS/go-sdk/client"
     "github.com/FISCO-BCOS/go-sdk/conf"
-    "github.com/FISCO-BCOS/go-sdk/store" // import store
+    "github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
 )
 
 func main(){
-    config := &conf.ParseConfigFile("config.toml")[0]
-    client, err := client.Dial(config)
-    if err != nil {
-        log.Fatal(err)
-    }
-    input := "Store deployment 1.0"
-    address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println("contract address: ", address.Hex())  // the address should be saved
-    fmt.Println("transaction hash: ", tx.Hash().Hex())
-    _ = instance
+	configs, err := conf.ParseConfigFile("config.toml")
+	if err != nil {
+		log.Fatalf("ParseConfigFile failed, err: %v", err)
+	}
+	client, err := client.Dial(&configs[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+	input := "Store deployment 1.0"
+	address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
+	fmt.Println("transaction hash: ", tx.Hash().Hex())
+	_ = instance
 }
 ```
 
 ## 加载智能合约并调用查询接口
 
-在部署过程中设置的`Store.sol`合约中有一个名为`version`的全局变量。 因为它是公开的，这意味着它们将成为我们自动创建的`getter`函数。 常量和`view`函数也接受`bind.CallOpts`作为第一个参数，新建`contract_read.go`文件以查询合约：
+在部署过程中设置的`Store.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数。下面的例子中我们加载上一步部署的合约，然后调用`Version()`来获取version的值。
 
 ```go
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 
+	"github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/store"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 func main() {
-	config := &conf.ParseConfigFile("config.toml")[0]
+	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	if err != nil {
+		log.Fatalf("decode hex failed of %v", err)
+	}
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
 	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// load the contract
-	contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
+	contractAddress := common.HexToAddress("contract addree in hex") // get contract address from deploy
 	instance, err := store.NewStore(contractAddress, client)
 	if err != nil {
 		log.Fatal(err)
@@ -266,24 +275,29 @@ func main() {
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 
+	"github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/store"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 func main() {
-	config := &conf.ParseConfigFile("config.toml")[0]
+	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	if err != nil {
+		log.Fatalf("decode hex failed of %v", err)
+	}
+	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// load the contract
-	contractAddress := common.HexToAddress("contract addree in hex") // 0x0626918C51A1F36c7ad4354BB1197460A533a2B9
+	contractAddress := common.HexToAddress("contract addree in hex") // get contract address from deploy
 	instance, err := store.NewStore(contractAddress, client)
 	if err != nil {
 		log.Fatal(err)
