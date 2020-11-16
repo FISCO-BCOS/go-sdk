@@ -28,10 +28,10 @@ var (
 )
 
 // StoreABI is the input ABI used to generate the binding from.
-const StoreABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"items\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"bytes32\"},{\"name\":\"value\",\"type\":\"bytes32\"}],\"name\":\"setItem\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_version\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"bytes32\"}],\"name\":\"ItemSet\",\"type\":\"event\"}]"
+const StoreABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"items\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"bytes32\"},{\"name\":\"value\",\"type\":\"bytes32\"}],\"name\":\"setItem\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_version\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"bytes32\"}],\"name\":\"ItemSet\",\"type\":\"event\"}]"
 
 // StoreBin is the compiled bytecode used for deploying new contracts.
-var StoreBin = "0x608060405234801561001057600080fd5b506040516103d53803806103d5833981018060405281019080805182019291905050508060009080519060200190610049929190610050565b50506100f5565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061009157805160ff19168380011785556100bf565b828001600101855582156100bf579182015b828111156100be5782518255916020019190600101906100a3565b5b5090506100cc91906100d0565b5090565b6100f291905b808211156100ee5760008160009055506001016100d6565b5090565b90565b6102d1806101046000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680631ef1a7f41461005c5780635f7691d3146100a9578063ad56e1dc146100e8575b600080fd5b34801561006857600080fd5b5061008b6004803603810190808035600019169060200190929190505050610178565b60405180826000191660001916815260200191505060405180910390f35b3480156100b557600080fd5b506100e660048036038101908080356000191690602001909291908035600019169060200190929190505050610190565b005b3480156100f457600080fd5b506100fd610207565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013d578082015181840152602081019050610122565b50505050905090810190601f16801561016a5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60016020528060005260406000206000915090505481565b8060016000846000191660001916815260200190815260200160002081600019169055507fcaa834c1e38aaf47dead74db084a49e1dfed8b637a04d8239a9b6fa4f27d74c7828260405180836000191660001916815260200182600019166000191681526020019250505060405180910390a15050565b60008054600181600116156101000203166002900480601f01602080910402602001604051908101604052809291908181526020018280546001816001161561010002031660029004801561029d5780601f106102725761010080835404028352916020019161029d565b820191906000526020600020905b81548152906001019060200180831161028057829003601f168201915b5050505050815600a165627a7a72305820bf5b591ded985e28fcddf03ba62a748ad93241b49a400df61687530c6ba4dfb40029"
+var StoreBin = "0x608060405234801561001057600080fd5b506040516103d53803806103d5833981018060405281019080805182019291905050508060009080519060200190610049929190610050565b50506100f5565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061009157805160ff19168380011785556100bf565b828001600101855582156100bf579182015b828111156100be5782518255916020019190600101906100a3565b5b5090506100cc91906100d0565b5090565b6100f291905b808211156100ee5760008160009055506001016100d6565b5090565b90565b6102d1806101046000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806348f343f31461005c57806354fd4d50146100a9578063f56256c714610139575b600080fd5b34801561006857600080fd5b5061008b6004803603810190808035600019169060200190929190505050610178565b60405180826000191660001916815260200191505060405180910390f35b3480156100b557600080fd5b506100be610190565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156100fe5780820151818401526020810190506100e3565b50505050905090810190601f16801561012b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561014557600080fd5b506101766004803603810190808035600019169060200190929190803560001916906020019092919050505061022e565b005b60016020528060005260406000206000915090505481565b60008054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156102265780601f106101fb57610100808354040283529160200191610226565b820191906000526020600020905b81548152906001019060200180831161020957829003601f168201915b505050505081565b8060016000846000191660001916815260200190815260200160002081600019169055507fe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4828260405180836000191660001916815260200182600019166000191681526020019250505060405180910390a150505600a165627a7a72305820e91ba5b81db3267fc49db49d441f866a5984c5e15f2b2d483e317da44f26cf290029"
 
 // DeployStore deploys a new contract, binding an instance of Store to it.
 func DeployStore(auth *bind.TransactOpts, backend bind.ContractBackend, _version string) (common.Address, *types.Transaction, *Store, error) {
@@ -47,29 +47,42 @@ func DeployStore(auth *bind.TransactOpts, backend bind.ContractBackend, _version
 	return address, tx, &Store{StoreCaller: StoreCaller{contract: contract}, StoreTransactor: StoreTransactor{contract: contract}, StoreFilterer: StoreFilterer{contract: contract}}, nil
 }
 
-// Store is an auto generated Go binding around an contract.
+func AsyncDeployStore(auth *bind.TransactOpts, handler func(*types.Receipt, error), backend bind.ContractBackend, _version string) (*types.Transaction, error) {
+	parsed, err := abi.JSON(strings.NewReader(StoreABI))
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(StoreBin), backend, _version)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// Store is an auto generated Go binding around a Solidity contract.
 type Store struct {
 	StoreCaller     // Read-only binding to the contract
 	StoreTransactor // Write-only binding to the contract
 	StoreFilterer   // Log filterer for contract events
 }
 
-// StoreCaller is an auto generated read-only Go binding around an contract.
+// StoreCaller is an auto generated read-only Go binding around a Solidity contract.
 type StoreCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// StoreTransactor is an auto generated write-only Go binding around an contract.
+// StoreTransactor is an auto generated write-only Go binding around a Solidity contract.
 type StoreTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// StoreFilterer is an auto generated log filtering Go binding around an contract events.
+// StoreFilterer is an auto generated log filtering Go binding around a Solidity contract events.
 type StoreFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
-// StoreSession is an auto generated Go binding around an contract,
+// StoreSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type StoreSession struct {
 	Contract     *Store            // Generic contract binding to set the session for
@@ -77,31 +90,31 @@ type StoreSession struct {
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// StoreCallerSession is an auto generated read-only Go binding around an contract,
+// StoreCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type StoreCallerSession struct {
 	Contract *StoreCaller  // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts // Call options to use throughout this session
 }
 
-// StoreTransactorSession is an auto generated write-only Go binding around an contract,
+// StoreTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type StoreTransactorSession struct {
 	Contract     *StoreTransactor  // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
 
-// StoreRaw is an auto generated low-level Go binding around an contract.
+// StoreRaw is an auto generated low-level Go binding around a Solidity contract.
 type StoreRaw struct {
 	Contract *Store // Generic contract binding to access the raw methods on
 }
 
-// StoreCallerRaw is an auto generated low-level read-only Go binding around an contract.
+// StoreCallerRaw is an auto generated low-level read-only Go binding around a Solidity contract.
 type StoreCallerRaw struct {
 	Contract *StoreCaller // Generic read-only contract binding to access the raw methods on
 }
 
-// StoreTransactorRaw is an auto generated low-level write-only Go binding around an contract.
+// StoreTransactorRaw is an auto generated low-level write-only Go binding around a Solidity contract.
 type StoreTransactorRaw struct {
 	Contract *StoreTransactor // Generic write-only contract binding to access the raw methods on
 }
@@ -161,12 +174,12 @@ func (_Store *StoreRaw) Call(opts *bind.CallOpts, result interface{}, method str
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Store *StoreRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_Store *StoreRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _Store.Contract.StoreTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Store *StoreRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_Store *StoreRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _Store.Contract.StoreTransactor.contract.Transact(opts, method, params...)
 }
 
@@ -180,12 +193,12 @@ func (_Store *StoreCallerRaw) Call(opts *bind.CallOpts, result interface{}, meth
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_Store *StoreTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+func (_Store *StoreTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *types.Receipt, error) {
 	return _Store.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Store *StoreTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (_Store *StoreTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	return _Store.Contract.contract.Transact(opts, method, params...)
 }
 
@@ -244,22 +257,34 @@ func (_Store *StoreCallerSession) Version() (string, error) {
 // SetItem is a paid mutator transaction binding the contract method 0xf56256c7.
 //
 // Solidity: function setItem(bytes32 key, bytes32 value) returns()
-func (_Store *StoreTransactor) SetItem(opts *bind.TransactOpts, key [32]byte, value [32]byte) (*types.Transaction, error) {
+func (_Store *StoreTransactor) SetItem(opts *bind.TransactOpts, key [32]byte, value [32]byte) (*types.Transaction, *types.Receipt, error) {
 	return _Store.contract.Transact(opts, "setItem", key, value)
 }
 
-// SetItem is a paid mutator transaction binding the contract method 0xf56256c7.
-//
-// Solidity: function setItem(bytes32 key, bytes32 value) returns()
-func (_Store *StoreSession) SetItem(key [32]byte, value [32]byte) (*types.Transaction, error) {
-	return _Store.Contract.SetItem(&_Store.TransactOpts, key, value)
+func (_Store *StoreTransactor) AsyncSetItem(handler func(*types.Receipt, error), opts *bind.TransactOpts, key [32]byte, value [32]byte) (*types.Transaction, error) {
+	return _Store.contract.AsyncTransact(opts, handler, "setItem", key, value)
 }
 
 // SetItem is a paid mutator transaction binding the contract method 0xf56256c7.
 //
 // Solidity: function setItem(bytes32 key, bytes32 value) returns()
-func (_Store *StoreTransactorSession) SetItem(key [32]byte, value [32]byte) (*types.Transaction, error) {
+func (_Store *StoreSession) SetItem(key [32]byte, value [32]byte) (*types.Transaction, *types.Receipt, error) {
 	return _Store.Contract.SetItem(&_Store.TransactOpts, key, value)
+}
+
+func (_Store *StoreSession) AsyncSetItem(handler func(*types.Receipt, error), key [32]byte, value [32]byte) (*types.Transaction, error) {
+	return _Store.Contract.AsyncSetItem(handler, &_Store.TransactOpts, key, value)
+}
+
+// SetItem is a paid mutator transaction binding the contract method 0xf56256c7.
+//
+// Solidity: function setItem(bytes32 key, bytes32 value) returns()
+func (_Store *StoreTransactorSession) SetItem(key [32]byte, value [32]byte) (*types.Transaction, *types.Receipt, error) {
+	return _Store.Contract.SetItem(&_Store.TransactOpts, key, value)
+}
+
+func (_Store *StoreTransactorSession) AsyncSetItem(handler func(*types.Receipt, error), key [32]byte, value [32]byte) (*types.Transaction, error) {
+	return _Store.Contract.AsyncSetItem(handler, &_Store.TransactOpts, key, value)
 }
 
 // StoreItemSetIterator is returned from FilterItemSet and is used to iterate over the raw logs and unpacked data for ItemSet events raised by the Store contract.
