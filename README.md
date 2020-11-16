@@ -186,6 +186,10 @@ Store.abi  Store.bin  Store.go  Store.sol
 touch store_main.go
 ```
 
+下面的例子先部署合约，在部署过程中设置的`Store.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
+
+写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。
+
 ```go
 package main
 
@@ -195,7 +199,7 @@ import (
 
     "github.com/FISCO-BCOS/go-sdk/client"
     "github.com/FISCO-BCOS/go-sdk/conf"
-    "github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
+    "github.com/FISCO-BCOS/go-sdk/store" // import store
 )
 
 func main(){
@@ -214,47 +218,15 @@ func main(){
 	}
 	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
 	fmt.Println("transaction hash: ", tx.Hash().Hex())
-	_ = instance
-}
-```
-
-## 加载智能合约并调用查询接口
-
-在部署过程中设置的`Store.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数。下面的例子中我们加载上一步部署的合约，然后调用`Version()`来获取version的值。
-
-```go
-package main
-
-import (
-	"encoding/hex"
-	"fmt"
-	"log"
-
-	"github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/ethereum/go-ethereum/common"
-)
-
-func main() {
-	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	if err != nil {
-		log.Fatalf("decode hex failed of %v", err)
-	}
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
-	client, err := client.Dial(config)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// load the contract
-	contractAddress := common.HexToAddress("contract addree in hex") // get contract address from deploy
-	instance, err := store.NewStore(contractAddress, client)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// contractAddress := common.HexToAddress("contract address in hex String")
+	// instance, err := store.NewStore(contractAddress, client)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
+	fmt.Println("================================")
 	storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
 	version, err := storeSession.Version()
@@ -263,48 +235,9 @@ func main() {
 	}
 
 	fmt.Println("version :", version) // "Store deployment 1.0"
-}
 
-```
-
-## 调用智能合约写接口
-
-写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。新建`contract_write.go`来测试写入智能合约：
-
-```go
-package main
-
-import (
-	"encoding/hex"
-	"fmt"
-	"log"
-
-	"github.com/FISCO-BCOS/go-sdk/.ci/store" // import store
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/ethereum/go-ethereum/common"
-)
-
-func main() {
-	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	if err != nil {
-		log.Fatalf("decode hex failed of %v", err)
-	}
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
-	client, err := client.Dial(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// load the contract
-	contractAddress := common.HexToAddress("contract addree in hex") // get contract address from deploy
-	instance, err := store.NewStore(contractAddress, client)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
-
+	// contract write interface demo
+	fmt.Println("================================")
 	key := [32]byte{}
 	value := [32]byte{}
 	copy(key[:], []byte("foo"))
@@ -324,7 +257,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(result[:])) // "bar"
+	fmt.Println("get item: " + string(result[:])) // "bar"
 }
-
 ```
