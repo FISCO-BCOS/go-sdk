@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 )
@@ -111,14 +111,7 @@ The block height is encoded in hex`,
 			fmt.Printf("block number not found: %v\n", err)
 			return
 		}
-		fmt.Printf("blocknumber: \n    hex: %s\n", blockNumber)
-		strNum := string(blockNumber)
-		bnum, err := toDecimal(strNum[3 : len(strNum)-1])
-		if err != nil {
-			fmt.Println("The block Number is tot a valid hex string")
-			return
-		}
-		fmt.Println("decimal: ", bnum)
+		fmt.Printf("blocknumber: %d\n", blockNumber)
 	},
 }
 
@@ -277,7 +270,6 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var bhash string
 		var includeTx bool
 
 		_, err := isValidHex(args[0])
@@ -297,8 +289,8 @@ For more information please refer:
 			includeTx = _includeTx
 		}
 
-		bhash = args[0]
-		peers, err := RPC.GetBlockByHash(context.Background(), bhash, includeTx)
+		blockHash := common.BytesToHash([]byte(args[0]))
+		peers, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
@@ -324,15 +316,14 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var bnumber string
 		var includeTx bool
 
-		bnum, err := isValidNumber(args[0])
+		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("parse block number failed, err: %v", err)
 			return
 		}
-		_, err = isBlockNumberOutOfRange(bnum)
+		_, err = isBlockNumberOutOfRange(blockNumber)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -349,8 +340,7 @@ For more information please refer:
 			includeTx = _includeTx
 		}
 
-		bnumber = args[0]
-		block, err := RPC.GetBlockByNumber(context.Background(), bnumber, includeTx)
+		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
@@ -375,25 +365,24 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		bnum, err := isValidNumber(args[0])
+		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
+		if err != nil {
+			fmt.Printf("parse block number failed, %s", args[0])
+			return
+		}
+
+		_, err = isBlockNumberOutOfRange(blockNumber)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		_, err = isBlockNumberOutOfRange(bnum)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		bnumber := args[0]
-		bhash, err := RPC.GetBlockHashByNumber(context.Background(), bnumber)
+		blockHash, err := RPC.GetBlockHashByNumber(context.Background(), blockNumber)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Block Hash: \n%s\n", bhash)
+		fmt.Printf("Block Hash: \n%s\n", blockHash.Hex())
 	},
 }
 
@@ -421,7 +410,7 @@ For more information please refer:
 			return
 		}
 
-		txHash := args[0]
+		txHash := common.BytesToHash([]byte(args[0]))
 		tx, err := RPC.GetTransactionByHash(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
@@ -454,15 +443,13 @@ For more information please refer:
 			return
 		}
 
-		_, err = isValidNumber(args[1])
+		txIndex, err := strconv.ParseInt(args[0], 0, 0)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
 		}
-
-		bhash := args[0]
-		txIndex := args[1]
-		tx, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), bhash, txIndex)
+		blockHash := common.BytesToHash([]byte(args[0]))
+		tx, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
@@ -488,27 +475,24 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		bnum, err := isValidNumber(args[0])
+		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
+		if err != nil {
+			fmt.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
+			return
+		}
+
+		_, err = isBlockNumberOutOfRange(blockNumber)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		_, err = isBlockNumberOutOfRange(bnum)
+		txIndex, err := strconv.Atoi(args[1])
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
 		}
-
-		_, err = isValidNumber(args[1])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		bnumber := args[0]
-		txIndex := args[1]
-		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), bnumber, txIndex)
+		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
@@ -539,7 +523,7 @@ For more information please refer:
 			return
 		}
 
-		txHash := args[0]
+		txHash := common.BytesToHash([]byte(args[0]))
 		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction receipt not found: %v\n", err)
@@ -576,13 +560,6 @@ var getPendingTxSizeCmd = &cobra.Command{
 			return
 		}
 		fmt.Printf("Pending Transactions Count: \n    hex: %s\n", tx)
-		strNum := string(tx)
-		bnum, err := toDecimal(strNum[3 : len(strNum)-1])
-		if err != nil {
-			fmt.Println("The Pending Transactions Count is tot a valid hex string")
-			return
-		}
-		fmt.Println("decimal: ", bnum)
 	},
 }
 
@@ -610,7 +587,7 @@ For more information please refer:
 			return
 		}
 
-		contractAdd := args[0]
+		contractAdd := common.BytesToAddress([]byte(args[0]))
 		code, err := RPC.GetCode(context.Background(), contractAdd)
 		if err != nil {
 			fmt.Printf("This address does not exist: %v\n", err)
@@ -628,7 +605,7 @@ For more information please refer:
 
 var getTotalTransactionCountCmd = &cobra.Command{
 	Use:   "getTotalTransactionCount",
-	Short: "                                   Get the totoal transactions and the latest block height",
+	Short: "                                   Get the total transactions and the latest block height",
 	Long:  `Returns the current total number of transactions and block height.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -763,43 +740,6 @@ func init() {
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func toDecimal(hex string) (int, error) {
-	i := new(big.Int)
-	var flag bool
-	i, flag = i.SetString(hex, 16) // octal
-	if !flag {
-		return -1, fmt.Errorf("Cannot parse hex string to Int")
-	}
-	return int(i.Uint64()), nil
-}
-
-func isValidNumber(str string) (int, error) {
-	var bnum int
-	var err error
-	// whether contains "." as the float type
-	if strings.Contains(str, ".") {
-		return -1, fmt.Errorf("Arguments error: please check your inpunt: %s%s", str, info)
-	}
-	// starts with "0x"
-	if strings.HasPrefix(str, "0x") {
-		// is hex string
-		_, err = strconv.ParseInt(str[2:], 16, 64)
-		if err != nil {
-			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
-		}
-		bnum, err = toDecimal(str[2:])
-		if err != nil {
-			return -1, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
-		}
-	} else {
-		bnum, err = strconv.Atoi(str)
-		if err != nil {
-			return -1, fmt.Errorf("Arguments error: please check your input: %s%s: %v", str, info, err)
-		}
-	}
-	return bnum, nil
-}
-
 func isValidHex(str string) (bool, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
@@ -816,18 +756,13 @@ func isValidHex(str string) (bool, error) {
 	return false, fmt.Errorf("Arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
 }
 
-func isBlockNumberOutOfRange(bnum int) (bool, error) {
+func isBlockNumberOutOfRange(blockNumber int64) (bool, error) {
 	// compare with the current block number
-	curr, err := RPC.GetBlockNumber(context.Background())
+	currentBlockNumber, err := RPC.GetBlockNumber(context.Background())
 	if err != nil {
 		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
 	}
-	currStr := string(curr)
-	currInt, err := toDecimal(currStr[3 : len(currStr)-1])
-	if err != nil {
-		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
-	}
-	if currInt < bnum {
+	if currentBlockNumber < blockNumber {
 		return false, fmt.Errorf("BlockNumber does not exist")
 	}
 	return true, nil

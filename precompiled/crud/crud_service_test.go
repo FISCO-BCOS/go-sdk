@@ -70,7 +70,7 @@ func TestAsyncCreateTable(t *testing.T) {
 			t.Fatalf("receive receipt failed, %v\n", err)
 		}
 		var bigNum *big.Int
-		bigNum, err = precompiled.ParseBigIntFromOutput(TableFactoryABI, "createTable", receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 		if err != nil {
 			t.Fatalf("parseReturnValue failed, err: %v\n", err)
 		}
@@ -121,7 +121,7 @@ func TestAsyncInsert(t *testing.T) {
 			t.Fatalf("receive receipt failed, %v\n", err)
 		}
 		var bigNum *big.Int
-		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "insert", receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 		if err != nil {
 			t.Fatalf("parseReturnValue failed, err: %v\n", err)
 		}
@@ -194,7 +194,7 @@ func TestAsyncUpdate(t *testing.T) {
 			t.Fatalf("receive receipt failed, %v\n", err)
 		}
 		var bigNum *big.Int
-		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "update", receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 		if err != nil {
 			t.Fatalf("parseReturnValue failed, err: %v\n", err)
 		}
@@ -245,7 +245,7 @@ func TestAsyncRemove(t *testing.T) {
 			t.Fatalf("receive receipt failed, %v\n", err)
 		}
 		var bigNum *big.Int
-		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, "remove", receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 		if err != nil {
 			t.Fatalf("parseReturnValue failed, err: %v\n", err)
 		}

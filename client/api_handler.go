@@ -121,7 +121,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 		queryTicker := time.NewTicker(time.Second)
 		defer queryTicker.Stop()
 		for {
-			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash())
 			if receipt != nil {
 				return receipt, nil
 			}
@@ -160,7 +160,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 	}
 }
 
-// AsyncSendTransaction send transaction async
+// AsyncSendRawTransaction send a transaction async
 func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
@@ -175,7 +175,7 @@ func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int,
 		var receipt *types.Receipt
 		go func() {
 			for {
-				receipt, err = api.GetTransactionReceipt(ctx, groupID, tx.Hash().Hex())
+				receipt, err = api.GetTransactionReceipt(ctx, groupID, tx.Hash())
 				if receipt != nil {
 					handler(receipt, nil)
 					return
@@ -296,14 +296,18 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 }
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
-func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) ([]byte, error) {
+func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) (int64, error) {
 	var raw string
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+
+	blockNumber, err := strconv.ParseInt(raw, 0, 64)
+	if err != nil {
+		return -1, fmt.Errorf("parse block number failed, err: %v", err)
+	}
+	return blockNumber, err
 }
 
 // GetBlockLimit returns the blocklimit for current blocknumber
@@ -430,9 +434,9 @@ func (api *APIHandler) GetGroupList(ctx context.Context) ([]byte, error) {
 }
 
 // GetBlockByHash returns the block information according to the given block hash
-func (api *APIHandler) GetBlockByHash(ctx context.Context, groupID int, bhash string, includetx bool) ([]byte, error) {
+func (api *APIHandler) GetBlockByHash(ctx context.Context, groupID int, blockHash common.Hash, includeTx bool) ([]byte, error) {
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getBlockByHash", groupID, bhash, includetx)
+	err := api.CallContext(ctx, &raw, "getBlockByHash", groupID, blockHash.Hex(), includeTx)
 	if err != nil {
 		return nil, err
 	}
@@ -441,9 +445,12 @@ func (api *APIHandler) GetBlockByHash(ctx context.Context, groupID int, bhash st
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
-func (api *APIHandler) GetBlockByNumber(ctx context.Context, groupID int, bnum string, includetx bool) ([]byte, error) {
+func (api *APIHandler) GetBlockByNumber(ctx context.Context, groupID int, blockNumber int64, includeTx bool) ([]byte, error) {
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getBlockByNumber", groupID, bnum, includetx)
+	err := api.CallContext(ctx, &raw, "getBlockByNumber", groupID, strconv.FormatInt(blockNumber, 10), includeTx)
 	if err != nil {
 		return nil, err
 	}
@@ -452,20 +459,23 @@ func (api *APIHandler) GetBlockByNumber(ctx context.Context, groupID int, bnum s
 }
 
 // GetBlockHashByNumber returns the block hash according to the given block number
-func (api *APIHandler) GetBlockHashByNumber(ctx context.Context, groupID int, bnum string) ([]byte, error) {
-	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getBlockHashByNumber", groupID, bnum)
+func (api *APIHandler) GetBlockHashByNumber(ctx context.Context, groupID int, blockNumber int64) (*common.Hash, error) {
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
+	var raw string
+	err := api.CallContext(ctx, &raw, "getBlockHashByNumber", groupID, strconv.FormatInt(blockNumber, 10))
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+	blockHash := common.HexToHash(raw)
+	return &blockHash, err
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
-func (api *APIHandler) GetTransactionByHash(ctx context.Context, groupID int, txhash string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByHash(ctx context.Context, groupID int, txHash common.Hash) ([]byte, error) {
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getTransactionByHash", groupID, txhash)
+	err := api.CallContext(ctx, &raw, "getTransactionByHash", groupID, txHash.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -475,9 +485,9 @@ func (api *APIHandler) GetTransactionByHash(ctx context.Context, groupID int, tx
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
-func (api *APIHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, groupID int, bhash string, txindex string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, groupID int, blockHash common.Hash, txIndex int) ([]byte, error) {
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getTransactionByBlockHashAndIndex", groupID, bhash, txindex)
+	err := api.CallContext(ctx, &raw, "getTransactionByBlockHashAndIndex", groupID, blockHash.Hex(), strconv.Itoa(txIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -487,9 +497,12 @@ func (api *APIHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, gr
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
-func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, groupID int, bnum string, txindex string) ([]byte, error) {
+func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, groupID int, blockNumber int64, txIndex int) ([]byte, error) {
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getTransactionByBlockNumberAndIndex", groupID, bnum, txindex)
+	err := api.CallContext(ctx, &raw, "getTransactionByBlockNumberAndIndex", groupID, strconv.FormatInt(blockNumber, 10), strconv.Itoa(txIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -498,18 +511,18 @@ func (api *APIHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, 
 }
 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
-func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, txhash string) (*types.Receipt, error) {
+func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, txHash common.Hash) (*types.Receipt, error) {
 	var raw *types.Receipt
 	var anonymityReceipt = &struct {
 		types.Receipt
 		Status string `json:"status"`
 	}{}
-	err := api.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", groupID, txhash)
+	err := api.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", groupID, txHash.Hex())
 	if err != nil {
 		return nil, err
 	}
 	if len(anonymityReceipt.Status) < 2 {
-		return nil, fmt.Errorf("transaction %v is not on-chain", txhash)
+		return nil, fmt.Errorf("transaction %v is not on-chain", txHash.Hex())
 	}
 	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
 	if err != nil {
@@ -521,10 +534,10 @@ func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, t
 }
 
 // GetContractAddress returns a contract address according to the transaction hash
-func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txhash string) (common.Address, error) {
+func (api *APIHandler) GetContractAddress(ctx context.Context, groupID int, txHash common.Hash) (common.Address, error) {
 	var raw interface{}
 	var contractAddress common.Address
-	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txhash)
+	err := api.CallContext(ctx, &raw, "getTransactionReceipt", groupID, txHash.Hex())
 	if err != nil {
 		return contractAddress, err
 	}
@@ -568,9 +581,9 @@ func (api *APIHandler) GetPendingTxSize(ctx context.Context, groupID int) ([]byt
 }
 
 // GetCode returns the contract code according to the contract address
-func (api *APIHandler) GetCode(ctx context.Context, groupID int, addr string) ([]byte, error) {
+func (api *APIHandler) GetCode(ctx context.Context, groupID int, address common.Address) ([]byte, error) {
 	var raw interface{}
-	err := api.CallContext(ctx, &raw, "getCode", groupID, addr)
+	err := api.CallContext(ctx, &raw, "getCode", groupID, address.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -578,7 +591,7 @@ func (api *APIHandler) GetCode(ctx context.Context, groupID int, addr string) ([
 	return js, err
 }
 
-// GetTotalTransactionCount returns the totoal amount of transactions and the block height at present
+// GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (api *APIHandler) GetTotalTransactionCount(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
 	err := api.CallContext(ctx, &raw, "getTotalTransactionCount", groupID)

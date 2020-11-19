@@ -129,7 +129,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRegisterCns(t *testing.T) {
-	result, err := service.RegisterCns(name, version, address, testABI)
+	result, err := service.RegisterCns(name, version, common.HexToAddress(address), testABI)
 	if err != nil {
 		t.Fatalf("Service RegisterCns failed: %+v\n", err)
 	}
@@ -144,10 +144,9 @@ func TestGetAddressByContractNameAndVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAddressByContractNameAndVersion failed: %v", err)
 	}
-	if common.Bytes2Hex(addr[:]) != "0626918c51a1f36c7ad4354bb1197460a533a2b9" {
-		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0626918c51a1f36c7ad4354bb1197460a533a2b9\"", common.Bytes2Hex(addr[:]))
+	if addr.Hex() != address {
+		t.Fatalf("GetAddressByContractNameAndVersion failed, the result %v is inconsistent with \"0626918c51a1f36c7ad4354bb1197460a533a2b9\"", addr.Hex())
 	}
-	t.Logf("address: %s", common.Bytes2Hex(addr[:]))
 }
 
 func TestQueryCnsByNameAndVersion(t *testing.T) {
@@ -158,7 +157,7 @@ func TestQueryCnsByNameAndVersion(t *testing.T) {
 	if len(cnsInfo) != 1 {
 		t.Fatalf("QueryCnsByNameAndVersion failed, the length of cnsInfo \"%v\" is inconsistent with 1", len(cnsInfo))
 	}
-	t.Logf("QueryCnsByNameAndVersion: %v", cnsInfo[0])
+	// t.Logf("QueryCnsByNameAndVersion: %v", cnsInfo[0])
 }
 
 func TestQueryCnsByName(t *testing.T) {
@@ -169,5 +168,5 @@ func TestQueryCnsByName(t *testing.T) {
 	if len(cnsInfoByName) != 1 {
 		t.Fatalf("QueryCnsByNameAndVersion failed, the length of cnsInfoByName \"%v\" is inconsistent with 1", len(cnsInfoByName))
 	}
-	t.Logf("QueryCnsByName: %v", cnsInfoByName[0])
+	// t.Logf("QueryCnsByName: %v", cnsInfoByName[0])
 }

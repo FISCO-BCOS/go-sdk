@@ -16,7 +16,7 @@ LOG_ERROR() {
 
 LOG_INFO() {
     content=${1}
-    echo -e "\033[32m${content}\033[0m"
+    echo -e "\033[32m[INFO] ${content}\033[0m"
 }
 
 execute_cmd() {
@@ -169,10 +169,7 @@ precompiled_test(){
 # TODO: consensus test use getSealer first
     precompileds=(config cns crud permission)
     for pkg in ${precompileds[*]}; do
-        if [ ! -z "$(go test -v ./precompiled/${pkg}| grep FAIL)" ];then
-            LOG_ERROR "test precompiled/${pkg} failed"
-            exit 1;
-        fi
+        go test -v ./precompiled/${pkg}
     done
 }
 
@@ -196,7 +193,7 @@ integration_std()
     if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call hello failed." && exit 1;fi
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
     precompiled_test
-
+    go test -v ./client
     execute_cmd "./solc-0.4.25 --bin --abi -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go

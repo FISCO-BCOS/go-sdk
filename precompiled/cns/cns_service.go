@@ -106,11 +106,11 @@ func (service *Service) GetAddressByContractNameAndVersion(contractName, version
 }
 
 // RegisterCns registers a contract for its CNS.
-func (service *Service) RegisterCns(name string, version string, addr string, abi string) (int64, error) {
+func (service *Service) RegisterCns(name string, version string, address common.Address, abi string) (int64, error) {
 	if len(version) > maxVersionLength {
 		return precompiled.DefaultErrorCode, fmt.Errorf("version string length exceeds the maximum limit")
 	}
-	_, receipt, err := service.cns.Insert(service.cnsAuth, name, version, addr, abi)
+	_, receipt, err := service.cns.Insert(service.cnsAuth, name, version, address.String(), abi)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("service RegisterCns failed: %+v", err)
 	}
@@ -147,17 +147,16 @@ func (service *Service) QueryCnsByNameAndVersion(name string, version string) ([
 
 func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	errorMessage := receipt.GetErrorMessage()
-
 	if errorMessage != "" {
 		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
-	bigNum, err := precompiled.ParseBigIntFromOutput(CnsABI, name, receipt)
+	bigNum, err := precompiled.ParseBigIntFromOutput(receipt)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("ParseBigIntFromOutput failed, err: %v, txHah: %v", err, receipt.TransactionHash)
 	}
 	errorCode, err := precompiled.BigIntToInt64(bigNum)
 	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
+		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v, txHah: %v", err, receipt.TransactionHash)
 	}
 	return errorCode, errorCodeToError(errorCode)
 }

@@ -245,7 +245,7 @@ func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	if errorMessage != "" {
 		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
-	bigNum, err := precompiled.ParseBigIntFromOutput(PermissionABI, name, receipt)
+	bigNum, err := precompiled.ParseBigIntFromOutput(receipt)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
