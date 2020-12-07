@@ -943,6 +943,7 @@ func (hc *channelSession) processMessages() {
 				}
 				hc.c = con
 				hc.closed = make(chan interface{})
+				hc.closeOnce = sync.Once{}
 				hc.nodeInfo.Protocol = 1
 				go hc.processMessages()
 				if err = hc.handshakeChannel(); err != nil {
