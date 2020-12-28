@@ -182,7 +182,7 @@ func DialContextChannel(rawurl, caFile, certFile, keyFile string, groupID int) (
 	}
 	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
 		InsecureSkipVerify: true}
-	config.CurvePreferences = append(config.CurvePreferences, tls.CurveSecp256k1)
+	config.CurvePreferences = append(config.CurvePreferences, tls.CurveSecp256k1, tls.CurveP256)
 	return DialChannelWithClient(rawurl, config, groupID)
 }
 
