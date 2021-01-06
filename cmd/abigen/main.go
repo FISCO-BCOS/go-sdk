@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -128,7 +129,7 @@ func init() {
 
 func abigen(c *cli.Context) error {
 	utils.CheckExclusive(c, abiFlag, jsonFlag, solFlag, vyFlag) // Only one source can be selected.
-	if c.GlobalString(pkgFlag.Name) == "" {
+	if c.GlobalString(pkgFlag.Name) == "" && c.GlobalString(langFlag.Name) != "objc"{
 		utils.Fatalf("No destination package specified (--pkg)")
 	}
 	var lang bind.Lang
@@ -139,7 +140,6 @@ func abigen(c *cli.Context) error {
 		lang = bind.LangJava
 	case "objc":
 		lang = bind.LangObjC
-		utils.Fatalf("Objc binding generation is uncompleted")
 	default:
 		utils.Fatalf("Unsupported destination language \"%s\" (--lang)", c.GlobalString(langFlag.Name))
 	}
@@ -263,6 +263,10 @@ func abigen(c *cli.Context) error {
 		}
 	}
 	// Generate the contract binding
+	var fileSuffix = path.Ext(c.GlobalString(outFlag.Name))
+	if fileSuffix == "m" {
+		utils.Fatalf("Please use .mm file instread of .m")
+	}
 	code, err := bind.Bind(types, abis, bins, sigs, c.GlobalString(pkgFlag.Name), lang, libs, aliases, smcrypto)
 	if err != nil {
 		utils.Fatalf("Failed to generate ABI binding: %v", err)
@@ -274,6 +278,22 @@ func abigen(c *cli.Context) error {
 	}
 	if err := ioutil.WriteFile(c.GlobalString(outFlag.Name), []byte(code), 0600); err != nil {
 		utils.Fatalf("Failed to write ABI binding: %v", err)
+	}
+	if lang == bind.LangObjC {
+		code, err := bind.Bind(types, abis, bins, sigs, c.GlobalString(pkgFlag.Name), bind.LangObjCHeader, libs, aliases, smcrypto)
+		if err != nil {
+			utils.Fatalf("Failed to generate ABI binding: %v", err)
+		}
+		// Either flush it out to a file or display on the standard output
+		if !c.GlobalIsSet(outFlag.Name) {
+			fmt.Printf("%s\n", code)
+			return nil
+		}
+		var fileSuffix = path.Ext(c.GlobalString(outFlag.Name))
+		var headerFile = strings.TrimSuffix(c.GlobalString(outFlag.Name), fileSuffix) + ".h"
+		if err := ioutil.WriteFile(headerFile, []byte(code), 0600); err != nil {
+			utils.Fatalf("Failed to write ABI binding: %v", err)
+		}
 	}
 	return nil
 }

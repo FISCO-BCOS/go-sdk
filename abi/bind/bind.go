@@ -41,6 +41,7 @@ const (
 	LangGo Lang = iota
 	LangJava
 	LangObjC
+	LangObjCHeader
 )
 
 // Bind generates a Go wrapper around a contract ABI. This wrapper isn't meant
@@ -210,13 +211,15 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 	buffer := new(bytes.Buffer)
 
 	funcs := map[string]interface{}{
-		"bindtype":      bindType[lang],
-		"bindtopictype": bindTopicType[lang],
-		"namedtype":     namedType[lang],
-		"formatmethod":  formatMethod,
-		"formatevent":   formatEvent,
-		"capitalise":    capitalise,
-		"decapitalise":  decapitalise,
+		"bindtype":            bindType[lang],
+		"bindtopictype":       bindTopicType[lang],
+		"namedtype":           namedType[lang],
+		"formatmethod":        formatMethod,
+		"formatevent":         formatEvent,
+		"capitalise":          capitalise,
+		"decapitalise":        decapitalise,
+		"objCFormattedValue":  objCFormattedValue,
+		"objcPrintArgComment": objcPrintArgComment,
 	}
 	tmpl := template.Must(template.New("").Funcs(funcs).Parse(tmplSource[lang]))
 	if err := tmpl.Execute(buffer, data); err != nil {
@@ -237,8 +240,10 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 // bindType is a set of type binders that convert Solidity types to some supported
 // programming language types.
 var bindType = map[Lang]func(kind abi.Type, structs map[string]*tmplStruct) string{
-	LangGo:   bindTypeGo,
-	LangJava: bindTypeJava,
+	LangGo:         bindTypeGo,
+	LangJava:       bindTypeJava,
+	LangObjC:       bindTypeObjC,
+	LangObjCHeader: bindTypeObjC,
 }
 
 // bindBasicTypeGo converts basic solidity types(except array, slice and tuple) to Go one.
@@ -278,6 +283,110 @@ func bindTypeGo(kind abi.Type, structs map[string]*tmplStruct) string {
 		return "[]" + bindTypeGo(*kind.Elem, structs)
 	default:
 		return bindBasicTypeGo(kind)
+	}
+}
+
+// bind type objc
+func bindBasicTypeObjC(kind abi.Type) string {
+	switch kind.T {
+	case abi.AddressTy:
+		return "NSString *"
+	case abi.IntTy:
+		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
+		switch parts[2] {
+		case "8", "16", "32":
+			return "int"
+		case "64":
+			return "double"
+		}
+		return "NSString *"
+	case abi.UintTy:
+		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
+		switch parts[2] {
+		case "8", "16", "32":
+			return "unsigned int"
+		case "64":
+			return "double"
+		}
+		return "NSString *"
+	case abi.FixedBytesTy:
+		return "NSString *"
+	case abi.BytesTy:
+		return "NSString *"
+	case abi.FunctionTy:
+		return "NSString *"
+	default:
+		// string, bool types
+		return "NSString *"
+	}
+}
+
+func bindTypeObjC(kind abi.Type, structs map[string]*tmplStruct) string {
+	// todo modify this
+	switch kind.T {
+	case abi.TupleTy:
+		return structs[kind.TupleRawName+kind.String()].Name
+	case abi.ArrayTy:
+		return "NSArray *"
+	case abi.SliceTy:
+		return "NSArray *"
+	case abi.BoolTy:
+		return "BOOL"
+	default:
+		return bindBasicTypeObjC(kind)
+	}
+}
+
+func objcPrintArgComment(kind abi.Type) string {
+	switch kind.T {
+	case abi.TupleTy:
+		return ""
+	case abi.ArrayTy, abi.SliceTy:
+		return objcPrintArgComment(*kind.Elem)
+	case abi.AddressTy, abi.FixedBytesTy, abi.BytesTy:
+		return ", please note this argument only accept hex encoded strings."
+	case abi.IntTy, abi.UintTy, abi.FunctionTy:
+		return ""
+	default:
+		// string, bool types
+		return ""
+	}
+
+}
+
+func objCFormattedValue(kind abi.Type, valueName string) string {
+	switch kind.T {
+	case abi.TupleTy, abi.ArrayTy, abi.SliceTy, abi.AddressTy:
+		return valueName
+	case abi.IntTy:
+		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
+		switch parts[2] {
+		case "8", "16", "32":
+			//return "[NSString stringWithFormat:@\"%d\", " + valueName + "]"
+			return "@(" + valueName + ")"
+		case "64":
+			//return "[NSString stringWithFormat:@\"%.0lf\", " + valueName + "]"
+			return "@(" + valueName + ")"
+		}
+		return valueName
+	case abi.UintTy:
+		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
+		switch parts[2] {
+		case "8", "16", "32":
+			//return "[NSString stringWithFormat:@\"%u\", " + valueName + "]"
+			return "@(" + valueName + ")"
+		case "64":
+			//return "[NSString stringWithFormat:@\"%.0lf\", " + valueName + "]"
+			return "@(" + valueName + ")"
+		}
+		return valueName
+	case abi.FixedBytesTy, abi.BytesTy, abi.FunctionTy:
+		return valueName
+	case abi.BoolTy:
+		return "@(" + valueName + ")"
+	default:
+		// string, bool types
+		return valueName
 	}
 }
 
@@ -359,8 +468,10 @@ func bindTypeJava(kind abi.Type, structs map[string]*tmplStruct) string {
 // bindTopicType is a set of type binders that convert Solidity types to some
 // supported programming language topic types.
 var bindTopicType = map[Lang]func(kind abi.Type, structs map[string]*tmplStruct) string{
-	LangGo:   bindTopicTypeGo,
-	LangJava: bindTopicTypeJava,
+	LangGo:         bindTopicTypeGo,
+	LangJava:       bindTopicTypeJava,
+	LangObjC:       bindTopicTypeJava, // todo modify this
+	LangObjCHeader: bindTopicTypeJava, // todo modify this
 }
 
 // bindTopicTypeGo converts a Solidity topic type to a Go one. It is almost the same
@@ -400,8 +511,10 @@ func bindTopicTypeJava(kind abi.Type, structs map[string]*tmplStruct) string {
 // bindStructType is a set of type binders that convert Solidity tuple types to some supported
 // programming language struct definition.
 var bindStructType = map[Lang]func(kind abi.Type, structs map[string]*tmplStruct) string{
-	LangGo:   bindStructTypeGo,
-	LangJava: bindStructTypeJava,
+	LangGo:         bindStructTypeGo,
+	LangJava:       bindStructTypeJava,
+	LangObjC:       bindStructTypeJava,
+	LangObjCHeader: bindStructTypeJava,
 }
 
 // bindStructTypeGo converts a Solidity tuple type to a Go one and records the mapping
@@ -483,8 +596,10 @@ func bindStructTypeJava(kind abi.Type, structs map[string]*tmplStruct) string {
 // namedType is a set of functions that transform language specific types to
 // named versions that my be used inside method names.
 var namedType = map[Lang]func(string, abi.Type) string{
-	LangGo:   func(string, abi.Type) string { panic("this shouldn't be needed") },
-	LangJava: namedTypeJava,
+	LangGo:         func(string, abi.Type) string { panic("this shouldn't be needed") },
+	LangJava:       namedTypeJava,
+	LangObjC:       namedTypeJava, // todo modify this
+	LangObjCHeader: namedTypeJava, // todo modify this
 }
 
 // namedTypeJava converts some primitive data types to named variants that can
@@ -525,8 +640,10 @@ func alias(aliases map[string]string, n string) string {
 // methodNormalizer is a name transformer that modifies Solidity method names to
 // conform to target language naming concentions.
 var methodNormalizer = map[Lang]func(string) string{
-	LangGo:   abi.ToCamelCase,
-	LangJava: decapitalise,
+	LangGo:         abi.ToCamelCase,
+	LangJava:       decapitalise,
+	LangObjC:       decapitalise, // todo test this
+	LangObjCHeader: decapitalise, // todo test this
 }
 
 // capitalise makes a camel-case string which starts with an upper case character.
