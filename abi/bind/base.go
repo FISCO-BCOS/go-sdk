@@ -100,22 +100,34 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
 func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
-	// Otherwise try to deploy the contract
+	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+	addr := common.Address{}
+	if receipt != nil {
+		addr = receipt.ContractAddress
+	}
+	return addr, tx, c, err
+}
+func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
+	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+	return tx, receipt, c, err
+}
+
+func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
 	input, err := c.abi.Pack("", params...)
 	if err != nil {
-		return common.Address{}, nil, nil, err
+		return nil, nil, nil, err
 	}
 	tx, receipt, err := c.transact(opts, nil, append(bytecode, input...))
 	if err != nil {
-		return common.Address{}, nil, nil, err
+		return nil, nil, nil, err
 	}
 	if receipt == nil {
-		return common.Address{}, nil, nil, errors.New("deploy failed, receipt is nil")
+		return nil, nil, nil, errors.New("deploy failed, receipt is nil")
 	}
 	c.address = receipt.ContractAddress
-	return c.address, tx, c, nil
+	return tx, receipt, c, nil
 }
 
 func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error), abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, error) {
@@ -234,7 +246,6 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 
 func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
-
 	// Ensure a valid value field and resolve the account nonce
 	value := opts.Value
 	if value == nil {
