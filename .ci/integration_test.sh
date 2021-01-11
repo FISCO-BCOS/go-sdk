@@ -239,26 +239,12 @@ integration_amop() {
     execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
     execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
     nohup ./unicast_publisher 127.0.0.1:20200 hello > output.file 2>&1 &
-    nohup ./subscriber 127.0.0.1:20201 hello > subscriber0.out 2>&1 &
-    sleep 13s
-    cat subscriber0.out
-    if ! grep "hello, FISCO BCOS" ./subscriber0.out >> /dev/null ;then LOG_ERROR "amop unique broadcast failed." && exit 1;fi
-    pid=$(ps -ef | grep -v grep | grep unicast_publisher | awk '{print $2}')
-    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
-    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
-    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    ./subscriber 127.0.0.1:20201 hello
     LOG_INFO "amop unique broadcast test success!"
 
     execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
     nohup ./broadcast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
-    nohup ./subscriber 127.0.0.1:20203 hello1 > subscriber1.out 2>&1 &
-    sleep 13s
-    cat subscriber1.out
-    if ! grep "hello, FISCO BCOS" ./subscriber1.out >> /dev/null ;then LOG_ERROR "amop multi broadcast failed." && exit 1;fi
-    pid=$(ps -ef | grep -v grep | grep broadcast_publisher | awk '{print $2}')
-    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
-    pid=$(ps -ef | grep -v grep | grep subscriber | awk '{print $2}')
-    if [[ ! -z "${pid}" ]];then kill -9 "${pid}";fi
+    ./subscriber 127.0.0.1:20203 hello1
     LOG_INFO "amop multi broadcast test success!"
 
     bash nodes/127.0.0.1/stop_all.sh

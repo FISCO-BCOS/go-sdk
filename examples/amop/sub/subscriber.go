@@ -6,15 +6,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 )
-
-func onPush(data []byte, response *[]byte) {
-	log.Printf("received: %s\n", string(data))
-}
 
 func main() {
 	if len(os.Args) < 3 {
@@ -29,9 +26,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("init subscriber failed, err: %v\n", err)
 	}
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	err = c.SubscribeTopic(topic, onPush)
+	queryTicker := time.NewTicker(10 * time.Second)
+	defer queryTicker.Stop()
+	done := make(chan bool)
+	err = c.SubscribeTopic(topic, func(data []byte, response *[]byte) {
+		log.Printf("received: %s\n", string(data))
+		queryTicker.Stop()
+		if strings.Contains(string(data), "Done") {
+			done <- true
+			return
+		}
+		queryTicker = time.NewTicker(10 * time.Second)
+	})
 	if err != nil {
 		fmt.Printf("SubscribeAuthTopic failed, err: %v\n", err)
 		return
@@ -40,5 +48,17 @@ func main() {
 
 	killSignal := make(chan os.Signal, 1)
 	signal.Notify(killSignal, os.Interrupt)
-	<-killSignal
+	for {
+		select {
+		case <-done:
+			fmt.Println("Done!")
+			os.Exit(0)
+		case <-queryTicker.C:
+			fmt.Println("can't receive message after 10s")
+			os.Exit(1)
+		case <-killSignal:
+			fmt.Println("user exit")
+			os.Exit(0)
+		}
+	}
 }
