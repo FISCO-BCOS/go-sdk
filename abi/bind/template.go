@@ -648,16 +648,9 @@ import java.util.*;
 const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 {{$structs := .Structs}}
-{{range $structs}}
-	// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
-	type {{.Name}} struct {
-	{{range $field := .Fields}}
-	{{$field.Name}} {{$field.Type}}{{end}}
-	}
-{{end}}
 {{range $contract := .Contracts}}
 #import "{{.Type}}.h"
-#import "Fiscobcosios.framework/Headers/Fiscobcosios.h"	
+#import "FiscoBcosIosSdk.framework/Headers/FiscoBcosIosSdk.h"	
 
 @implementation {{.Type}}
 // {{.Type}}ABI is the input ABI used to generate the binding from.
@@ -672,53 +665,53 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 }
 {{if .InputBin}}
 /// deploy {{range .Constructor.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosDeployContractResult*) deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
-	
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Constructor.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileDeployContractResult*) deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
 	{{if .Constructor.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Constructor.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
             @"type":@"{{.Type}}",
-            @"value":{{objCFormattedValue .Type .Name}}
+            @"value":{{objcFormattedValue .Type .Name $structs}}
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Constructor.Inputs}}NSString *__params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return FiscobcosiosDeployContract(_abi,_bin,__params);
+	return MobileDeployContract(_abi,_bin,__params);
 }
 {{end}}
 
 {{range .Calls}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosCallResult *) {{.Normalized.Name}} {{range .Normalized.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
-	
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileCallResult *) {{.Normalized.Name}} {{range .Normalized.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
 	{{if .Normalized.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Normalized.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
             @"type":@"{{.Type}}",
-            @"value":{{objCFormattedValue .Type .Name}}
+            @"value":{{objcFormattedValue .Type .Name $structs}}
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Normalized.Inputs}}NSString * __params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return FiscobcosiosCall(_abi,_address,@"{{.Original.Name}}",__params);
+	return MobileCall(_abi,_address,@"{{.Original.Name}}",__params);
 }
 {{end}}
 
 {{range .Transacts}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
 	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}}{
-	
 	{{if .Normalized.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Normalized.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
             @"type":@"{{.Type}}",
-            @"value":{{objCFormattedValue .Type .Name}}
+            @"value":{{objcFormattedValue .Type .Name $structs}}
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Normalized.Inputs}}NSString *__params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return FiscobcosiosSendTransaction(_abi,_address,@"{{.Original.Name}}",__params);
+	return MobileSendTransaction(_abi,_address,@"{{.Original.Name}}",__params);
 }
 {{end}}
 	
@@ -749,10 +742,17 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 `
 
 const tmplSourceObjcHeader = `#import <Foundation/Foundation.h>
-#import "Fiscobcosios.framework/Headers/Fiscobcosios.h"
+#import "FiscoBcosIosSdk.framework/Headers/FiscoBcosIosSdk.h"
 
 NS_ASSUME_NONNULL_BEGIN
 {{$structs := .Structs}}
+{{range $structs}}
+// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
+struct {{.Name}}{
+{{range $field := .Fields}}{{$field.Type}} {{$field.Name}} ;
+{{end}}
+};
+{{end}}
 {{range $contract := .Contracts}}
 @interface {{.Type}} : NSObject
 
@@ -763,20 +763,23 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithAddress:(NSString *)addr;
 {{if .InputBin}}
 /// deploy {{range .Constructor.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosDeployContractResult*)  deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}};{{end}}
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Constructor.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileDeployContractResult*)  deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}};{{end}}
 
 {{range .Calls}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosCallResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}} {{range .Normalized.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileCallResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
 	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}};
 {{end}}
 
 {{range .Transacts}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
-/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}
-- (FiscobcosiosTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+/// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
+/// @return {{.Name}} {{.Type}} type argument{{end}}
+- (MobileTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
 	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}};
 {{end}}
 

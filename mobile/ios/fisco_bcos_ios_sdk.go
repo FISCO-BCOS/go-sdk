@@ -1,4 +1,4 @@
-package fiscobcosios
+package mobile
 
 import (
 	"context"
@@ -12,15 +12,17 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+	"path"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"unsafe"
 )
 
 type BuildSDKResult struct {
-	ErrorId   int    `json:"errorId"`
-	ErrorInfo string `json:"errorInfo"`
+	IsSuccess   bool    `json:"isSuccess"`
+	Information string `json:"information"`
 }
 
 type ContractParams struct {
@@ -105,67 +107,39 @@ type CallResult struct {
 
 var clientSdk *client.Client
 
+// BuildSDK
 // Build sdk.
 // Connect to the proxy or FISCO BCOS node.
-func BuildSDK(basePath string) string {
+func BuildSDK(configString string) *BuildSDKResult {
 	// connect node
-	configs, err := conf.ParseConfigFile(basePath + "config.toml")
+	configs, err := conf.ParseConfig([]byte(configString))
 	if err != nil {
-		buildResult := BuildSDKResult{ErrorId: -1, ErrorInfo: err.Error()}
-		ret, _ := json.Marshal(buildResult)
-		return string(ret)
+		return &BuildSDKResult{ false,  err.Error()}
 	}
 	clientSdk, err = client.Dial(&configs[0])
 	if err != nil {
-		buildResult := BuildSDKResult{ErrorId: -1, ErrorInfo: err.Error()}
-		ret, _ := json.Marshal(buildResult)
-		return string(ret)
+		return &BuildSDKResult{ false,  err.Error()}
 	}
-	buildResult := BuildSDKResult{ErrorId: 0, ErrorInfo: ""}
-	ret, _ := json.Marshal(buildResult)
-	return string(ret)
+	return &BuildSDKResult{true, "Success connect to "+configs[0].NodeURL}
 }
 
-// Build sdk.
+// BuildSDKWithParam
 // Connect to the proxy or FISCO BCOS node.
-func BuildSDKWithParam(basePath string, groupId string, ipPort string, keyfile string) string {
-	var config = "[Network]\n" +
-		"Type=\"channel\"\n" +
-		"CAFile=\"" + basePath + "/ca.crt\"\n" +
-		"Cert=\"" + basePath + "/sdk.crt\"\n" +
-		"Key=\"" + basePath + "/sdk.key\"\n" +
-		"[[Network.Connection]]\n" +
-		"NodeURL=\"" + ipPort + "\"\n" +
-		"GroupID=" + groupId + "\n\n" +
-		"[Account]\n" +
-		"KeyFile= \"" + basePath + "/" + keyfile + "\"\n\n" +
-		"[Chain]\n" +
-		"ChainID=1\n" +
-		"SMCrypto=false"
-	// connect node
-	configs, err := conf.ParseConfig([]byte(config))
+// Please make sure ca.crt, sdk.crt, sdk.key under path certPath.
+// Please provider full keyFile path
+func BuildSDKWithParam(certPath string, keyFile string, groupId int, ipPort string, isHttp bool, chainId int64, isSMCrypto bool) *BuildSDKResult {
+	config, err := conf.ParseConfigOptions(path.Join(certPath, "ca.crt"), path.Join(certPath, "sdk.key"), path.Join(certPath, "sdk.crt"), keyFile, groupId, ipPort, isHttp, chainId, isSMCrypto)
 	if err != nil {
-		return err.Error()
+		return &BuildSDKResult{ false,  err.Error()}
 	}
-	clientSdk, err = client.Dial(&configs[0])
+	clientSdk, err = client.Dial(config)
 	if err != nil {
-		return err.Error()
+		return &BuildSDKResult{ false,  err.Error()}
 	}
-	return "Connect Success to node " + ipPort
+	return &BuildSDKResult{true, "Success connect to "+ipPort}
 }
 
-// Get client version
-func GetClientVersion() *RPCResult {
-	cv, err := clientSdk.GetClientVersion(context.Background())
-	var rpcResult *RPCResult
-	if err != nil {
-		rpcResult = &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
-	} else {
-		rpcResult = &RPCResult{QueryResult: string(cv), ErrorInfo: ""}
-	}
-	return rpcResult
-}
-
+// DeployContract
 // Deploy contract
 func DeployContract(abiContract string, binContract string, params string) *DeployContractResult {
 	ops := clientSdk.GetTransactOpts()
@@ -181,21 +155,20 @@ func DeployContract(abiContract string, binContract string, params string) *Depl
 	return toDeployResult(address, transaction, err)
 }
 
+// SendTransaction
 // Send transaction to call function of contract
-func SendTransaction(abiContract string, address string, method string, params string) *TransactResult {
-	parsed, err := abi.JSON(strings.NewReader(abiContract))
+func SendTransaction(contractAbi string, address string, method string, params string) *TransactResult {
+	parsed, err := abi.JSON(strings.NewReader(contractAbi))
 	if err != nil {
 		return toTxResult(nil, nil, err)
 	}
 	goParams, err := toGoParams(params)
 	if err != nil {
-		fmt.Println("toGoParams error")
 		return toTxResult(nil, nil, err)
 	}
 	addr := common.HexToAddress(address)
-	c := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
-	fmt.Println("send transaction, address :", addr.Hex(), " method :", method, " params: ", goParams)
-	transaction, receipt, err := c.Transact(clientSdk.GetTransactOpts(), method, goParams...)
+	boundContract := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
+	transaction, receipt, err := boundContract.Transact(clientSdk.GetTransactOpts(), method, goParams...)
 	return toTxResult(transaction, receipt, err)
 }
 
@@ -210,25 +183,53 @@ func Call(abiContract string, address string, method string, params string) *Cal
 		return toCallResult(nil, err)
 	}
 	addr := common.HexToAddress(address)
-	c := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
+	boundContract := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
 
-	fmt.Println("call, address :", addr.Hex(), " method :", method, " params: ", goParams)
 	// override problem
 	mtd := parsed.Methods[method]
 	if len(mtd.Outputs) == 1 {
 		result := getGoType(mtd.Outputs[0].Type)
-		err = c.Call(clientSdk.GetCallOpts(), result, method, goParams...)
+		err = boundContract.Call(clientSdk.GetCallOpts(), result, method, goParams...)
 		return toCallResult(result, err)
 	} else {
 		var outputs []interface{}
 		for _, one := range mtd.Outputs {
 			outputs = append(outputs, getGoType(one.Type))
 		}
-		err = c.Call(clientSdk.GetCallOpts(), &outputs, method, goParams...)
+		err = boundContract.Call(clientSdk.GetCallOpts(), &outputs, method, goParams...)
 		return toCallResult(&outputs, err)
 	}
 }
 
+// RPC calls
+// GetClientVersion
+func GetClientVersion() *RPCResult {
+	cv, err := clientSdk.GetClientVersion(context.Background())
+	var rpcResult *RPCResult
+	if err != nil {
+		rpcResult = &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
+	} else {
+		rpcResult = &RPCResult{QueryResult: string(cv), ErrorInfo: ""}
+	}
+	return rpcResult
+}
+
+// GetBlockNumber
+// Return block number
+func GetBlockNumber() *RPCResult {
+	num, err := clientSdk.GetBlockNumber(context.Background())
+	if err != nil {
+		return &RPCResult{"", fmt.Sprintf("Client error: cannot get the block number: %v", err)}
+	}
+	currStr := string(num)
+	currInt, err := toDecimal(currStr[3 : len(currStr)-1])
+	if err != nil {
+		return &RPCResult{"", fmt.Sprintf("Client error: cannot get the block number: %v", err)}
+	}
+	return &RPCResult{strconv.FormatInt(int64(currInt), 64), ""}
+}
+
+// GetTransactionByHash
 // Get transaction by tx hash
 func GetTransactionByHash(txHash string) *RPCTransactionResult {
 	raw, err := clientSdk.GetTransactionByHash(context.Background(), txHash)
@@ -244,6 +245,7 @@ func GetTransactionByHash(txHash string) *RPCTransactionResult {
 	}
 }
 
+// GetTransactionReceipt
 // Get transaction receipt by tx hash
 func GetTransactionReceipt(txHash string) *RPCResult {
 	receipt, err := clientSdk.GetTransactionReceipt(context.Background(), txHash)
@@ -264,14 +266,11 @@ func GetTransactionReceipt(txHash string) *RPCResult {
 func toGoParams(param string) ([]interface{}, error) {
 	var objs []ContractParams
 	if err := json.Unmarshal([]byte(param), &objs); err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 	var par []interface{}
 
 	for _, t := range objs {
-		fmt.Println("--------------")
-		fmt.Println("params type :", t.ValueType, "value :", t.Value)
 		value, err := StringToInterface(t.ValueType, t.Value)
 		if err != nil {
 			return nil, err
@@ -417,24 +416,21 @@ func StringToInterface(paramType string, value interface{}) (interface{}, error)
 		// split elements
 		i := strings.LastIndex(paramType, "[")
 		preType := paramType[:i]
-		//string[] strs
-
-		//strs := strings.Split(value[1:len(value)-1], ",")
-		strs, ok := value.([]interface{})
+		valueList, ok := value.([]interface{})
 		if !ok {
 			return nil, errors.New("parse data to interface error")
 		}
 
 		// get type and construct an array
-		obj, err := stringToInterfaceBasic(preType, strs[0])
+		obj, err := stringToInterfaceBasic(preType, valueList[0])
 		if err != nil {
 			return nil, err
 		}
 
 		// construct array
-		arrayType := reflect.ArrayOf(len(strs), reflect.TypeOf(obj))
+		arrayType := reflect.ArrayOf(len(valueList), reflect.TypeOf(obj))
 		array := reflect.New(arrayType).Elem()
-		for i, one := range strs {
+		for i, one := range valueList {
 			obj, err := stringToInterfaceBasic(preType, one)
 			if err != nil {
 				return nil, err
@@ -448,22 +444,58 @@ func StringToInterface(paramType string, value interface{}) (interface{}, error)
 			}
 		}
 		return array.Interface(), nil
+	} else if strings.Count(paramType, "(") != 0 {
+		// Identify struct type
+		paramTypeString := paramType[1 : len(paramType)-1]
+		params := strings.Split(paramTypeString, ",")
+
+		// Get values
+		objs := value.(map[string]interface{})
+		// Construct a struct
+		var fields []reflect.StructField
+
+		i := 0
+		for k, v := range objs {
+			p, e := stringToInterfaceBasic(params[i], v)
+			if e != nil {
+				return nil, e
+			}
+			aField := reflect.StructField{
+				Name:    k,
+				Type:    reflect.TypeOf(p),
+				PkgPath: "github.com/FISCO-BCOS/go-sdk/mobile/ios",
+			}
+			fields = append(fields, aField)
+			i++
+		}
+		structType := reflect.StructOf(fields)
+
+		// Init struct
+		structInstance := reflect.New(structType).Elem()
+		i = 0
+		for k, v := range objs {
+			p, e := stringToInterfaceBasic(params[i], v)
+			if e != nil {
+				return nil, e
+			}
+
+			aField := structInstance.FieldByName(k)
+			if aField.Kind() == reflect.Ptr {
+				newValue := reflect.NewAt(aField.Type(), unsafe.Pointer(aField.UnsafeAddr()))
+				newValue.Elem().Set(reflect.ValueOf(p))
+			} else {
+				newValue := reflect.NewAt(aField.Type(), unsafe.Pointer(aField.UnsafeAddr()))
+				err := set(newValue, reflect.ValueOf(p))
+				if err != nil {
+					return nil, err
+				}
+			}
+			i++
+		}
+		return structInstance.Addr().Interface(), nil
 	} else {
 		return stringToInterfaceBasic(paramType, value)
 	}
-}
-
-func TestTransfer(paramType string, value string) reflect.Type {
-	fmt.Println("before ", paramType, value)
-	v, e := StringToInterface(paramType, value)
-	fmt.Println(e)
-	//fmt.Println("v:")
-	fmt.Println("$$$", reflect.TypeOf(v), v)
-	return reflect.TypeOf(v)
-}
-func getType(paramType string, value string) (result reflect.Type) {
-	a, _ := stringToInterfaceBasic(paramType, value)
-	return reflect.TypeOf(a)
 }
 
 // Parse string params to go interface
@@ -583,7 +615,6 @@ func getGoType(kind abi.Type) interface{} {
 
 func set(dst, src reflect.Value) error {
 	dstType, srcType := dst.Type(), src.Type()
-	fmt.Println("dstVal:  Kind = ", dstType.Kind(), " dst.CanSet() = ", dst.CanSet(), "     src: value =", src, " srcType.Kind() =", srcType.Kind(), " srcType.AssignableTo(dstType) = ", srcType.AssignableTo(dstType))
 	switch {
 	case dstType.Kind() == reflect.Interface && dst.Elem().IsValid():
 		return set(dst.Elem(), src)
@@ -596,13 +627,12 @@ func set(dst, src reflect.Value) error {
 	case dstType.Kind() == reflect.Slice && srcType.Kind() == reflect.Slice:
 		return setSlice(dst, src)
 	default:
-		return fmt.Errorf("abi: cannot unmarshal %v in to %v", src.Type(), dst.Type())
+		//return fmt.Errorf("abi: cannot unmarshal %v in to %v", src.Type(), dst.Type())
 	}
 	return nil
 }
 
 func setSlice(dst, src reflect.Value) error {
-	fmt.Println("????")
 	slice := reflect.MakeSlice(dst.Type(), src.Len(), src.Len())
 	for i := 0; i < src.Len(); i++ {
 		v := src.Index(i)
@@ -618,4 +648,14 @@ func mustByteSliceToArray(value reflect.Value) reflect.Value {
 		array.Index(i).Set(value.Index(i))
 	}
 	return array
+}
+
+func toDecimal(hex string) (int, error) {
+	i := new(big.Int)
+	var flag bool
+	i, flag = i.SetString(hex, 16) // octal
+	if !flag {
+		return -1, fmt.Errorf("Cannot parse hex string to Int")
+	}
+	return int(i.Uint64()), nil
 }
