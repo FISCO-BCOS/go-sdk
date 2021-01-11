@@ -1,14 +1,12 @@
 package precompiled
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
-	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -20,6 +18,11 @@ const (
 	DefaultErrorCode int64 = -1
 
 	bigIntHexStrLen int = 66
+)
+
+var (
+	// MaxUint256 is the maximum value that can be represented by a uint256.
+	MaxUint256 = new(big.Int).Sub(new(big.Int).Lsh(common.Big1, 256), common.Big1)
 )
 
 // GetCommonErrorCodeMessage returns the message of common error code
@@ -36,22 +39,19 @@ func GetCommonErrorCodeMessage(errorCode int64) string {
 	return message
 }
 
-func ParseBigIntFromOutput(abiStr, name string, receipt *types.Receipt) (*big.Int, error) {
-	parsed, err := abi.JSON(strings.NewReader(abiStr))
-	if err != nil {
-		fmt.Printf("parse ABI failed, err: %v", err)
-	}
+func ParseBigIntFromOutput(receipt *types.Receipt) (*big.Int, error) {
 	var ret *big.Int
 	if len(receipt.Output) != bigIntHexStrLen {
 		return nil, fmt.Errorf("the leghth of receipt.Output %v is inconsistent with %v", len(receipt.Output), bigIntHexStrLen)
 	}
-	b, err := hex.DecodeString(receipt.Output[2:])
-	if err != nil {
-		return nil, fmt.Errorf("decode receipt.Output[2:] failed, err: %v", err)
+	ret, success := new(big.Int).SetString(receipt.Output, 0)
+	if !success {
+		return nil, fmt.Errorf("parse output as big.Int failed: %v", receipt.Output)
 	}
-	err = parsed.Unpack(&ret, name, b)
-	if err != nil {
-		return nil, fmt.Errorf("unpack %v failed, err: %v", name, err)
+	if ret.Bit(255) == 1 {
+		ret.Add(MaxUint256, new(big.Int).Neg(ret))
+		ret.Add(ret, common.Big1)
+		ret.Neg(ret)
 	}
 	return ret, nil
 }

@@ -68,7 +68,7 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, er
 	if errorMessage != "" {
 		return int64(receipt.GetStatus()), fmt.Errorf("receipt.Status err: %v", errorMessage)
 	}
-	bigNum, err := precompiled.ParseBigIntFromOutput(ConfigABI, "setValueByKey", receipt)
+	bigNum, err := precompiled.ParseBigIntFromOutput(receipt)
 	if err != nil {
 		return types.PrecompiledError, fmt.Errorf("systemConfigService setValueByKey failed, err: %+v", err)
 	}

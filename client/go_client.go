@@ -161,7 +161,7 @@ func (c *Client) SMCrypto() bool {
 // CodeAt returns the contract code of the given account.
 // The block number can be nil, in which case the code is taken from the latest known block.
 func (c *Client) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, account.String())
+	return c.apiHandler.GetCode(ctx, c.groupID, account)
 }
 
 // Filters
@@ -217,7 +217,7 @@ func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 
 // PendingCodeAt returns the contract code of the given account in the pending state.
 func (c *Client) PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, account.String())
+	return c.apiHandler.GetCode(ctx, c.groupID, account)
 }
 
 // Contract Calling
@@ -249,7 +249,7 @@ func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash.Hex())
+	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
@@ -324,7 +324,7 @@ func (c *Client) GetChainID(ctx context.Context) (*big.Int, error) {
 }
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
-func (c *Client) GetBlockNumber(ctx context.Context) ([]byte, error) {
+func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 	return c.apiHandler.GetBlockNumber(ctx, c.groupID)
 }
 
@@ -382,46 +382,45 @@ func (c *Client) GetGroupList(ctx context.Context) ([]byte, error) {
 }
 
 // GetBlockByHash returns the block information according to the given block hash
-func (c *Client) GetBlockByHash(ctx context.Context, bhash string, includetx bool) ([]byte, error) {
-	return c.apiHandler.GetBlockByHash(ctx, c.groupID, bhash, includetx)
+func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) ([]byte, error) {
+	return c.apiHandler.GetBlockByHash(ctx, c.groupID, blockHash, includeTx)
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
-func (c *Client) GetBlockByNumber(ctx context.Context, bnum string, includetx bool) ([]byte, error) {
-	return c.apiHandler.GetBlockByNumber(ctx, c.groupID, bnum, includetx)
+func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) ([]byte, error) {
+	return c.apiHandler.GetBlockByNumber(ctx, c.groupID, blockNumber, includeTx)
 }
 
 // GetBlockHashByNumber returns the block hash according to the given block number
-func (c *Client) GetBlockHashByNumber(ctx context.Context, bnum string) ([]byte, error) {
-	return c.apiHandler.GetBlockHashByNumber(ctx, c.groupID, bnum)
-
+func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*common.Hash, error) {
+	return c.apiHandler.GetBlockHashByNumber(ctx, c.groupID, blockNumber)
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
-func (c *Client) GetTransactionByHash(ctx context.Context, txhash string) ([]byte, error) {
-	return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txhash)
+func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) ([]byte, error) {
+	return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txHash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
-func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, bhash string, txindex string) ([]byte, error) {
-	return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, bhash, txindex)
+func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) ([]byte, error) {
+	return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, blockHash, txIndex)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
-func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, bnum string, txindex string) ([]byte, error) {
-	return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, bnum, txindex)
+func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) ([]byte, error) {
+	return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, blockNumber, txIndex)
 }
 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
-func (c *Client) GetTransactionReceipt(ctx context.Context, txhash string) (*types.Receipt, error) {
-	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txhash)
+func (c *Client) GetTransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
 // GetContractAddress returns a contract address according to the transaction hash
-func (c *Client) GetContractAddress(ctx context.Context, txhash string) (common.Address, error) {
-	return c.apiHandler.GetContractAddress(ctx, c.groupID, txhash)
+func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (common.Address, error) {
+	return c.apiHandler.GetContractAddress(ctx, c.groupID, txHash)
 }
 
 // GetPendingTransactions returns information of the pending transactions
@@ -435,11 +434,11 @@ func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
 }
 
 // GetCode returns the contract code according to the contract address
-func (c *Client) GetCode(ctx context.Context, addr string) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, addr)
+func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, error) {
+	return c.apiHandler.GetCode(ctx, c.groupID, address)
 }
 
-// GetTotalTransactionCount returns the totoal amount of transactions and the block height at present
+// GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (c *Client) GetTotalTransactionCount(ctx context.Context) ([]byte, error) {
 	return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
 }

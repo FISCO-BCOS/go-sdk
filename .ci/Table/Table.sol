@@ -1,3 +1,4 @@
+pragma solidity>=0.4.24 <0.6.11;
 contract TableFactory {
     function openTable(string memory) public view returns (Table) {} //open table
     function createTable(string memory, string memory, string memory) public returns (int256) {} //create table
@@ -24,7 +25,7 @@ contract Condition {
 //one record
 contract Entry {
     function getInt(string memory) public view returns (int256) {}
-    function getUInt(string memory) public view returns (int256) {}
+    function getUInt(string memory) public view returns (uint256) {}
     function getAddress(string memory) public view returns (address) {}
     function getBytes64(string memory) public view returns (bytes1[64] memory) {}
     function getBytes32(string memory) public view returns (bytes32) {}

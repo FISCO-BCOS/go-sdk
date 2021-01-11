@@ -228,9 +228,9 @@ func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	var bigNum *big.Int
 	var err error
 	if name == "createTable" {
-		bigNum, err = precompiled.ParseBigIntFromOutput(TableFactoryABI, name, receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 	} else {
-		bigNum, err = precompiled.ParseBigIntFromOutput(CrudABI, name, receipt)
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
 	}
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
