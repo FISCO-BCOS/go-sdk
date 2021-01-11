@@ -218,7 +218,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 		"formatevent":         formatEvent,
 		"capitalise":          capitalise,
 		"decapitalise":        decapitalise,
-		"objCFormattedValue":  objCFormattedValue,
+		"objcFormattedValue":  objcFormattedValue,
 		"objcPrintArgComment": objcPrintArgComment,
 	}
 	tmpl := template.Must(template.New("").Funcs(funcs).Parse(tmplSource[lang]))
@@ -322,10 +322,9 @@ func bindBasicTypeObjC(kind abi.Type) string {
 }
 
 func bindTypeObjC(kind abi.Type, structs map[string]*tmplStruct) string {
-	// todo modify this
 	switch kind.T {
 	case abi.TupleTy:
-		return structs[kind.TupleRawName+kind.String()].Name
+		return "struct " + structs[kind.TupleRawName+kind.String()].Name
 	case abi.ArrayTy:
 		return "NSArray *"
 	case abi.SliceTy:
@@ -354,9 +353,21 @@ func objcPrintArgComment(kind abi.Type) string {
 
 }
 
-func objCFormattedValue(kind abi.Type, valueName string) string {
+func objcFormattedValue(kind abi.Type, valueName string, structs map[string]*tmplStruct) string {
 	switch kind.T {
-	case abi.TupleTy, abi.ArrayTy, abi.SliceTy, abi.AddressTy:
+	case abi.TupleTy:
+		fields := structs[kind.TupleRawName+kind.String()].Fields
+		result := "@{"
+		for i, f := range fields {
+			fieldName := valueName + "." + f.Name
+			if i != 0 {
+				result = result + ","
+			}
+			result = result + "@\"" + capitalise(f.Name) + "\":" + objcFormattedValue(f.SolKind, fieldName, structs)
+		}
+		result = result + "}"
+		return result
+	case abi.ArrayTy, abi.SliceTy, abi.AddressTy:
 		return valueName
 	case abi.IntTy:
 		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())

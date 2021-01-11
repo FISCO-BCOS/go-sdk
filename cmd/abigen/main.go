@@ -263,10 +263,6 @@ func abigen(c *cli.Context) error {
 		}
 	}
 	// Generate the contract binding
-	var fileSuffix = path.Ext(c.GlobalString(outFlag.Name))
-	if fileSuffix == "m" {
-		utils.Fatalf("Please use .mm file instread of .m")
-	}
 	code, err := bind.Bind(types, abis, bins, sigs, c.GlobalString(pkgFlag.Name), lang, libs, aliases, smcrypto)
 	if err != nil {
 		utils.Fatalf("Failed to generate ABI binding: %v", err)
