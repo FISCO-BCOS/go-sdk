@@ -37,3 +37,6 @@ config.toml
 
 # golang
 go.sum
+
+# idea
+.idea
