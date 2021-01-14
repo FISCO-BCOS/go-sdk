@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -22,13 +21,22 @@ func main() {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
 		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
-	c, err := client.Dial(config)
+	var c *client.Client
+	var err error
+	for i := 0; i < 3; i++ {
+		log.Printf("%d try to connect\n", i)
+		c, err = client.Dial(config)
+		if err != nil {
+			log.Printf("init subscriber failed, err: %v, retrying\n", err)
+			continue
+		}
+		break
+	}
 	if err != nil {
 		log.Fatalf("init subscriber failed, err: %v\n", err)
 	}
-	time.Sleep(1 * time.Second)
-
-	queryTicker := time.NewTicker(10 * time.Second)
+	timeout := 10 * time.Second
+	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
 	err = c.SubscribeTopic(topic, func(data []byte, response *[]byte) {
@@ -38,26 +46,26 @@ func main() {
 			done <- true
 			return
 		}
-		queryTicker = time.NewTicker(10 * time.Second)
+		queryTicker = time.NewTicker(timeout)
 	})
 	if err != nil {
-		fmt.Printf("SubscribeAuthTopic failed, err: %v\n", err)
+		log.Printf("SubscribeAuthTopic failed, err: %v\n", err)
 		return
 	}
-	fmt.Println("Subscriber success")
+	log.Printf("Subscriber %s success %s\n", topic, time.Now().String())
 
 	killSignal := make(chan os.Signal, 1)
 	signal.Notify(killSignal, os.Interrupt)
 	for {
 		select {
 		case <-done:
-			fmt.Println("Done!")
+			log.Println("Done!")
 			os.Exit(0)
 		case <-queryTicker.C:
-			fmt.Println("can't receive message after 10s")
+			log.Printf("can't receive message after 10s, %s\n", time.Now().String())
 			os.Exit(1)
 		case <-killSignal:
-			fmt.Println("user exit")
+			log.Println("user exit")
 			os.Exit(0)
 		}
 	}

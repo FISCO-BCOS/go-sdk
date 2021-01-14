@@ -138,15 +138,16 @@ type requestOp struct {
 
 func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, error) {
 	select {
-	case <-ctx.Done():
-		// Send the timeout to dispatch so it can remove the request IDs.
-		if !c.isHTTP {
-			select {
-			case c.reqTimeout <- op:
-			case <-c.closing:
-			}
-		}
-		return nil, ctx.Err()
+	// case <-ctx.Done():
+	// 	// Send the timeout to dispatch so it can remove the request IDs.
+	// 	// FIXME: remove the code below
+	// 	if !c.isHTTP {
+	// 		select {
+	// 		case c.reqTimeout <- op:
+	// 		case <-c.closing:
+	// 		}
+	// 	}
+	// 	return nil, ctx.Err()
 	case resp := <-op.resp:
 		return resp, op.err
 	}
@@ -305,6 +306,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case resp.Error != nil:
 		return resp.Error
 	case len(resp.Result) == 0:
+		// log.Printf("result is null, %+v, err:%+v \n", resp, err)
 		return ErrNoResult
 	default:
 		return json.Unmarshal(resp.Result, &result)
