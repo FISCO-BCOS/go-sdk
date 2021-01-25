@@ -211,15 +211,17 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 	buffer := new(bytes.Buffer)
 
 	funcs := map[string]interface{}{
-		"bindtype":            bindType[lang],
-		"bindtopictype":       bindTopicType[lang],
-		"namedtype":           namedType[lang],
-		"formatmethod":        formatMethod,
-		"formatevent":         formatEvent,
-		"capitalise":          capitalise,
-		"decapitalise":        decapitalise,
-		"objcFormattedValue":  objcFormattedValue,
-		"objcPrintArgComment": objcPrintArgComment,
+		"bindtype":             bindType[lang],
+		"bindtopictype":        bindTopicType[lang],
+		"namedtype":            namedType[lang],
+		"formatmethod":         formatMethod,
+		"formatevent":          formatEvent,
+		"capitalise":           capitalise,
+		"decapitalise":         decapitalise,
+		"objcFormattedValue":   objcFormattedValue,
+		"objcPrintArgComment":  objcPrintArgComment,
+		"objcFormatStructType": objcFormatStructType,
+		"objcGetOutputNum":     objcGetOutputNum,
 	}
 	tmpl := template.Must(template.New("").Funcs(funcs).Parse(tmplSource[lang]))
 	if err := tmpl.Execute(buffer, data); err != nil {
@@ -350,7 +352,21 @@ func objcPrintArgComment(kind abi.Type) string {
 		// string, bool types
 		return ""
 	}
+}
 
+func objcFormatStructType(kind abi.Type, structs map[string]*tmplStruct, name string) string {
+	switch kind.T {
+	case abi.TupleTy:
+		return name + "_" + structs[kind.TupleRawName+kind.String()].Name + " *"
+	case abi.ArrayTy:
+		return "NSArray *"
+	case abi.SliceTy:
+		return "NSArray *"
+	case abi.BoolTy:
+		return "BOOL"
+	default:
+		return bindBasicTypeObjC(kind)
+	}
 }
 
 func objcFormattedValue(kind abi.Type, valueName string, structs map[string]*tmplStruct) string {
@@ -399,6 +415,10 @@ func objcFormattedValue(kind abi.Type, valueName string, structs map[string]*tmp
 		// string, bool types
 		return valueName
 	}
+}
+
+func objcGetOutputNum(arguments abi.Arguments) int {
+	return len(arguments)
 }
 
 // bindBasicTypeJava converts basic solidity types(except array, slice and tuple) to Java one.

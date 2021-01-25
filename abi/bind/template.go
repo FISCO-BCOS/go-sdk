@@ -647,27 +647,42 @@ import java.util.*;
 
 const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
-{{$structs := .Structs}}
-{{range $contract := .Contracts}}
+{{$structs := .Structs}}{{range $contract := .Contracts}}
 #import "{{.Type}}.h"
-#import "FiscoBcosIosSdk.framework/Headers/FiscoBcosIosSdk.h"	
+#import <FiscoBcosIosSdk/FiscoBcosIosSdk.h>
+
+{{$contractName := .Type}}
+{{range $structs}}
+// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
+@implementation {{$contractName}}_{{.Name}}
+@end
+{{end}}
 
 @implementation {{.Type}}
-// {{.Type}}ABI is the input ABI used to generate the binding from.
 
-/// initWithAddress
-- (instancetype) initWithAddress:(NSString *)addr{
-	if (self = [super init]){
+/// init
+- (instancetype) init:(MobileBcosSDK *)sdk{
+    if (self = [super init]){
 		self = [self init];
-		_address = addr;
+        self.sdk = sdk;
+    }
+    return self;
+}
+/// initWithAddress
+- (instancetype) initWithAddress:(NSString *)addr
+                             sdk:(MobileBcosSDK *)sdk{
+	if (self = [super init]){
+        self = [self init:sdk];
+		self.address = addr;
 	}
 	return self;
 }
+
 {{if .InputBin}}
 /// deploy {{range .Constructor.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Constructor.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileDeployContractResult*) deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
+- (MobileReceiptResult*) deploy {{range .Constructor.Inputs}}:({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}{
 	{{if .Constructor.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Constructor.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
@@ -676,7 +691,7 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Constructor.Inputs}}NSString *__params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return MobileDeployContract(_abi,_bin,__params);
+	return [self.sdk deployContract:self.abi contractBin:_bin params:__params];
 }
 {{end}}
 
@@ -684,7 +699,7 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileCallResult *) {{.Normalized.Name}} {{range .Normalized.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}}{
+- (MobileCallResult *) {{.Normalized.Name}} {{range .Normalized.Inputs}}:({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}{
 	{{if .Normalized.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Normalized.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
@@ -693,7 +708,7 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Normalized.Inputs}}NSString * __params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return MobileCall(_abi,_address,@"{{.Original.Name}}",__params);
+	return [self.sdk call:self.abi address:self.address method:@"{{.Original.Name}}" params:__params outputNum:{{objcGetOutputNum .Normalized.Outputs}}];
 }
 {{end}}
 
@@ -701,8 +716,8 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
-	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}}{
+- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}{
 	{{if .Normalized.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Normalized.Inputs}}{{if ne $i 0}},
 		{{else}}{{end}}@{
@@ -711,13 +726,13 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
         }{{end}}
     ];{{else}}{{end}}
 	{{if .Normalized.Inputs}}NSString *__params = [self __stringFromArr:__resArr];{{else}}NSString *__params = @"[]";{{end}}
-	return MobileSendTransaction(_abi,_address,@"{{.Original.Name}}",__params);
+	return [self.sdk sendTransaction:self.abi address:self.address method:@"{{.Original.Name}}" params:__params];
 }
 {{end}}
 	
 - (instancetype)init{
-	_abi = @"{{.InputABI}}";
-	_bin = @"0x{{.InputBin}}";
+	self.abi = @"{{.InputABI}}";
+	self.bin = @"0x{{.InputBin}}";
 	return self;
 }
 
@@ -742,45 +757,49 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 `
 
 const tmplSourceObjcHeader = `#import <Foundation/Foundation.h>
-#import "FiscoBcosIosSdk.framework/Headers/FiscoBcosIosSdk.h"
+#import <FiscoBcosIosSdk/FiscoBcosIosSdk.h>
 
 NS_ASSUME_NONNULL_BEGIN
-{{$structs := .Structs}}
-{{range $structs}}
-// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
-struct {{.Name}}{
-{{range $field := .Fields}}{{$field.Type}} {{$field.Name}} ;
+{{$structs := .Structs}}{{range $contract := .Contracts}}{{$contractName := .Type}} 
+{{range $structs}}// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
+@interface {{$contractName}}_{{.Name}} : NSObject
+{{range $field := .Fields}}@property (nonatomic, assign) {{$field.Type}} {{$field.Name}};
 {{end}}
-};
+@end
 {{end}}
-{{range $contract := .Contracts}}
 @interface {{.Type}} : NSObject
 
 @property (nonatomic, copy) NSString *address;
 @property (nonatomic, copy) NSString *abi;
 @property (nonatomic, copy) NSString *bin;
+@property (nonatomic, strong) MobileBcosSDK *sdk;
 
-- (instancetype)initWithAddress:(NSString *)addr;
+/// init
+- (instancetype)init:(MobileBcosSDK *)sdk;
+/// initWithAddress
+- (instancetype)initWithAddress:(NSString *)addr
+	sdk:(MobileBcosSDK *) sdk;
 {{if .InputBin}}
 /// deploy {{range .Constructor.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Constructor.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileDeployContractResult*)  deploy {{range .Constructor.Inputs}}:({{bindtype .Type $structs}}) {{.Name}}{{end}};{{end}}
+- (MobileReceiptResult*)  deploy {{range $i, $_ := .Constructor.Inputs}}{{if ne $i 0}} 
+	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}; {{end}}
 
 {{range .Calls}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}} {{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
 - (MobileCallResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
-	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}};
+	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}};
 {{end}}
 
 {{range .Transacts}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileTransactResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
-	{{.Name}}:{{else}} :{{end}}({{bindtype .Type $structs}}) {{.Name}}{{end}};
+- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}};
 {{end}}
 
 @end

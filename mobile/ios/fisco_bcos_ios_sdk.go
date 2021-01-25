@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
-	"path"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -20,65 +19,74 @@ import (
 	"unsafe"
 )
 
+type BcosSDK struct {
+	Callback PostCallback
+	config   *conf.Config
+	backend  *ContractProxy
+	auth     *bind.TransactOpts
+	callOpts *bind.CallOpts
+}
+
+// PostCallback delegate callback function, will implement in outside objc code
+type PostCallback interface {
+	SendRequest(rpcRequest string) string
+}
+
+// BuildSDKResult return when build sdk
 type BuildSDKResult struct {
 	IsSuccess   bool   `json:"isSuccess"`
 	Information string `json:"information"`
 }
 
+// ReceiptResult return by deploy and sendTransaction function.
+type ReceiptResult struct {
+	Code    int
+	Message string
+	Receipt *TxReceipt
+}
+
+// TransactionResult result with transaction
+type TransactionResult struct {
+	Code        int
+	Message     string
+	Transaction *FullTransaction
+}
+
+// CallResult return by call function
+type CallResult struct {
+	Code    int
+	Message string
+	Result  string
+}
+
+// RPCResult return by rpc request
+type RPCResult struct {
+	Code    int
+	Message string
+	Result  string
+}
+
+// ContractParams Parameters
 type ContractParams struct {
 	ValueType string      `json:"type"`
 	Value     interface{} `json:"value"`
 }
 
-type DeployContractResult struct {
-	ErrorInfo   string       `json:"errorInfo"`
-	Address     string       `json:"address"`
-	Transaction *Transaction `json:"transaction"`
-}
-
-type SendTransactionReceipt struct {
-	Receipt   string `json:"receipt"`
-	ErrorInfo string `json:"errorInfo"`
-}
-
 type TxReceipt struct {
-	TransactionHash  string     `json:"transactionHash"`
-	TransactionIndex string     `json:"transactionIndex"`
-	BlockHash        string     `json:"blockHash"`
-	BlockNumber      string     `json:"blockNumber"`
-	GasUsed          string     `json:"gasUsed"`
-	ContractAddress  string     `json:"contractAddress"`
-	Root             string     `json:"root"`
-	Status           int        `json:"status"`
-	From             string     `json:"from"`
-	To               string     `json:"to"`
-	Input            string     `json:"input"`
-	Output           string     `json:"output"`
-	Logs             []EventLog `json:"logs"`
-	LogsBloom        string     `json:"logsBloom"`
-}
-
-type EventLog struct {
-	Address string   `json:"address"`
-	Data    string   `json:"data"`
-	Topics  []string `json:"topics" `
-}
-
-type RPCResult struct {
-	QueryResult string `json:"queryResult"`
-	ErrorInfo   string `json:"errorInfo"`
-}
-
-type TransactResult struct {
-	Transaction *Transaction
-	Receipt     *TxReceipt
-	ErrorInfo   string
-}
-
-type Transaction struct {
-	Hash string
-	Size float64
-	Data string
+	TransactionHash  string `json:"transactionHash"`
+	TransactionIndex string `json:"transactionIndex"`
+	BlockHash        string `json:"blockHash"`
+	BlockNumber      string `json:"blockNumber"`
+	GasUsed          string `json:"gasUsed"`
+	ContractAddress  string `json:"contractAddress"`
+	Root             string `json:"root"`
+	Status           int    `json:"status"`
+	From             string `json:"from"`
+	To               string `json:"to"`
+	Input            string `json:"input"`
+	Output           string `json:"output"`
+	Logs             string `json:"logs"`
+	LogsBloom        string `json:"logsBloom"`
 }
 
 type FullTransaction struct {
@@ -95,172 +103,170 @@ type FullTransaction struct {
 	Value            string `json:"value"`
 }
 
-type RPCTransactionResult struct {
-	Transaction FullTransaction `json:"transaction"`
-	ErrorInfo   string          `json:"errorInfo"`
-}
-
-type CallResult struct {
-	Result    string `json:"result"`
-	ErrorInfo string `json:"errorInfo"`
-}
-
-var clientSdk *client.Client
-
-// BuildSDK
-// Build sdk.
-// Connect to the proxy or FISCO BCOS node.
-func BuildSDK(configString string) *BuildSDKResult {
-	// connect node
-	configs, err := conf.ParseConfig([]byte(configString))
-	if err != nil {
-		return &BuildSDKResult{false, err.Error()}
-	}
-	clientSdk, err = client.Dial(&configs[0])
-	if err != nil {
-		return &BuildSDKResult{false, err.Error()}
-	}
-	return &BuildSDKResult{true, "Success connect to " + configs[0].NodeURL}
+// NetworkResponse data type return from the post callback
+type NetworkResponse struct {
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Result  json.RawMessage `json:"data"`
 }
 
 // BuildSDKWithParam
 // Connect to the proxy or FISCO BCOS node.
 // Please make sure ca.crt, sdk.crt, sdk.key under path certPath.
 // Please provider full keyFile path
-func BuildSDKWithParam(certPath string, keyFile string, groupId int, ipPort string, isHttp bool, chainId int64, isSMCrypto bool) *BuildSDKResult {
-	config, err := conf.ParseConfigOptions(path.Join(certPath, "ca.crt"), path.Join(certPath, "sdk.key"), path.Join(certPath, "sdk.crt"), keyFile, groupId, ipPort, isHttp, chainId, isSMCrypto)
+func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, groupID int, chainID int64, isSMCrypto bool, callback PostCallback) *BuildSDKResult {
+	// init config and callback
+	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", true, chainID, isSMCrypto)
 	if err != nil {
 		return &BuildSDKResult{false, err.Error()}
 	}
-	clientSdk, err = client.Dial(config)
-	if err != nil {
-		return &BuildSDKResult{false, err.Error()}
+	sdk.config = config
+	sdk.Callback = callback
+
+	// Init transact auth and
+	sdk.auth = bind.NewSMCryptoTransactor(sdk.config.PrivateKey)
+	if config.IsSMCrypto {
+		sdk.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
+	} else {
+		privateKey, err := crypto.ToECDSA(config.PrivateKey)
+		if err != nil {
+			return &BuildSDKResult{false, err.Error()}
+		}
+		sdk.auth = bind.NewKeyedTransactor(privateKey)
 	}
-	return &BuildSDKResult{true, "Success connect to " + ipPort}
+	sdk.auth.GasLimit = big.NewInt(30000000)
+	sdk.auth.GasPrice = big.NewInt(30000000)
+	sdk.callOpts = &bind.CallOpts{From: sdk.auth.From}
+
+	// Init backend
+	sdk.backend = &ContractProxy{
+		groupID:  groupID,
+		chainID:  big.NewInt(chainID),
+		callback: sdk.Callback,
+	}
+	return &BuildSDKResult{true, "Init success"}
 }
 
-// DeployContract
-// Deploy contract
-func DeployContract(abiContract string, binContract string, params string) *DeployContractResult {
-	ops := clientSdk.GetTransactOpts()
-	parsed, err := abi.JSON(strings.NewReader(abiContract))
+// DeployContract is a function to deploy a FISCO BCOS smart contract
+// Return receipt
+func (sdk *BcosSDK) DeployContract(contractAbi string, contractBin string, params string) *ReceiptResult {
+	parsedAbi, err := abi.JSON(strings.NewReader(contractAbi))
 	if err != nil {
-		return toDeployResult(common.Address{}, nil, err)
+		return toReceiptResult(nil, errors.New("your abi is not a right json string: "+err.Error()))
 	}
 	goParam, err := toGoParams(params)
 	if err != nil {
-		return toDeployResult(common.Address{}, nil, err)
+		return toReceiptResult(nil, errors.New("params error: "+err.Error()))
 	}
-	address, transaction, _, err := bind.DeployContract(ops, parsed, common.FromHex(binContract), clientSdk, goParam...)
-	return toDeployResult(address, transaction, err)
+	_, receipt, _, err := bind.DeployContractGetReceipt(sdk.auth, parsedAbi, common.FromHex(contractBin), sdk.backend, goParam...)
+	return toReceiptResult(receipt, err)
 }
 
-// SendTransaction
-// Send transaction to call function of contract
-func SendTransaction(contractAbi string, address string, method string, params string) *TransactResult {
+// SendTransaction is a function to send an transaction to call smart contract function.
+// return receipt
+func (sdk *BcosSDK) SendTransaction(contractAbi string, address string, method string, params string) *ReceiptResult {
 	parsed, err := abi.JSON(strings.NewReader(contractAbi))
 	if err != nil {
-		return toTxResult(nil, nil, err)
+		return toReceiptResult(nil, errors.New("your abi is not a right json string: "+err.Error()))
 	}
 	goParams, err := toGoParams(params)
 	if err != nil {
-		return toTxResult(nil, nil, err)
+		return toReceiptResult(nil, errors.New("params error: "+err.Error()))
 	}
 	addr := common.HexToAddress(address)
-	boundContract := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
-	transaction, receipt, err := boundContract.Transact(clientSdk.GetTransactOpts(), method, goParams...)
-	return toTxResult(transaction, receipt, err)
+	boundContract := bind.NewBoundContract(addr, parsed, sdk.backend, sdk.backend, sdk.backend)
+	_, receipt, err := boundContract.Transact(sdk.GetTransactOpts(), method, goParams...)
+	return toReceiptResult(receipt, err)
 }
 
-// Call contract
-func Call(abiContract string, address string, method string, params string) *CallResult {
+// Call is a function to call a smart contract function without sending transaction
+// return CallResult
+func (sdk *BcosSDK) Call(abiContract string, address string, method string, params string, outputNum int) *CallResult {
 	parsed, err := abi.JSON(strings.NewReader(abiContract))
 	if err != nil {
-		return toCallResult(nil, err)
+		return toCallResult("", errors.New("your abi is not a right json string: "+err.Error()))
 	}
 	goParams, err := toGoParams(params)
 	if err != nil {
-		return toCallResult(nil, err)
+		return toCallResult("", errors.New("params error: "+err.Error()))
 	}
 	addr := common.HexToAddress(address)
-	boundContract := bind.NewBoundContract(addr, parsed, clientSdk, clientSdk, clientSdk)
+	boundContract := bind.NewBoundContract(addr, parsed, sdk.backend, sdk.backend, sdk.backend)
 
-	// override problem
-	mtd := parsed.Methods[method]
-	if len(mtd.Outputs) == 1 {
-		result := getGoType(mtd.Outputs[0].Type)
-		err = boundContract.Call(clientSdk.GetCallOpts(), result, method, goParams...)
-		return toCallResult(result, err)
-	} else {
-		var outputs []interface{}
-		for _, one := range mtd.Outputs {
-			outputs = append(outputs, getGoType(one.Type))
-		}
-		err = boundContract.Call(clientSdk.GetCallOpts(), &outputs, method, goParams...)
-		return toCallResult(&outputs, err)
+	var result = make([]interface{}, outputNum)
+	err = boundContract.Call(sdk.GetCallOpts(), &result, method, goParams...)
+	if err != nil {
+		return toCallResult("", errors.New("call contract error: "+err.Error()))
 	}
+	resultBytes, err := json.Marshal(result)
+	if err != nil {
+		return toCallResult("", errors.New(": "+err.Error()))
+	}
+	return toCallResult(string(resultBytes), err)
 }
 
 // RPC calls
-// GetClientVersion
-func GetClientVersion() *RPCResult {
-	cv, err := clientSdk.GetClientVersion(context.Background())
-	var rpcResult *RPCResult
-	if err != nil {
-		rpcResult = &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
-	} else {
-		rpcResult = &RPCResult{QueryResult: string(cv), ErrorInfo: ""}
+// GetClientVersion is to query the client version of connected nodes
+func (sdk *BcosSDK) GetClientVersion() *RPCResult {
+	var raw interface{}
+	if err := sdk.backend.CallContext(context.TODO(), &raw, "getClientVersion"); err != nil {
+		return toRPCResult("", err)
 	}
-	return rpcResult
+	js, err := json.MarshalIndent(raw, "", indent)
+	return toRPCResult(string(js), err)
 }
 
-// GetBlockNumber
-// Return block number
-func GetBlockNumber() *RPCResult {
-	num, err := clientSdk.GetBlockNumber(context.Background())
-	if err != nil {
-		return &RPCResult{"", fmt.Sprintf("Client error: cannot get the block number: %v", err)}
+// GetBlockNumber is to query the blockchain and get the latest block number.
+// Return the latest block number
+func (sdk *BcosSDK) GetBlockNumber() *RPCResult {
+	var raw string
+	if err := sdk.backend.CallContext(context.TODO(), &raw, "getBlockNumber", sdk.backend.groupID); err != nil {
+		return toRPCResult("", err)
 	}
-	currStr := string(num)
-	currInt, err := toDecimal(currStr[3 : len(currStr)-1])
+	blockNumber, err := strconv.ParseInt(raw, 0, 64)
 	if err != nil {
-		return &RPCResult{"", fmt.Sprintf("Client error: cannot get the block number: %v", err)}
+		return toRPCResult("", fmt.Errorf("parse block number failed, err: %v", err))
 	}
-	return &RPCResult{strconv.FormatInt(int64(currInt), 64), ""}
+	return toRPCResult(strconv.FormatInt(blockNumber, 10), err)
 }
 
-// GetTransactionByHash
+// GetTransactionByHash is to query the blockchain and get the transaction of a transaction hash.
 // Get transaction by tx hash
-func GetTransactionByHash(txHash string) *RPCTransactionResult {
-	raw, err := clientSdk.GetTransactionByHash(context.Background(), common.HexToHash(txHash))
-	var tx FullTransaction
-	if err != nil {
-		return &RPCTransactionResult{Transaction: tx, ErrorInfo: err.Error()}
-	} else {
-		err = json.Unmarshal(raw, &tx)
-		if err != nil {
-			return &RPCTransactionResult{Transaction: tx, ErrorInfo: err.Error()}
-		}
-		return &RPCTransactionResult{Transaction: tx, ErrorInfo: ""}
-	}
+func (sdk *BcosSDK) GetTransactionByHash(txHash string) *TransactionResult {
+	var raw FullTransaction
+	err := sdk.backend.CallContext(context.TODO(), &raw, "getTransactionByHash", sdk.backend.groupID, txHash)
+	return toTransactionResult(&raw, err)
 }
 
-// GetTransactionReceipt
-// Get transaction receipt by tx hash
-func GetTransactionReceipt(txHash string) *RPCResult {
-	receipt, err := clientSdk.GetTransactionReceipt(context.Background(), common.HexToHash(txHash))
+// GetTransactionReceipt is to query the blockchain and get the receipt of a transaction.
+func (sdk *BcosSDK) GetTransactionReceipt(txHash string) *ReceiptResult {
+	var anonymityReceipt = &struct {
+		types.Receipt
+		Status string `json:"status"`
+	}{}
+	err := sdk.backend.CallContext(context.TODO(), &anonymityReceipt, "getTransactionReceipt", sdk.backend.groupID, txHash)
 	if err != nil {
-		return &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
+		return toReceiptResult(nil, errors.New("call rpc error: "+err.Error()))
 	}
-	rec, err := toReceipt(receipt)
+	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
 	if err != nil {
-		return &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
+		return toReceiptResult(nil, errors.New("call rpc error: parse int of receipt status error: "+err.Error()))
 	}
-	str, err := json.Marshal(rec)
-	if err != nil {
-		return &RPCResult{QueryResult: "", ErrorInfo: err.Error()}
-	}
-	return &RPCResult{QueryResult: string(str), ErrorInfo: ""}
+
+	// parse to types.Receipt
+	receipt := &anonymityReceipt.Receipt
+	receipt.Status = int(status)
+	return toReceiptResult(receipt, nil)
+}
+
+// GetTransactOpts return *bind.TransactOpts
+func (sdk *BcosSDK) GetTransactOpts() *bind.TransactOpts {
+	return sdk.auth
+}
+
+// GetCallOpts return *bind.CallOpts
+func (sdk *BcosSDK) GetCallOpts() *bind.CallOpts {
+	return sdk.callOpts
 }
 
 func toGoParams(param string) ([]interface{}, error) {
@@ -271,7 +277,7 @@ func toGoParams(param string) ([]interface{}, error) {
 	var par []interface{}
 
 	for _, t := range objs {
-		value, err := StringToInterface(t.ValueType, t.Value)
+		value, err := stringToInterface(t.ValueType, t.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -280,50 +286,38 @@ func toGoParams(param string) ([]interface{}, error) {
 	return par, nil
 }
 
-func toDeployResult(addr common.Address, transaction *types.Transaction, err error) *DeployContractResult {
-	var txResult DeployContractResult
+func toTransactionResult(transaction *FullTransaction, err error) *TransactionResult {
+	var txResult TransactionResult
 	if err != nil {
-		txResult.ErrorInfo = err.Error()
+		txResult.Code = -1
+		txResult.Message = err.Error()
 	}
 	if transaction != nil {
-		txResult.Transaction = toTransact(transaction)
-	}
-	var emptyAddress = common.Address{}
-	if addr != emptyAddress {
-		txResult.Address = addr.Hex()
+		txResult.Transaction = transaction
 	}
 	return &txResult
 }
 
-func toTxResult(transaction *types.Transaction, receipt *types.Receipt, err error) *TransactResult {
-	var tr TransactResult
+func toReceiptResult(receipt *types.Receipt, err error) *ReceiptResult {
+	var receiptResult ReceiptResult
 	if err != nil {
-		tr.ErrorInfo = err.Error()
-		return &tr
+		receiptResult.Code = -1
+		receiptResult.Message = err.Error()
+		return &receiptResult
 	}
 	if receipt != nil {
 		rec, err := toReceipt(receipt)
-		tr.Receipt = rec
+		receiptResult.Receipt = rec
 		if err != nil {
-			tr.ErrorInfo = err.Error()
-			return &tr
+			receiptResult.Code = -1
+			receiptResult.Message = err.Error()
+			return &receiptResult
 		}
+	} else {
+		receiptResult.Code = -1
+		receiptResult.Message = "No result"
 	}
-	if transaction != nil {
-		tr.Transaction = toTransact(transaction)
-	}
-	return &tr
-}
-
-func toTransact(transaction *types.Transaction) *Transaction {
-	var tx Transaction
-	var emptyHash = common.Hash{}
-	if transaction.Hash() != emptyHash {
-		tx.Hash = transaction.Hash().Hex()
-	}
-	tx.Size = float64(transaction.Size())
-	tx.Data = string(transaction.Data())
-	return &tx
+	return &receiptResult
 }
 
 func toReceipt(_r *types.Receipt) (*TxReceipt, error) {
@@ -343,31 +337,37 @@ func toReceipt(_r *types.Receipt) (*TxReceipt, error) {
 	rec.To = _r.To
 	rec.Input = _r.Input
 	rec.Output = _r.Output
-	var logs []EventLog
-	for _, one := range _r.Logs {
-		topics, err := interfaceToString(one.Topics)
-		var log EventLog
-		if err != nil {
-			return nil, err
-		} else {
-			log = EventLog{one.Address, one.Data, topics}
-		}
-		logs = append(logs, log)
-	}
-	rec.Logs = logs
+	logs, err := json.Marshal(_r.Logs)
+	rec.Logs = string(logs)
 	rec.LogsBloom = _r.LogsBloom
-	return &rec, nil
+	return &rec, err
 }
 
-func toCallResult(result interface{}, err error) *CallResult {
+func toCallResult(result string, err error) *CallResult {
 	if err != nil {
-		return &CallResult{"", err.Error()}
+		return &CallResult{
+			Code:    -1,
+			Message: err.Error(),
+		}
 	}
-	resultBytes, err := json.MarshalIndent(result, "", "  ")
+	return &CallResult{
+		Code:   0,
+		Result: result,
+	}
+}
+
+func toRPCResult(result string, err error) *RPCResult {
 	if err != nil {
-		return &CallResult{"", err.Error()}
+		return &RPCResult{
+			Code:    -1,
+			Message: err.Error(),
+		}
 	}
-	return &CallResult{string(resultBytes), ""}
+	return &RPCResult{
+		Code:    0,
+		Message: "",
+		Result:  result,
+	}
 }
 
 // interface to string
@@ -411,7 +411,7 @@ func interfaceToString(param []interface{}) ([]string, error) {
 }
 
 // string to interface
-func StringToInterface(paramType string, value interface{}) (interface{}, error) {
+func stringToInterface(paramType string, value interface{}) (interface{}, error) {
 	if strings.Count(paramType, "[") != 0 {
 		// split elements
 		i := strings.LastIndex(paramType, "[")
@@ -438,14 +438,12 @@ func StringToInterface(paramType string, value interface{}) (interface{}, error)
 			if array.Index(i).Kind() == reflect.Ptr {
 				newObj := reflect.New(array.Index(i).Type().Elem())
 				array.Index(i).Set(newObj)
-				err := set(newObj, reflect.ValueOf(obj))
-				if err != nil {
-					return nil, err
+				if err := set(newObj, reflect.ValueOf(obj)); err != nil {
+					return nil, errors.New("parse params error :" + err.Error())
 				}
 			} else {
-				err := set(array.Index(i), reflect.ValueOf(obj))
-				if err != nil {
-					return nil, err
+				if err := set(array.Index(i), reflect.ValueOf(obj)); err != nil {
+					return nil, errors.New("parse params error :" + err.Error())
 				}
 			}
 		}
