@@ -2,6 +2,7 @@
 
 set -e
 
+start_time=5
 macOS=
 GOPATH_BIN=$(go env GOPATH)/bin
 SHELL_FOLDER=$(
@@ -186,10 +187,11 @@ integration_std()
     execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
-    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -o nodes
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
-    bash nodes/127.0.0.1/start_all.sh
-    if [ -z "$(./hello | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
+    bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
+    ./hello > hello.out
+    if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
     if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call hello failed." && exit 1;fi
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
     precompiled_test
@@ -201,6 +203,7 @@ integration_std()
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./counter | grep failed)" ];then LOG_ERROR "call counter failed." && exit 1;fi
 
+    integration_amop
     bash nodes/127.0.0.1/stop_all.sh
     LOG_INFO "integration_std testing pass."
 
@@ -219,13 +222,14 @@ integration_gm()
     execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
-    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:4 -g -o nodes_gm
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -g -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./
-    bash nodes_gm/127.0.0.1/start_all.sh
+    bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
-    if [ ! -z "$(./hello_gm | grep failed)" ];then LOG_ERROR "gm call hello_gm failed." && exit 1;fi
+    ./hello_gm > hello.out
+    if [ ! -z "$(grep failed hello.out)" ];then LOG_ERROR "gm call hello_gm failed." && cat hello.out && exit 1;fi
     # if [ ! -z "$(./bn256_gm | grep failed)" ];then ./bn256_gm && LOG_ERROR "gm call bn256_gm failed." && exit 1;fi
     # precompiled_test
     bash nodes_gm/127.0.0.1/stop_all.sh
@@ -233,28 +237,22 @@ integration_gm()
 }
 
 integration_amop() {
-    LOG_INFO "integration_amop testing..."
-    bash nodes/127.0.0.1/start_all.sh
-
+    # nodes should be started
+    LOG_INFO "amop unicast testing..."
     execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
     execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
-    nohup ./unicast_publisher 127.0.0.1:20200 hello > output.file 2>&1 &
+    ./unicast_publisher 127.0.0.1:20200 hello &
     ./subscriber 127.0.0.1:20201 hello
-    LOG_INFO "amop unique broadcast test success!"
 
+    LOG_INFO "amop broadcast testing..."
     execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
-    nohup ./broadcast_publisher 127.0.0.1:20202 hello1 > output.file 2>&1 &
-    ./subscriber 127.0.0.1:20203 hello1
-    LOG_INFO "amop multi broadcast test success!"
-
-    bash nodes/127.0.0.1/stop_all.sh
-    LOG_INFO "integration_amop testing pass."
+    ./broadcast_publisher 127.0.0.1:20200 hello1 &
+    ./subscriber 127.0.0.1:20201 hello1
 }
 
 check_env
 compile_and_ut
 get_build_chain
 integration_std
-integration_amop
 
 if [ -z "${macOS}" ];then integration_gm ; fi

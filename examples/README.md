@@ -27,10 +27,10 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
   > go run examples/amop/sub/subscriber.go 127.0.0.1:20201 hello
 
     Subscriber success
-    2020/08/11 21:21:50 received: hello, FISCO BCOS, I am unique broadcast publisher! 0
-    2020/08/11 21:21:52 received: hello, FISCO BCOS, I am unique broadcast publisher! 1
-    2020/08/11 21:21:54 received: hello, FISCO BCOS, I am unique broadcast publisher! 2
-    2020/08/11 21:21:56 received: hello, FISCO BCOS, I am unique broadcast publisher! 3
+    2020/08/11 21:21:50 received: hello, FISCO BCOS, I am unicast publisher! 0
+    2020/08/11 21:21:52 received: hello, FISCO BCOS, I am unicast publisher! 1
+    2020/08/11 21:21:54 received: hello, FISCO BCOS, I am unicast publisher! 2
+    2020/08/11 21:21:56 received: hello, FISCO BCOS, I am unicast publisher! 3
   ```
 
 - 运行 AMOP 消息发布者：
@@ -39,10 +39,10 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
   # go run examples/amop/unicast_pub/publisher.go [endpoint] [topic]
   > go run examples/amop/unicast_pub/publisher.go 127.0.0.1:20200 hello
 
-    2020/08/11 21:21:50 publish message: hello, FISCO BCOS, I am unique broadcast publisher! 0
-    2020/08/11 21:21:52 publish message: hello, FISCO BCOS, I am unique broadcast publisher! 1
-    2020/08/11 21:21:54 publish message: hello, FISCO BCOS, I am unique broadcast publisher! 2
-    2020/08/11 21:21:56 publish message: hello, FISCO BCOS, I am unique broadcast publisher! 3
+    2020/08/11 21:21:50 publish message: hello, FISCO BCOS, I am unicast publisher! 0
+    2020/08/11 21:21:52 publish message: hello, FISCO BCOS, I am unicast publisher! 1
+    2020/08/11 21:21:54 publish message: hello, FISCO BCOS, I am unicast publisher! 2
+    2020/08/11 21:21:56 publish message: hello, FISCO BCOS, I am unicast publisher! 3
   ```
 
 ### 多播案例
@@ -56,10 +56,10 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
   > go run examples/amop/sub/subscriber.go 127.0.0.1:20201 hello
 
     Subscriber success
-    2020/08/11 21:23:54 received: hello, FISCO BCOS, I am multi broadcast publisher! 0
-    2020/08/11 21:23:56 received: hello, FISCO BCOS, I am multi broadcast publisher! 1
-    2020/08/11 21:23:58 received: hello, FISCO BCOS, I am multi broadcast publisher! 2
-    2020/08/11 21:24:00 received: hello, FISCO BCOS, I am multi broadcast publisher! 3
+    2020/08/11 21:23:54 received: hello, FISCO BCOS, I am broadcast publisher! 0
+    2020/08/11 21:23:56 received: hello, FISCO BCOS, I am broadcast publisher! 1
+    2020/08/11 21:23:58 received: hello, FISCO BCOS, I am broadcast publisher! 2
+    2020/08/11 21:24:00 received: hello, FISCO BCOS, I am broadcast publisher! 3
   ```
 
 - 运行 AMOP 消息发布者：
@@ -68,10 +68,10 @@ AMOP（Advanced Messages Onchain Protocol）即链上信使协议，旨在为联
   # go run examples/amop/broadcast_pub/publisher.go [endpoint] [topic]
   > go run examples/amop/broadcast_pub/publisher.go 127.0.0.1:20200 hello
 
-    2020/08/11 21:23:54 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 0
-    2020/08/11 21:23:56 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 1
-    2020/08/11 21:23:58 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 2
-    2020/08/11 21:24:00 publish message: hello, FISCO BCOS, I am multi broadcast publisher! 3
+    2020/08/11 21:23:54 publish message: hello, FISCO BCOS, I am broadcast publisher! 0
+    2020/08/11 21:23:56 publish message: hello, FISCO BCOS, I am broadcast publisher! 1
+    2020/08/11 21:23:58 publish message: hello, FISCO BCOS, I am broadcast publisher! 2
+    2020/08/11 21:24:00 publish message: hello, FISCO BCOS, I am broadcast publisher! 3
   ```
 
 ### 身份验证单播案例

@@ -423,7 +423,7 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	msgBytes := rpcMsg.Encode()
 
 	if hc.c == nil {
-		return nil, errors.New("connection unavailable, trying to reconnect")
+		return nil, errors.New("connection unavailable")
 	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
@@ -439,7 +439,7 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	response = hc.responses[rpcMsg.uuid]
 	delete(hc.responses, rpcMsg.uuid)
 	hc.mu.Unlock()
-	if response.Err != nil { // connection unavailable, trying to reconnect
+	if response.Err != nil {
 		return nil, response.Err
 	}
 	if response.Message.errorCode != 0 {
@@ -472,7 +472,7 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	}()
 	msgBytes := rpcMsg.Encode()
 	if hc.c == nil {
-		return nil, errors.New("connection unavailable, trying to reconnect")
+		return nil, errors.New("connection unavailable")
 	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
@@ -483,7 +483,7 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	response = hc.responses[rpcMsg.uuid]
 	delete(hc.responses, rpcMsg.uuid)
 	hc.mu.Unlock()
-	if response.Err != nil { // connection unavailable, trying to reconnect
+	if response.Err != nil {
 		return nil, response.Err
 	}
 	if response.Message.errorCode != 0 {
@@ -501,7 +501,7 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	hc.mu.RLock()
 	receiptResponse = hc.receiptResponses[rpcMsg.uuid]
 	hc.mu.RUnlock()
-	if receiptResponse.Err != nil { // connection unavailable, trying to reconnect
+	if receiptResponse.Err != nil {
 		return nil, response.Err
 	}
 	if receiptResponse.Message.errorCode != 0 {
@@ -536,7 +536,7 @@ func (hc *channelSession) asyncSendTransaction(msg interface{}, handler func(*ty
 	}()
 	msgBytes := rpcMsg.Encode()
 	if hc.c == nil {
-		return errors.New("connection unavailable, trying to reconnect")
+		return errors.New("connection unavailable")
 	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
@@ -547,7 +547,7 @@ func (hc *channelSession) asyncSendTransaction(msg interface{}, handler func(*ty
 	hc.mu.Lock()
 	response = hc.responses[rpcMsg.uuid]
 	hc.mu.Unlock()
-	if response.Err != nil { // connection unavailable, trying to reconnect
+	if response.Err != nil {
 		return response.Err
 	}
 	if response.Message.errorCode != 0 {
@@ -566,7 +566,7 @@ func (hc *channelSession) asyncSendTransaction(msg interface{}, handler func(*ty
 func (hc *channelSession) sendMessageNoResponse(msg *channelMessage) error {
 	msgBytes := msg.Encode()
 	if hc.c == nil {
-		return errors.New("connection unavailable, trying to reconnect")
+		return errors.New("connection unavailable")
 	}
 	_, err := hc.c.Write(msgBytes)
 	if err != nil {
@@ -582,7 +582,7 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 	hc.responses[msg.uuid] = response
 	hc.mu.Unlock()
 	if hc.c == nil {
-		return nil, errors.New("connection unavailable, trying to reconnect")
+		return nil, errors.New("connection unavailable")
 	}
 	_, err := hc.c.Write(msgBytes)
 	if err != nil {
@@ -597,7 +597,7 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 	hc.mu.Lock()
 	response = hc.responses[msg.uuid]
 	hc.mu.Unlock()
-	if response.Err != nil { // connection unavailable, trying to reconnect
+	if response.Err != nil {
 		return nil, response.Err
 	}
 	switch response.Message.errorCode {
@@ -920,18 +920,18 @@ func (hc *channelSession) processMessages() {
 			// return err for responses and receiptResponses
 			hc.mu.Lock()
 			for _, response := range hc.responses {
-				response.Err = errors.New("connection unavailable, trying to reconnect")
+				response.Err = errors.New("connection lost, reconnecting")
 				response.Notify <- struct{}{}
 			}
 			for _, receiptResponse := range hc.receiptResponses {
-				receiptResponse.Err = errors.New("connection unavailable, trying to reconnect")
+				receiptResponse.Err = errors.New("connection lost, reconnecting")
 				receiptResponse.Notify <- struct{}{}
 			}
 			hc.mu.Unlock()
 			// delete asyncHandler
 			hc.asyncMu.Lock()
 			for key, handler := range hc.asyncHandlers {
-				handler(nil, errors.New("connection unavailable, trying to reconnect"))
+				handler(nil, errors.New("connection lost, reconnecting"))
 				delete(hc.asyncHandlers, key)
 			}
 			hc.asyncMu.Unlock()
