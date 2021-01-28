@@ -41,5 +41,9 @@ jobs:
       - name: check commit
         if: ${{ runner.os == 'Linux' && github.base_ref != 'master' && github.event_name == 'pull_request' }}
         run: bash .ci/check-commit.sh
-      - name: test
+      - name: test all
+        if: ${{ runner.os == 'Linux' }}
+        run: bash .ci/integration_test.sh -a
+      - name: test without amop
+        if: ${{ runner.os == 'macOS' }}
         run: bash .ci/integration_test.sh
