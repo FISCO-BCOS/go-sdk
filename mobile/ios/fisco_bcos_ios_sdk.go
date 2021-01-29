@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/abi"
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
+
+	"github.com/FISCO-BCOS/go-sdk/abi"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type BcosSDK struct {
@@ -193,16 +194,29 @@ func (sdk *BcosSDK) Call(abiContract string, address string, method string, para
 	addr := common.HexToAddress(address)
 	boundContract := bind.NewBoundContract(addr, parsed, sdk.backend, sdk.backend, sdk.backend)
 
-	var result = make([]interface{}, outputNum)
-	err = boundContract.Call(sdk.GetCallOpts(), &result, method, goParams...)
-	if err != nil {
-		return toCallResult("", errors.New("call contract error: "+err.Error()))
+	if outputNum > 1 {
+		var result = make([]interface{}, outputNum)
+		err = boundContract.Call(sdk.GetCallOpts(), &result, method, goParams...)
+		if err != nil {
+			return toCallResult("", errors.New("call contract error: "+err.Error()))
+		}
+		resultBytes, err := json.Marshal(result)
+		if err != nil {
+			return toCallResult("", errors.New(": "+err.Error()))
+		}
+		return toCallResult(string(resultBytes), err)
+	} else {
+		var result interface{}
+		err = boundContract.Call(sdk.GetCallOpts(), &result, method, goParams...)
+		if err != nil {
+			return toCallResult("", errors.New("call contract error: "+err.Error()))
+		}
+		resultBytes, err := json.Marshal(result)
+		if err != nil {
+			return toCallResult("", errors.New(": "+err.Error()))
+		}
+		return toCallResult(string(resultBytes), err)
 	}
-	resultBytes, err := json.Marshal(result)
-	if err != nil {
-		return toCallResult("", errors.New(": "+err.Error()))
-	}
-	return toCallResult(string(resultBytes), err)
 }
 
 // RPC calls
