@@ -26,7 +26,7 @@
 
 ```bash
 # 下载代码
-mkdir -p ~/go/src/github.com/FISCO-BCOS && cd ~/go/src/github.com/FISCO-BCOS && git clone git@github.com:FISCO-BCOS/go-sdk.git && cd go-sdk
+mkdir -p ~/go/src/github.com/FISCO-BCOS && cd ~/go/src/github.com/FISCO-BCOS && git clone https://github.com/FISCO-BCOS/go-sdk.git && cd go-sdk
 # 切换到develop分支
 git checkout -b develop origin/develop
 # 下载依赖
@@ -127,7 +127,7 @@ ls
 # 请替换 ~/code 为您存放HelloWorld项目的正确目录
 cp -r HelloWorld.h HelloWorld.m ../FiscoBcosIosSdk.framework 你的项目路径/HelloWorld/HelloWorld/
 # 拷贝私钥文件
-cp .ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem 你的项目路径/HelloWorld/HelloWorld/key.pem
+cp ../.ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem 你的项目路径/HelloWorld/HelloWorld/key.pem
 ```
 
 私钥也可以[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)，使用工具生成。
