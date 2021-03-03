@@ -6,7 +6,7 @@ Golang SDK For FISCO BCOS 2.2.0+
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)
 [![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)](https://github.com/FISCO-BCOS/go-sdk)
-[![version](https://img.shields.io/github/tag/FISCO-BCOS/FISCO-BCOS.svg)](https://github.com/FISCO-BCOS/FISCO-BCOS/releases/latest)
+[![version](https://img.shields.io/github/tag/FISCO-BCOS/go-sdk.svg)](https://github.com/FISCO-BCOS/go-sdk/releases/latest)
 
 
 ![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg)
@@ -56,6 +56,8 @@ SMCrypto=false
 ```
 
 ## Network
+
+**注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
 
 - Type：支持channel和rpc两种模式，其中`channel`使用ssl链接，需要提供证书。`rpc`使用http访问节点。
 - CAFile：链根证书
