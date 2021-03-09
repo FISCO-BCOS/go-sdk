@@ -13,32 +13,24 @@
    ```bash
    cd ~
    # 如果您处在国内的网络环境中，请执行设置GORPOXY的步骤
-   export GOPROXY=https://goproxy.cn,https://goproxy.io,direct 
-   # 确保GO111MODULE=on 
-   export GO111MODULE=on 
-   # 设置环境变量 
-   export PATH=$PATH:~/go/bin 
-   # 下载gomobile并编译
-   git clone https://github.com/golang/mobile
-   mkdir -p ~/go/src/golang.org/x && mv mobile ~/go/src/golang.org/x/mobile
-   # 编译gomobile
-   cd ~/go/src/golang.org/x/mobile/cmd/gomobile && go build . && cp gomobile ~/go/bin
-   # 编译gobind
-   cd ../gobind && go build . && cp gobind ~/go/bin
-   # 测试是否安装成功
-   gomobile version
-   # gomobile version +e6ae53a Thu Dec 17 15:07:44 2020 +0000 (android,ios); androidSDK= 得到这个输出表示安装成功
+   export GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+   # 确保GO111MODULE=on
+   export GO111MODULE=on
+   # 设置环境变量
+   export PATH=$PATH:~/go/bin
+   # 安装gomobile
+   go get golang.org/x/mobile/cmd/gomobile
    ```
 
 #### 第二步. 下载go-sdk源码
 
 ```bash
 # 下载代码
-mkdir -p ~/go/src/github.com/FISCO-BCOS && cd ~/go/src/github.com/FISCO-BCOS && git clone git@github.com:FISCO-BCOS/go-sdk.git && cd go-sdk
+mkdir -p ~/go/src/github.com/FISCO-BCOS && cd ~/go/src/github.com/FISCO-BCOS && git clone https://github.com/FISCO-BCOS/go-sdk.git && cd go-sdk
 # 切换到develop分支
 git checkout -b develop origin/develop
 # 下载依赖
-go mod download 
+go mod download
 ```
 
 #### 第三步. 编译iOS SDK
@@ -48,7 +40,6 @@ go mod download
 export CGO_LDFLAGS_ALLOW=".*"
 gomobile bind -target=ios -o FiscoBcosIosSdk.framework ./mobile/iOS
 # 编译成功后，目录下会多了一个FiscoBcosIosSdk.framework目录
-ls
 ```
 
 ### 2. 生成Objective-c合约
@@ -80,8 +71,13 @@ contract HelloWorld {
 
     function set(string v) public {
         value = v;
+
     }
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    [alertController addAction:cancelAction];
+    [self presentViewController:alertController animated:YES completion:nil];
 }
+
 ```
 
 #### 第二步. 编译合约
@@ -92,20 +88,19 @@ contract HelloWorld {
 bash ../tools/download_solc.sh -v 0.4.25
 # 编译合约
 ./solc-0.4.25 --bin --abi -o ./ ./HelloWorld.sol
-ls 
-# 得到返回HelloWorld.abi	HelloWorld.bin	HelloWorld.sol	solc-0.4.25， 生成了ABI和Bin文件
+# 得到HelloWorld.abi, HelloWorld.bin, HelloWorld.sol, solc-0.4.25， 生成了ABI和Bin文件
 ```
 
-#### 第三步. 生成Objective-c合约
+#### 第三步. 生成Objective-c调用接口
 
 ```bash
 # 当前目录~/go/src/github.com/FISCO-BCOS/go-sdk/helloworld
 # 编译生成abigen工具
 go build ../cmd/abigen
 # 生成Objective-c合约
-./abigen --bin ./HelloWorld.bin --abi ./HelloWorld.abi --lang objc --pkg helloworld --type HelloWorld --out ./HelloWorld.m 
+./abigen --bin ./HelloWorld.bin --abi ./HelloWorld.abi --lang objc --pkg helloworld --type HelloWorld --out ./HelloWorld.m
 ls
-# 得到了HelloWorld.h，HelloWorld.m Objective-C合约文件
+# 得到了HelloWorld.h，HelloWorld.m Objective-C调用接口
 ```
 
 
@@ -122,7 +117,7 @@ ls
 
 点击Create a new Xcode project
 
-选择``iOS``，``App``，点击``next`` 
+选择``iOS``，``App``，点击``next``
 
 在Product Name中输入``HelloWorld``, 并选择属性 ``Interface:Storyboard``, ``LifeCycle:UIKit App Delegate``,`` language:Objective-C1``, 点击``Next``
 
@@ -135,10 +130,14 @@ ls
 ```bash
 # 当前位置 ~/go/src/github.com/FISCO-BCOS/go-sdk/helloworld
 # 请替换 ~/code 为您存放HelloWorld项目的正确目录
-cp -r HelloWorld.h HelloWorld.m ../FiscoBcosIosSdk.framework ~/code/HelloWorld/HelloWorld/
+cp -r HelloWorld.h HelloWorld.m ../FiscoBcosIosSdk.framework 你的项目路径/HelloWorld/HelloWorld/
+# 拷贝私钥文件
+cp ../.ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem 你的项目路径/HelloWorld/HelloWorld/key.pem
 ```
 
-打开Finder，进入项目目录HelloWorld/HelloWorld，得到我们刚刚复制进去的文件和目录包括HelloWorld.h、HelloWorld.m、FiscoBcosIosSdk.framework。选中这些文件和目录拖入Xcode中左边的项目文件夹结构的HelloWorld > HelloWorld下，点击确认。
+私钥也可以[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)，使用工具生成。
+
+打开Finder，进入项目目录HelloWorld/HelloWorld，得到我们刚刚复制进去的文件和目录包括HelloWorld.h、HelloWorld.m、FiscoBcosIosSdk.framework、key.pem。**选中这些文件和目录拖入Xcode中左边的项目文件夹结构的HelloWorld > HelloWorld下，点击确认**。
 
 #### 第四部. 搭建区块链网络和代理
 
@@ -227,21 +226,21 @@ MyPostCallback.m
 - (NSString* _Nonnull)sendRequest:(NSString* _Nullable)rpcRequest{
     NSURL *nsurl = [NSURL URLWithString:@"http://localhost:8170/Bcos-node-proxy/rpc/v1"];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:nsurl];
-    
+
     //设置请求类型
     request.HTTPMethod = @"POST";
-    
+
     //将需要的信息放入请求头
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];//token
-    
+
     //把参数放到请求体内
     request.HTTPBody = [rpcRequest dataUsingEncoding:NSUTF8StringEncoding];
-    
+
     NSData *resultData = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:nil] ;
     NSString * resultString = [[NSString alloc] initWithData:resultData encoding:NSUTF8StringEncoding];
     NSLog(@"Get response: %@",resultString);
     return resultString;
-    
+
 }
 @end
 ```
@@ -251,16 +250,6 @@ MyPostCallback.m
 在项目的info.plist中添加一个Key：App Transport Security Settings，类型为字典类型。然后给它添加一个Key：Allow Arbitrary Loads，类型为Boolean类型，值为YES。
 
 具体的，点击info.plist。在空白处右键``Add Row``, 输入``App Transport Security Settings``。在这个节点处点``+``按钮，添加新Key ，``Allow Arbitrary Loads``,类型为Boolean类型，值为``YES``。
-
-**生成并引入密钥**
-
-```bash
-# 在HelloWorld项目的文件夹内
-curl -#LO https://raw.githubusercontent.com/FISCO-BCOS/console/master/tools/get_account.sh && chmod u+x get_account.sh && bash get_account.sh -h
-bash get_account.sh 
-# 生成了两个密钥文件如 0x61d844fab9591360dae14207e6c68f4e48c21641.pem		0x61d844fab9591360dae14207e6c68f4e48c21641.public.pem
-mv accounts/0x61d844fab9591360dae14207e6c68f4e48c21641.pem HelloWorld/key.pem
-```
 
 打开Finder将HelloWorld项目下HelloWorld/key.pem拖到Xcode右边项目栏HelloWorld文件夹下，得到目录
 
@@ -282,7 +271,7 @@ HelloWorld
 |			|-----main.m
 |			|-----MyPostCallback.h
 |			|-----MyPostCallback.m
-|		
+|
 |-----HelloWorldTest (省略内部文件)
 |-----HelloWorldUITest (省略内部文件)
 |-----Products (省略内部文件)
@@ -318,7 +307,7 @@ HelloWorld
     [super viewDidLoad];
     NSString *path = [NSBundle mainBundle].bundlePath;
     NSString *keyFile = [NSString stringWithFormat:@"%@/%@", path, @"key.pem" ];
-    
+
     [super viewDidLoad];
     self.sdk = [[MobileBcosSDK alloc]init];
     MobileBuildSDKResult* result = [self.sdk buildSDKWithParam:keyFile groupID:1 chainID:1 isSMCrypto:false callback:[[MyPostCallback alloc] init]];
@@ -343,7 +332,7 @@ HelloWorld
 - (IBAction)set:(id)sender {
     UIAlertController *alertController;
     MobileReceiptResult *result = [self.contract set: self.setValue.text];
-    
+
     long zero = 0;
     if (result.code != zero){
         NSLog(@"send tx error : %@", result.message);
