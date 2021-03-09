@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
