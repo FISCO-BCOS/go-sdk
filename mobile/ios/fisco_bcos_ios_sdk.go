@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -384,46 +383,6 @@ func toRPCResult(result string, err error) *RPCResult {
 	}
 }
 
-// interface to string
-func interfaceToString(param []interface{}) ([]string, error) {
-	var str []string
-	for _, p := range param {
-		switch p.(type) {
-		case string:
-			str = append(str, p.(string))
-		case int:
-			str = append(str, strconv.FormatInt(int64(p.(int)), 10))
-		case int8:
-			str = append(str, strconv.FormatInt(int64(p.(int8)), 10))
-		case int16:
-			str = append(str, strconv.FormatInt(int64(p.(int16)), 10))
-		case int32:
-			str = append(str, strconv.FormatInt(int64(p.(int32)), 10))
-		case int64:
-			str = append(str, strconv.FormatInt(p.(int64), 10))
-		case uint:
-			str = append(str, strconv.FormatUint(p.(uint64), 10))
-		case uint8:
-			str = append(str, strconv.FormatUint(uint64(p.(uint8)), 10))
-		case uint16:
-			str = append(str, strconv.FormatUint(uint64(p.(uint16)), 10))
-		case uint32:
-			str = append(str, strconv.FormatUint(uint64(p.(uint32)), 10))
-		case uint64:
-			str = append(str, strconv.FormatUint(p.(uint64), 10))
-		case bool:
-			str = append(str, strconv.FormatBool(p.(bool)))
-		case []byte:
-			str = append(str, string(p.([]byte)))
-		case common.Address:
-			str = append(str, p.(common.Address).Hex())
-		default:
-			return nil, errors.New("unsupport interface type (" + reflect.TypeOf(p).String() + ")")
-		}
-	}
-	return str, nil
-}
-
 // string to interface
 func stringToInterface(paramType string, value interface{}) (interface{}, error) {
 	if strings.Count(paramType, "[") != 0 {
@@ -529,14 +488,21 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return int16(value.(float64)), nil
 	case "int32":
 		return int32(value.(float64)), nil
-	case "int64":
-		return int64(value.(float64)), nil
-	case "int256":
-		in, err := strconv.ParseInt(value.(string), 10, 64)
-		if err != nil {
-			return nil, err
+	case "int40", "int48", "int56", "int64":
+		data := int64(value.(float64))
+		v, success := new(big.Int).SetString(strconv.FormatInt(data, 10), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
 		}
-		return big.NewInt(in), nil
+		return v, nil
+	case "int72", "int80", "int88", "int96", "int104", "int112", "int120", "int128", "int136", "int144", "int152", "int160", "int168", "int176", "int184", "int192", "int200", "int208", "int216", "int224", "int232", "int240", "int248", "int256":
+		v, success := new(big.Int).SetString(value.(string), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
+		}
+		return v, nil
 	case "uint":
 		return uint(value.(float64)), nil
 	case "uint8":
@@ -545,14 +511,21 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return uint16(value.(float64)), nil
 	case "uint32":
 		return uint32(value.(float64)), nil
-	case "uint64":
-		return uint64(value.(float64)), nil
-	case "uint256":
-		in, err := strconv.ParseUint(value.(string), 10, 64)
-		if err != nil {
-			return nil, err
+	case "uint40", "uint48", "uint56", "uint64":
+		data := uint64(value.(float64))
+		v, success := new(big.Int).SetString(strconv.FormatUint(data, 10), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
 		}
-		return big.NewInt(int64(in)), nil
+		return v, nil
+	case "uint72", "uint80", "uint88", "uint96", "uint104", "uint112", "uint120", "uint128", "uint136", "uint144", "uint152", "uint160", "uint168", "uint176", "uint184", "uint192", "uint200", "uint208", "uint216", "uint224", "uint232", "uint240", "uint248", "uint256":
+		v, success := new(big.Int).SetString(value.(string), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
+		}
+		return v, nil
 	case "bool":
 		return value.(bool), nil
 	case "[]byte", "bytes":
@@ -566,6 +539,10 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 			return nil, err
 		}
 		byteValue := common.FromHex(value.(string))
+		if len(byteValue) != int(length) {
+			err := fmt.Errorf("length not match for type (" + paramType + "), value: " + value.(string) + ", acture length: " + strconv.FormatInt(int64(len(byteValue)), 10))
+			return value, err
+		}
 		result := make([]byte, length)
 		copy(result[:], byteValue)
 		return mustByteSliceToArray(reflect.ValueOf(result)).Interface(), nil
@@ -577,60 +554,6 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return value, err
 	}
 }
-
-// abi.typ to interface
-func getGoType(kind abi.Type) interface{} {
-	switch kind.T {
-	case abi.AddressTy:
-		var result *common.Address
-		return result
-	case abi.IntTy, abi.UintTy:
-		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
-		if parts[1] == "u" {
-			switch parts[2] {
-			case "8":
-				return new(uint8)
-			case "16":
-				return new(uint16)
-			case "32":
-				return new(uint32)
-			case "64":
-				return new(uint64)
-			case "256":
-				return new(*big.Int)
-			}
-		} else {
-			switch parts[2] {
-			case "8":
-				return new(int8)
-			case "16":
-				return new(int16)
-			case "32":
-				return new(int32)
-			case "64":
-				return new(int64)
-			case "256":
-				return new(*big.Int)
-			}
-		}
-	case abi.FixedBytesTy:
-		return new([]byte)
-	case abi.BytesTy:
-		return new([]byte)
-	case abi.FunctionTy:
-		return new([24]byte)
-	case abi.BoolTy:
-		return new(bool)
-	case abi.StringTy:
-		return new(string)
-	case abi.HashTy:
-		return new(common.Hash)
-	default:
-		return new(interface{})
-	}
-	return nil
-}
-
 func set(dst, src reflect.Value) error {
 	dstType, srcType := dst.Type(), src.Type()
 	switch {

@@ -298,7 +298,7 @@ func bindBasicTypeObjC(kind abi.Type) string {
 		switch parts[2] {
 		case "8", "16", "32":
 			return "int"
-		case "64":
+		case "40", "48", "56", "64":
 			return "double"
 		}
 		return "NSString *"
@@ -306,8 +306,8 @@ func bindBasicTypeObjC(kind abi.Type) string {
 		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
 		switch parts[2] {
 		case "8", "16", "32":
-			return "unsigned int"
-		case "64":
+			return "int"
+		case "40", "48", "56", "64":
 			return "double"
 		}
 		return "NSString *"
@@ -391,7 +391,7 @@ func objcFormattedValue(kind abi.Type, valueName string, structs map[string]*tmp
 		case "8", "16", "32":
 			//return "[NSString stringWithFormat:@\"%d\", " + valueName + "]"
 			return "@(" + valueName + ")"
-		case "64":
+		case "40", "48", "56", "64":
 			//return "[NSString stringWithFormat:@\"%.0lf\", " + valueName + "]"
 			return "@(" + valueName + ")"
 		}
@@ -402,7 +402,7 @@ func objcFormattedValue(kind abi.Type, valueName string, structs map[string]*tmp
 		case "8", "16", "32":
 			//return "[NSString stringWithFormat:@\"%u\", " + valueName + "]"
 			return "@(" + valueName + ")"
-		case "64":
+		case "40", "48", "56", "64":
 			//return "[NSString stringWithFormat:@\"%.0lf\", " + valueName + "]"
 			return "@(" + valueName + ")"
 		}
