@@ -5,6 +5,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 
 	"github.com/FISCO-BCOS/crypto/ecdsa"
@@ -15,11 +16,6 @@ import (
 )
 
 const publicKeyLength = 64
-
-type sm2Signature struct {
-	R *big.Int
-	S *big.Int
-}
 
 // SM2PubBytes return esdsa public key as slice
 func SM2PubBytes(pub *ecdsa.PublicKey) []byte {
@@ -144,6 +140,9 @@ func Sign(hash, privateKey []byte) (sig []byte, err error) {
 	pubBytes := SM2PubBytes(&key.PublicKey)
 
 	r, s, err := SM2Sign(hash, key)
+	if err != nil {
+		log.Fatal(err)
+	}
 	sig = make([]byte, 128)
 	copy(sig[32-len(r.Bytes()):], r.Bytes())
 	copy(sig[64-len(s.Bytes()):], s.Bytes())

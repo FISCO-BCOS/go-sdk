@@ -3,6 +3,7 @@ package sm3
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 	"math/big"
 )
 
@@ -61,13 +62,35 @@ func (sm3 *Context) Final() []byte {
 func (sm3 *Context) cf(v, b []byte) []byte {
 	// update a-h
 	buf := bytes.NewBuffer(v)
-	binary.Read(buf, binary.BigEndian, &sm3.a)
-	binary.Read(buf, binary.BigEndian, &sm3.b)
-	binary.Read(buf, binary.BigEndian, &sm3.c)
-	binary.Read(buf, binary.BigEndian, &sm3.d)
-	binary.Read(buf, binary.BigEndian, &sm3.e)
-	binary.Read(buf, binary.BigEndian, &sm3.f)
-	binary.Read(buf, binary.BigEndian, &sm3.g)
+	err := binary.Read(buf, binary.BigEndian, &sm3.a)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.e)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Read(buf, binary.BigEndian, &sm3.g)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	binary.Read(buf, binary.BigEndian, &sm3.h)
 	A, B, C, D, E, F, G, H := sm3.a, sm3.b, sm3.c, sm3.d, sm3.e, sm3.f, sm3.g, sm3.h
 	w68, w64 := splitB(b)
@@ -105,14 +128,38 @@ func (sm3 *Context) cf(v, b []byte) []byte {
 	// calculate next v and return
 	var ret []byte
 	retBuf := bytes.NewBuffer(ret)
-	binary.Write(retBuf, binary.BigEndian, sm3.a^A)
-	binary.Write(retBuf, binary.BigEndian, sm3.b^B)
-	binary.Write(retBuf, binary.BigEndian, sm3.c^C)
-	binary.Write(retBuf, binary.BigEndian, sm3.d^D)
-	binary.Write(retBuf, binary.BigEndian, sm3.e^E)
-	binary.Write(retBuf, binary.BigEndian, sm3.f^F)
-	binary.Write(retBuf, binary.BigEndian, sm3.g^G)
-	binary.Write(retBuf, binary.BigEndian, sm3.h^H)
+	err = binary.Write(retBuf, binary.BigEndian, sm3.a^A)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.b^B)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.c^C)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.d^D)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.e^E)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.f^F)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.g^G)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = binary.Write(retBuf, binary.BigEndian, sm3.h^H)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return retBuf.Bytes()
 }
@@ -128,7 +175,10 @@ func splitB(b []byte) (w68 [68]uint32, w64 [64]uint32) {
 
 	buf := bytes.NewBuffer(b)
 	for i := 0; i < 16; i++ {
-		binary.Read(buf, binary.BigEndian, &w68[i])
+		err := binary.Read(buf, binary.BigEndian, &w68[i])
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	for i := 16; i < 68; i++ {
 		w68[i] = p1(w68[i-16]^w68[i-9]^cycleLeftRotate(w68[i-3], 15)) ^ cycleLeftRotate(w68[i-13], 7) ^ w68[i-6]
@@ -146,10 +196,16 @@ func pad(src []byte) []byte {
 		padLength += 512
 	}
 	buf := bytes.NewBuffer(src)
-	buf.WriteByte(paddingHeader)
+	err := buf.WriteByte(paddingHeader)
+	if err != nil {
+		log.Fatal(err)
+	}
 	padLength -= 8
 	for padLength > 0 {
-		buf.WriteByte(0)
+		err = buf.WriteByte(0)
+		if err != nil {
+			log.Fatal(err)
+		}
 		padLength -= 8
 	}
 	binary.Write(buf, binary.BigEndian, uint64(length))
