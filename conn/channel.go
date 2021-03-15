@@ -125,11 +125,6 @@ type handshakeRequest struct {
 	ClientType     string `json:"clientType"`
 }
 
-type handshakeResponse struct {
-	Protocol    int32  `json:"protocol"`
-	NodeVersion string `json:"nodeVersion"`
-}
-
 type channelResponse struct {
 	Message *channelMessage
 	Err     error
@@ -247,7 +242,7 @@ func decodeChannelMessage(raw []byte) (*channelMessage, error) {
 		fmt.Println("binary.Read failed:", err)
 	}
 	dataLength := result.length - messageHeaderLength
-	result.body = make([]byte, dataLength, dataLength)
+	result.body = make([]byte, dataLength)
 	err = binary.Read(buf, binary.BigEndian, &result.body)
 	if err != nil {
 		fmt.Println("binary.Read failed:", err)
@@ -262,14 +257,14 @@ func decodeTopic(raw []byte) (*topicData, error) {
 	if err != nil {
 		fmt.Println("binary.Read failed:", err)
 	}
-	topic := make([]byte, result.length-1, result.length-1)
+	topic := make([]byte, result.length-1)
 	err = binary.Read(buf, binary.LittleEndian, &topic)
 	if err != nil {
 		fmt.Println("binary.Read failed:", err)
 	}
 	result.topic = string(topic)
 	dataLength := len(raw) - int(result.length)
-	result.data = make([]byte, dataLength, dataLength)
+	result.data = make([]byte, dataLength)
 	err = binary.Read(buf, binary.LittleEndian, &result.data)
 	if err != nil {
 		fmt.Println("binary.Read failed:", err)

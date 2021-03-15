@@ -2,7 +2,7 @@
 
 set -e
 
-start_time=5
+start_time=10
 macOS=
 check_amop=
 GOPATH_BIN=$(go env GOPATH)/bin
