@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
+	"log"
 	"math/big"
 
 	"github.com/FISCO-BCOS/crypto/ecdsa"
@@ -18,15 +19,38 @@ func SM2PreProcess(src []byte, id string, priv *ecdsa.PrivateKey) ([]byte, error
 	length := uint16(len(id) * 8)
 	var data []byte
 	buf := bytes.NewBuffer(data)
-	binary.Write(buf, binary.BigEndian, length)
-	buf.Write([]byte(id))
-	buf.Write(elliptic.Sm2p256v1().Params().A.Bytes())
-	buf.Write(elliptic.Sm2p256v1().Params().B.Bytes())
-	buf.Write(elliptic.Sm2p256v1().Params().Gx.Bytes())
-	buf.Write(elliptic.Sm2p256v1().Params().Gy.Bytes())
-	buf.Write(priv.X.Bytes())
-	buf.Write(priv.Y.Bytes())
-
+	err := binary.Write(buf, binary.BigEndian, length)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write([]byte(id))
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(elliptic.Sm2p256v1().Params().A.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(elliptic.Sm2p256v1().Params().B.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(elliptic.Sm2p256v1().Params().Gx.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(elliptic.Sm2p256v1().Params().Gy.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(priv.X.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = buf.Write(priv.Y.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
 	z := sm3.Hash(buf.Bytes())
 	// fmt.Printf("digest sm3 hash :%x\n", z)
 	return append(z, src...), nil

@@ -19,6 +19,7 @@ package conn
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -90,7 +91,10 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 	// Emit error response for empty batches:
 	if len(msgs) == 0 {
 		h.startCallProc(func(cp *callProc) {
-			h.conn.Write(cp.ctx, errorMessage(&invalidRequestError{"empty batch"}))
+			err := h.conn.Write(cp.ctx, errorMessage(&invalidRequestError{"empty batch"}))
+			if err != nil {
+				log.Fatal(err)
+			}
 		})
 		return
 	}
@@ -115,10 +119,16 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 		}
 		h.addSubscriptions(cp.notifiers)
 		if len(answers) > 0 {
-			h.conn.Write(cp.ctx, answers)
+			err := h.conn.Write(cp.ctx, answers)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		for _, n := range cp.notifiers {
-			n.activate()
+			err := n.activate()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	})
 }
@@ -132,10 +142,16 @@ func (h *handler) handleMsg(msg *jsonrpcMessage) {
 		answer := h.handleCallMsg(cp, msg)
 		h.addSubscriptions(cp.notifiers)
 		if answer != nil {
-			h.conn.Write(cp.ctx, answer)
+			err := h.conn.Write(cp.ctx, answer)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		for _, n := range cp.notifiers {
-			n.activate()
+			err := n.activate()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	})
 }

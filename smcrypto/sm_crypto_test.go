@@ -15,8 +15,13 @@ const sm2Hex = "00f82aeb0b2ae031bf35f68b5f0407f936a1d8ca26f4dfd8afaeedb47dc36757
 const sm2pubHex = "a893d2cdb81255adf068b1b5df3e41b982f64a653153e6cfd6fc15b92fbca83c05b091f120396899d78aad4c54bfe7addbf64b3cfc768dc451acaf930128867f"
 const sm2Addr = "00d6bbe6a5b391f0eb24885c8ee833f0b756f6db"
 
-const sigData = "message digest    message digest"
-const signKeyHex = "3945208F7B2144B13F36E38AC6D39F95889393692860B51A42FB81EF4DF7C5B8"
+// const sigData = "message digest    message digest"
+// const signKeyHex = "3945208F7B2144B13F36E38AC6D39F95889393692860B51A42FB81EF4DF7C5B8"
+
+// type sm2Signature struct {
+// 	R *big.Int
+// 	S *big.Int
+// }
 
 func TestHexToSM2(t *testing.T) {
 	private, _ := HexToSM2(sm2Hex)
