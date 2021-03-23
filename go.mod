@@ -1,6 +1,6 @@
 module github.com/FISCO-BCOS/go-sdk
 
-go 1.13
+go 1.16
 
 require (
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
