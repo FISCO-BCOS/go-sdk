@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"regexp"
+	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -21,7 +22,6 @@ import (
 )
 
 type BcosSDK struct {
-	Callback PostCallback
 	config   *conf.Config
 	backend  *ContractProxy
 	auth     *bind.TransactOpts
@@ -115,14 +115,13 @@ type NetworkResponse struct {
 // Connect to the proxy or FISCO BCOS node.
 // Please make sure ca.crt, sdk.crt, sdk.key under path certPath.
 // Please provider full keyFile path
-func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, groupID int, chainID int64, isSMCrypto bool, callback PostCallback) *BuildSDKResult {
+func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID int, chainID int64, isSMCrypto bool) *BuildSDKResult {
 	// init config and callback
 	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", true, chainID, isSMCrypto)
 	if err != nil {
 		return &BuildSDKResult{false, err.Error()}
 	}
 	sdk.config = config
-	sdk.Callback = callback
 
 	// Init transact auth and
 	sdk.auth = bind.NewSMCryptoTransactor(sdk.config.PrivateKey)
@@ -143,14 +142,19 @@ func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, groupID int, chainID int64
 	sdk.backend = &ContractProxy{
 		groupID:  groupID,
 		chainID:  big.NewInt(chainID),
-		callback: sdk.Callback,
+		callback: callback,
+		smCrypto: isSMCrypto,
 	}
+
 	return &BuildSDKResult{true, "Init success"}
 }
 
 // DeployContract is a function to deploy a FISCO BCOS smart contract
 // Return receipt
 func (sdk *BcosSDK) DeployContract(contractAbi string, contractBin string, params string) *ReceiptResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	parsedAbi, err := abi.JSON(strings.NewReader(contractAbi))
 	if err != nil {
 		return toReceiptResult(nil, errors.New("your abi is not a right json string: "+err.Error()))
@@ -166,6 +170,9 @@ func (sdk *BcosSDK) DeployContract(contractAbi string, contractBin string, param
 // SendTransaction is a function to send an transaction to call smart contract function.
 // return receipt
 func (sdk *BcosSDK) SendTransaction(contractAbi string, address string, method string, params string) *ReceiptResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	parsed, err := abi.JSON(strings.NewReader(contractAbi))
 	if err != nil {
 		return toReceiptResult(nil, errors.New("your abi is not a right json string: "+err.Error()))
@@ -177,18 +184,24 @@ func (sdk *BcosSDK) SendTransaction(contractAbi string, address string, method s
 	addr := common.HexToAddress(address)
 	boundContract := bind.NewBoundContract(addr, parsed, sdk.backend, sdk.backend, sdk.backend)
 	_, receipt, err := boundContract.Transact(sdk.GetTransactOpts(), method, goParams...)
-	return toReceiptResult(receipt, err)
+	receiptResult := toReceiptResult(receipt, err)
+	return receiptResult
 }
 
 // Call is a function to call a smart contract function without sending transaction
 // return CallResult
 func (sdk *BcosSDK) Call(abiContract string, address string, method string, params string, outputNum int) *CallResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	parsed, err := abi.JSON(strings.NewReader(abiContract))
 	if err != nil {
+
 		return toCallResult("", errors.New("your abi is not a right json string: "+err.Error()))
 	}
 	goParams, err := toGoParams(params)
 	if err != nil {
+
 		return toCallResult("", errors.New("params error: "+err.Error()))
 	}
 	addr := common.HexToAddress(address)
@@ -204,6 +217,7 @@ func (sdk *BcosSDK) Call(abiContract string, address string, method string, para
 		if err != nil {
 			return toCallResult("", errors.New(": "+err.Error()))
 		}
+
 		return toCallResult(string(resultBytes), err)
 	} else {
 		var result interface{}
@@ -215,6 +229,7 @@ func (sdk *BcosSDK) Call(abiContract string, address string, method string, para
 		if err != nil {
 			return toCallResult("", errors.New(": "+err.Error()))
 		}
+
 		return toCallResult(string(resultBytes), err)
 	}
 }
@@ -222,23 +237,32 @@ func (sdk *BcosSDK) Call(abiContract string, address string, method string, para
 // RPC calls
 // GetClientVersion is to query the client version of connected nodes
 func (sdk *BcosSDK) GetClientVersion() *RPCResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	var raw interface{}
 	if err := sdk.backend.CallContext(context.TODO(), &raw, "getClientVersion"); err != nil {
+
 		return toRPCResult("", err)
 	}
 	js, err := json.MarshalIndent(raw, "", indent)
+
 	return toRPCResult(string(js), err)
 }
 
 // GetBlockNumber is to query the blockchain and get the latest block number.
 // Return the latest block number
 func (sdk *BcosSDK) GetBlockNumber() *RPCResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	var raw string
 	if err := sdk.backend.CallContext(context.TODO(), &raw, "getBlockNumber", sdk.backend.groupID); err != nil {
 		return toRPCResult("", err)
 	}
 	blockNumber, err := strconv.ParseInt(raw, 0, 64)
 	if err != nil {
+
 		return toRPCResult("", fmt.Errorf("parse block number failed, err: %v", err))
 	}
 	return toRPCResult(strconv.FormatInt(blockNumber, 10), err)
@@ -247,29 +271,39 @@ func (sdk *BcosSDK) GetBlockNumber() *RPCResult {
 // GetTransactionByHash is to query the blockchain and get the transaction of a transaction hash.
 // Get transaction by tx hash
 func (sdk *BcosSDK) GetTransactionByHash(txHash string) *TransactionResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	var raw FullTransaction
 	err := sdk.backend.CallContext(context.TODO(), &raw, "getTransactionByHash", sdk.backend.groupID, txHash)
+
 	return toTransactionResult(&raw, err)
 }
 
 // GetTransactionReceipt is to query the blockchain and get the receipt of a transaction.
 func (sdk *BcosSDK) GetTransactionReceipt(txHash string) *ReceiptResult {
+	runtime.GC()
+	debug.FreeOSMemory()
+
 	var anonymityReceipt = &struct {
 		types.Receipt
 		Status string `json:"status"`
 	}{}
 	err := sdk.backend.CallContext(context.TODO(), &anonymityReceipt, "getTransactionReceipt", sdk.backend.groupID, txHash)
 	if err != nil {
+
 		return toReceiptResult(nil, errors.New("call rpc error: "+err.Error()))
 	}
 	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
 	if err != nil {
+
 		return toReceiptResult(nil, errors.New("call rpc error: parse int of receipt status error: "+err.Error()))
 	}
 
 	// parse to types.Receipt
 	receipt := &anonymityReceipt.Receipt
 	receipt.Status = int(status)
+
 	return toReceiptResult(receipt, nil)
 }
 
@@ -384,46 +418,6 @@ func toRPCResult(result string, err error) *RPCResult {
 	}
 }
 
-// interface to string
-func interfaceToString(param []interface{}) ([]string, error) {
-	var str []string
-	for _, p := range param {
-		switch p.(type) {
-		case string:
-			str = append(str, p.(string))
-		case int:
-			str = append(str, strconv.FormatInt(int64(p.(int)), 10))
-		case int8:
-			str = append(str, strconv.FormatInt(int64(p.(int8)), 10))
-		case int16:
-			str = append(str, strconv.FormatInt(int64(p.(int16)), 10))
-		case int32:
-			str = append(str, strconv.FormatInt(int64(p.(int32)), 10))
-		case int64:
-			str = append(str, strconv.FormatInt(p.(int64), 10))
-		case uint:
-			str = append(str, strconv.FormatUint(p.(uint64), 10))
-		case uint8:
-			str = append(str, strconv.FormatUint(uint64(p.(uint8)), 10))
-		case uint16:
-			str = append(str, strconv.FormatUint(uint64(p.(uint16)), 10))
-		case uint32:
-			str = append(str, strconv.FormatUint(uint64(p.(uint32)), 10))
-		case uint64:
-			str = append(str, strconv.FormatUint(p.(uint64), 10))
-		case bool:
-			str = append(str, strconv.FormatBool(p.(bool)))
-		case []byte:
-			str = append(str, string(p.([]byte)))
-		case common.Address:
-			str = append(str, p.(common.Address).Hex())
-		default:
-			return nil, errors.New("unsupport interface type (" + reflect.TypeOf(p).String() + ")")
-		}
-	}
-	return str, nil
-}
-
 // string to interface
 func stringToInterface(paramType string, value interface{}) (interface{}, error) {
 	if strings.Count(paramType, "[") != 0 {
@@ -529,14 +523,24 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return int16(value.(float64)), nil
 	case "int32":
 		return int32(value.(float64)), nil
-	case "int64":
-		return int64(value.(float64)), nil
-	case "int256":
-		in, err := strconv.ParseInt(value.(string), 10, 64)
-		if err != nil {
-			return nil, err
+	case "int40", "int48", "int56":
+		data := int64(value.(float64))
+		v, success := new(big.Int).SetString(strconv.FormatInt(data, 10), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
 		}
-		return big.NewInt(in), nil
+		return v, nil
+	case "int64":
+		data := int64(value.(float64))
+		return data, nil
+	case "int72", "int80", "int88", "int96", "int104", "int112", "int120", "int128", "int136", "int144", "int152", "int160", "int168", "int176", "int184", "int192", "int200", "int208", "int216", "int224", "int232", "int240", "int248", "int256":
+		v, success := new(big.Int).SetString(value.(string), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
+		}
+		return v, nil
 	case "uint":
 		return uint(value.(float64)), nil
 	case "uint8":
@@ -545,14 +549,24 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return uint16(value.(float64)), nil
 	case "uint32":
 		return uint32(value.(float64)), nil
-	case "uint64":
-		return uint64(value.(float64)), nil
-	case "uint256":
-		in, err := strconv.ParseUint(value.(string), 10, 64)
-		if err != nil {
-			return nil, err
+	case "uint40", "uint48", "uint56":
+		data := uint64(value.(float64))
+		v, success := new(big.Int).SetString(strconv.FormatUint(data, 10), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
 		}
-		return big.NewInt(int64(in)), nil
+		return v, nil
+	case "uint64":
+		data := uint64(value.(float64))
+		return data, nil
+	case "uint72", "uint80", "uint88", "uint96", "uint104", "uint112", "uint120", "uint128", "uint136", "uint144", "uint152", "uint160", "uint168", "uint176", "uint184", "uint192", "uint200", "uint208", "uint216", "uint224", "uint232", "uint240", "uint248", "uint256":
+		v, success := new(big.Int).SetString(value.(string), 10)
+		if !success {
+			err := fmt.Errorf("parse type " + paramType + " to big.int failed.")
+			return value, err
+		}
+		return v, nil
 	case "bool":
 		return value.(bool), nil
 	case "[]byte", "bytes":
@@ -566,6 +580,10 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 			return nil, err
 		}
 		byteValue := common.FromHex(value.(string))
+		if len(byteValue) != int(length) {
+			err := fmt.Errorf("length not match for type (" + paramType + "), value: " + value.(string) + ", acture length: " + strconv.FormatInt(int64(len(byteValue)), 10))
+			return value, err
+		}
 		result := make([]byte, length)
 		copy(result[:], byteValue)
 		return mustByteSliceToArray(reflect.ValueOf(result)).Interface(), nil
@@ -577,60 +595,6 @@ func stringToInterfaceBasic(paramType string, value interface{}) (interface{}, e
 		return value, err
 	}
 }
-
-// abi.typ to interface
-func getGoType(kind abi.Type) interface{} {
-	switch kind.T {
-	case abi.AddressTy:
-		var result *common.Address
-		return result
-	case abi.IntTy, abi.UintTy:
-		parts := regexp.MustCompile(`(u)?int([0-9]*)`).FindStringSubmatch(kind.String())
-		if parts[1] == "u" {
-			switch parts[2] {
-			case "8":
-				return new(uint8)
-			case "16":
-				return new(uint16)
-			case "32":
-				return new(uint32)
-			case "64":
-				return new(uint64)
-			case "256":
-				return new(*big.Int)
-			}
-		} else {
-			switch parts[2] {
-			case "8":
-				return new(int8)
-			case "16":
-				return new(int16)
-			case "32":
-				return new(int32)
-			case "64":
-				return new(int64)
-			case "256":
-				return new(*big.Int)
-			}
-		}
-	case abi.FixedBytesTy:
-		return new([]byte)
-	case abi.BytesTy:
-		return new([]byte)
-	case abi.FunctionTy:
-		return new([24]byte)
-	case abi.BoolTy:
-		return new(bool)
-	case abi.StringTy:
-		return new(string)
-	case abi.HashTy:
-		return new(common.Hash)
-	default:
-		return new(interface{})
-	}
-	return nil
-}
-
 func set(dst, src reflect.Value) error {
 	dstType, srcType := dst.Type(), src.Type()
 	switch {
@@ -666,14 +630,4 @@ func mustByteSliceToArray(value reflect.Value) reflect.Value {
 		array.Index(i).Set(value.Index(i))
 	}
 	return array
-}
-
-func toDecimal(hex string) (int, error) {
-	i := new(big.Int)
-	var flag bool
-	i, flag = i.SetString(hex, 16) // octal
-	if !flag {
-		return -1, fmt.Errorf("Cannot parse hex string to Int")
-	}
-	return int(i.Uint64()), nil
 }

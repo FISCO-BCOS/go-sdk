@@ -38,7 +38,7 @@ go mod download
 ```bash
 # 编译iOS SDK，当前目录~/go/src/github.com/FISCO-BCOS/go-sdk
 export CGO_LDFLAGS_ALLOW=".*"
-gomobile bind -target=ios -o FiscoBcosIosSdk.framework ./mobile/iOS
+gomobile bind -target=ios -o FiscoBcosIosSdk.framework  --ldflags='-s -w' :./mobile/ios
 # 编译成功后，目录下会多了一个FiscoBcosIosSdk.framework目录
 ```
 
@@ -71,8 +71,13 @@ contract HelloWorld {
 
     function set(string v) public {
         value = v;
+
     }
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    [alertController addAction:cancelAction];
+    [self presentViewController:alertController animated:YES completion:nil];
 }
+
 ```
 
 #### 第二步. 编译合约
