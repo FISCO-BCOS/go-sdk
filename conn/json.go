@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -215,7 +216,10 @@ func (c *jsonCodec) Write(ctx context.Context, v interface{}) error {
 	if !ok {
 		deadline = time.Now().Add(defaultWriteTimeout)
 	}
-	c.conn.SetWriteDeadline(deadline)
+	err := c.conn.SetWriteDeadline(deadline)
+	if err != nil {
+		log.Print(err)
+	}
 	return c.encode(v)
 }
 
@@ -223,7 +227,10 @@ func (c *jsonCodec) Write(ctx context.Context, v interface{}) error {
 func (c *jsonCodec) Close() {
 	c.closer.Do(func() {
 		close(c.closed)
-		c.conn.Close()
+		err := c.conn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 }
 
@@ -239,15 +246,24 @@ func (c *jsonCodec) Closed() <-chan interface{} {
 func parseMessage(raw json.RawMessage) ([]*jsonrpcMessage, bool) {
 	if !isBatch(raw) {
 		msgs := []*jsonrpcMessage{{}}
-		json.Unmarshal(raw, &msgs[0])
+		err := json.Unmarshal(raw, &msgs[0])
+		if err != nil {
+			log.Fatal(err)
+		}
 		return msgs, false
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.Token() // skip '['
+	_, err := dec.Token() // skip '['
+	if err != nil {
+		log.Fatal(err)
+	}
 	var msgs []*jsonrpcMessage
 	for dec.More() {
 		msgs = append(msgs, new(jsonrpcMessage))
-		dec.Decode(&msgs[len(msgs)-1])
+		err := dec.Decode(&msgs[len(msgs)-1])
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	return msgs, true
 }

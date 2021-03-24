@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -692,7 +693,10 @@ func (c *Connection) read(codec ServerCodec) {
 	for {
 		msgs, batch, err := codec.Read()
 		if _, ok := err.(*json.SyntaxError); ok {
-			codec.Write(context.Background(), errorMessage(&parseError{err.Error()}))
+			err := codec.Write(context.Background(), errorMessage(&parseError{err.Error()}))
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		if err != nil {
 			c.readErr <- err

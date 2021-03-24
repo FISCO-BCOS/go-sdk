@@ -2,8 +2,9 @@
 
 set -e
 
-start_time=5
+start_time=10
 macOS=
+check_amop=
 GOPATH_BIN=$(go env GOPATH)/bin
 SHELL_FOLDER=$(
     cd $(dirname $0)
@@ -202,8 +203,9 @@ integration_std()
     execute_cmd "go build -o counter counter.go"
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./counter | grep failed)" ];then LOG_ERROR "call counter failed." && exit 1;fi
-
-    integration_amop
+    if [[ "${check_amop}" == "true" ]];then
+        integration_amop
+    fi
     bash nodes/127.0.0.1/stop_all.sh
     LOG_INFO "integration_std testing pass."
 
@@ -250,9 +252,26 @@ integration_amop() {
     ./subscriber 127.0.0.1:20201 hello1
 }
 
-check_env
-compile_and_ut
-get_build_chain
-integration_std
+parse_params()
+{
+    echo "parse_params $#"
+    while getopts "a" option;do
+        case $option in
+        a) check_amop="true";;
+        *) LOG_WARN "invalid option $option";;
+        esac
+    done
+}
 
-if [ -z "${macOS}" ];then integration_gm ; fi
+main()
+{
+    check_env
+    compile_and_ut
+    get_build_chain
+    integration_std
+
+    if [ -z "${macOS}" ];then integration_gm ; fi
+}
+
+parse_params "$@"
+main

@@ -25,6 +25,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -63,7 +64,10 @@ func randomIDGenerator() func() ID {
 		mu.Lock()
 		defer mu.Unlock()
 		id := make([]byte, 16)
-		rng.Read(id)
+		_, err = rng.Read(id)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return encodeID(id)
 	}
 }
@@ -252,7 +256,10 @@ func (sub *ClientSubscription) quitWithError(err error, unsubscribeServer bool) 
 		// unblocks deliver.
 		close(sub.quit)
 		if unsubscribeServer {
-			sub.requestUnsubscribe()
+			err := sub.requestUnsubscribe()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		if err != nil {
 			if err == ErrClientQuit {
