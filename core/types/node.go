@@ -4,7 +4,7 @@ type Node struct {
 	Agency    string   `json:"Agency"`
 	IPAndPort string   `json:"IPAndPort"`
 	Node      string   `json:"Node"`
-	NodeID    string   `json:"NodeID"`
+	NodeId    string   `json:"NodeID"`
 	Topic     []string `json:"Topic"`
 }
 
@@ -23,9 +23,9 @@ func (n *Node) GetNode() string {
 	return n.Node
 }
 
-// GetNodeID returns the node id string
-func (n *Node) GetNodeID() string {
-	return n.NodeID
+// GetNodeId returns the node id string
+func (n *Node) GetNodeId() string {
+	return n.NodeId
 }
 
 // GetTopic returns the node attention topic infomation string
