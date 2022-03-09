@@ -79,27 +79,27 @@ func (B *Block) GetSealer() string {
 	return B.Sealer
 }
 
-// GetSealer returns the sealer node list
+// GetSealerList returns the sealer node list
 func (B *Block) GetSealerList() []string {
 	return B.SealerList
 }
 
-// GetSealer returns the block  signature list
+// GetSignatureList returns the block  signature list
 func (B *Block) GetSignatureList() []Signature {
 	return B.SignatureList
 }
 
-// GetSealer returns the block timestamp string
+// GetTimestamp returns the block timestamp string
 func (B *Block) GetTimestamp() string {
 	return B.Timestamp
 }
 
-// GetSealer returns the blcok transcation list
+// GetTransactions returns the blcok transcation list
 func (B *Block) GetTransactions() []interface{} {
 	return B.Transactions
 }
 
-// GetSealer returns the block all transcation root string
+// GetTransactionsRoot returns the block all transcation root string
 func (B *Block) GetTransactionsRoot() string {
 	return B.TransactionsRoot
 }

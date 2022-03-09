@@ -76,9 +76,9 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// get supported FISCO BCOS version
 	var compatibleVersionStr string
-	if(cv.GetSupportedVersion() == ""){
+	if cv.GetSupportedVersion() == "" {
 		return nil, errors.New("JSON response does not contains the key : Supported Version")
-	}else {
+	} else {
 		compatibleVersionStr = cv.GetSupportedVersion()
 	}
 	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
@@ -88,9 +88,9 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
 	var fiscoBcosVersion string
-	if(cv.SupportedVersion == ""){
+	if cv.SupportedVersion == "" {
 		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
-	}else {
+	} else {
 		fiscoBcosVersion = cv.GetFiscoBcosVersion()
 	}
 	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")

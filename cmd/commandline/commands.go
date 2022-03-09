@@ -14,9 +14,11 @@ import (
 )
 
 var info = ", you can type console help for more information"
+
 const (
-	indent           = "  "
+	indent = "  "
 )
+
 // commands
 // var bashCompletionCmd = &cobra.Command{
 // 	Use:   "bashCompletion",
