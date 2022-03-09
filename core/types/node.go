@@ -28,7 +28,7 @@ func (n *Node) GetNodeId() string {
 	return n.NodeId
 }
 
-// GetTopic returns the node attention topic infomation string
+// GetTopic returns the node attention topic information string
 func (n *Node) GetTopic() []string {
 	return n.Topic
 }
