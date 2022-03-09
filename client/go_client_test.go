@@ -170,13 +170,13 @@ func TestObserverList(t *testing.T) {
 }
 
 func TestConsensusStatus(t *testing.T) {
-	//c := GetClient(t)
-	//status, err := c.GetConsensusStatus(context.Background())
-	//if err != nil {
-	//	t.Fatalf("consensus status not found: %v", err)
-	//}
-	//
-	//t.Logf("consensus status:\n%s", status)
+	c := GetClient(t)
+	status, err := c.GetConsensusStatus(context.Background())
+	if err != nil {
+		t.Fatalf("consensus status not found: %v", err)
+	}
+
+	t.Logf("consensus status:\n%s", status)
 }
 
 func TestSyncStatus(t *testing.T) {
