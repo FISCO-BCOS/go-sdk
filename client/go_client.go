@@ -252,6 +252,10 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
+func (c *Client) SubscribeEvent(eventLogParams types.EventLogParams, handler func([]byte, *[]byte)) error {
+	return c.apiHandler.SubscribeEvent(eventLogParams, handler)
+}
+
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }

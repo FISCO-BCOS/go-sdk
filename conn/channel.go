@@ -32,7 +32,7 @@ import (
 	"sync"
 	"time"
 
-	tls "github.com/FISCO-BCOS/crypto/tls"
+	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
@@ -61,6 +61,7 @@ type channelSession struct {
 	receiptResponses    map[string]*channelResponse
 	topicMu             sync.RWMutex
 	topicHandlers       map[string]func([]byte, *[]byte)
+	eventHandlers       map[string]func([]byte, *[]byte)
 	asyncMu             sync.RWMutex
 	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
@@ -129,6 +130,25 @@ type channelResponse struct {
 	Message *channelMessage
 	Err     error
 	Notify  chan interface{}
+}
+
+type eventLogResponse struct {
+	FilterID string     `json:"filterID"`
+	Logs     []eventLog `json:"logs"`
+	Result   int32      `json:"result"`
+}
+
+type eventLog struct {
+	Removed          bool     `json:"removed"`
+	LogIndex         string   `json:"logIndex"`
+	TransactionIndex string   `json:"transactionIndex"`
+	TransactionHash  string   `json:"transactionHash"`
+	BlockHash        string   `json:"blockHash"`
+	BlockNumber      string   `json:"blockNumber"`
+	Address          string   `json:"address"`
+	Data             string   `json:"data"`
+	Type             string   `json:"type"`
+	Topics           []string `json:"topics"`
 }
 
 type requestAuth struct {
@@ -337,6 +357,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
+			eventHandlers:       make(map[string]func([]byte, *[]byte)),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
@@ -416,7 +437,6 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 		return nil, err
 	}
 	msgBytes := rpcMsg.Encode()
-
 	if hc.c == nil {
 		return nil, errors.New("connection unavailable")
 	}
@@ -428,7 +448,6 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	hc.mu.Lock()
 	hc.responses[rpcMsg.uuid] = response
 	hc.mu.Unlock()
-
 	<-response.Notify
 	hc.mu.Lock()
 	response = hc.responses[rpcMsg.uuid]
@@ -638,6 +657,18 @@ func (hc *channelSession) handshakeChannel() error {
 	return nil
 }
 
+func (hc *channelSession) sendSubscribedEvent(eventLogParams types.EventLogParams) error {
+	data, err := json.Marshal(eventLogParams)
+	if err != nil {
+		return errors.New("marshal eventLogParams failed")
+	}
+	msg, err := newTopicMessage("", data, clientRegisterEventLog)
+	if err != nil {
+		return fmt.Errorf("new topic message failed, err: %v", err)
+	}
+	return hc.sendMessageNoResponse(msg)
+}
+
 func (hc *channelSession) sendSubscribedTopics() error {
 	keys := make([]string, 0, len(hc.topicHandlers))
 	for k := range hc.topicHandlers {
@@ -652,6 +683,19 @@ func (hc *channelSession) sendSubscribedTopics() error {
 		return fmt.Errorf("newChannelMessage failed, err: %v", err)
 	}
 	return hc.sendMessageNoResponse(msg)
+}
+
+func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func([]byte, *[]byte)) error {
+	if handler == nil {
+		return errors.New("handler is nil")
+	}
+	if _, ok := hc.eventHandlers[eventLogParams.FilterID]; ok {
+		return errors.New("already subscribed to event " + eventLogParams.FilterID)
+	}
+	hc.topicMu.Lock()
+	hc.eventHandlers[eventLogParams.FilterID] = handler
+	hc.topicMu.Unlock()
+	return hc.sendSubscribedEvent(eventLogParams)
 }
 
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]byte)) error {
@@ -904,6 +948,26 @@ func (hc *channelSession) processAuthTopicMessage(msg *channelMessage) {
 	}
 }
 
+func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
+	var eventLogResponse eventLogResponse
+	err := json.Unmarshal(msg.body, &eventLogResponse)
+	if err != nil {
+		fmt.Printf("unmarshal eventLogResponse failed, err: %v\n", err)
+		return
+	}
+	fmt.Println("process EventLogMessage FilterID:", eventLogResponse.FilterID)
+	//fmt.Println("process EventLogMessage result:",eventLogResponse.Result)
+	//fmt.Println("process EventLogMessage Address:",eventLogResponse.Logs[0].Address)
+	hc.topicMu.RLock()
+	handler, ok := hc.eventHandlers[eventLogResponse.FilterID]
+	hc.topicMu.RUnlock()
+	if ok {
+		go handler(msg.body, nil)
+		// return
+	}
+}
+
+// 接受函数
 func (hc *channelSession) processMessages() {
 	for {
 		select {
@@ -979,7 +1043,7 @@ func (hc *channelSession) processMessages() {
 			hc.mu.Unlock()
 			switch msg.typeN {
 			case rpcMessage, amopResponse, clientHandshake:
-				// fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
+				//fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
 				hc.mu.Lock()
@@ -1021,6 +1085,8 @@ func (hc *channelSession) processMessages() {
 			case amopAuthTopic:
 				go hc.processAuthTopicMessage(msg)
 				// fmt.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
+			case eventLogPush:
+				go hc.processEventLogMessage(msg)
 			default:
 				fmt.Printf("unknown message type:%d, msg:%+v", msg.typeN, msg)
 			}
