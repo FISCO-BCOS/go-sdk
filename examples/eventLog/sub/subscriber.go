@@ -2,18 +2,21 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
+
+	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/conn"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -26,6 +29,9 @@ func main() {
 		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error
+	const (
+		indent = "  "
+	)
 	for i := 0; i < 3; i++ {
 		log.Printf("%d try to connect\n", i)
 		c, err = client.Dial(config)
@@ -59,8 +65,14 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEvent(eventLogParams, func(data []byte, response *[]byte) {
-		log.Printf("received: %s\n", string(data))
+	err = c.SubscribeEvent(eventLogParams, func(status int, logs []conn.EventLog) {
+		logRes, err := json.MarshalIndent(logs, "", indent)
+		if err != nil {
+			fmt.Printf("logs marshalIndent error: %v", err)
+		}
+
+		log.Printf("received: %s\n", logRes)
+		log.Printf("received status: %d\n", status)
 		queryTicker.Stop()
 		queryTicker = time.NewTicker(timeout)
 		done <- true

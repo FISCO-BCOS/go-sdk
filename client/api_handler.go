@@ -209,7 +209,7 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	return r, err
 }
 
-func (api *APIHandler) SubscribeEvent(eventLogParams types.EventLogParams, handler func([]byte, *[]byte)) error {
+func (api *APIHandler) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []conn.EventLog)) error {
 	return api.Connection.SubscribeEvent(eventLogParams, handler)
 }
 

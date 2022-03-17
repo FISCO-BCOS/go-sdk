@@ -61,7 +61,7 @@ type channelSession struct {
 	receiptResponses    map[string]*channelResponse
 	topicMu             sync.RWMutex
 	topicHandlers       map[string]func([]byte, *[]byte)
-	eventHandlers       map[string]func([]byte, *[]byte)
+	eventHandlers       map[string]func(int, []EventLog)
 	asyncMu             sync.RWMutex
 	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
@@ -134,11 +134,11 @@ type channelResponse struct {
 
 type eventLogResponse struct {
 	FilterID string     `json:"filterID"`
-	Logs     []eventLog `json:"logs"`
-	Result   int32      `json:"result"`
+	Logs     []EventLog `json:"logs"`
+	Result   int        `json:"result"`
 }
 
-type eventLog struct {
+type EventLog struct {
 	Removed          bool     `json:"removed"`
 	LogIndex         string   `json:"logIndex"`
 	TransactionIndex string   `json:"transactionIndex"`
@@ -357,7 +357,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
-			eventHandlers:       make(map[string]func([]byte, *[]byte)),
+			eventHandlers:       make(map[string]func(int, []EventLog)),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
@@ -685,7 +685,7 @@ func (hc *channelSession) sendSubscribedTopics() error {
 	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func([]byte, *[]byte)) error {
+func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []EventLog)) error {
 	if handler == nil {
 		return errors.New("handler is nil")
 	}
@@ -962,7 +962,7 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 	handler, ok := hc.eventHandlers[eventLogResponse.FilterID]
 	hc.topicMu.RUnlock()
 	if ok {
-		go handler(msg.body, nil)
+		go handler(eventLogResponse.Result, eventLogResponse.Logs)
 		// return
 	}
 }
