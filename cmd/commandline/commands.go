@@ -2,6 +2,7 @@ package commandline
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,10 @@ import (
 )
 
 var info = ", you can type console help for more information"
+
+const (
+	indent = "  "
+)
 
 // commands
 // var bashCompletionCmd = &cobra.Command{
@@ -67,7 +72,11 @@ var newAccountCmd = &cobra.Command{
 			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Client Version: \n%s\n", clientVer)
+		cv, err := json.MarshalIndent(clientVer, "", indent)
+		if err != nil {
+			fmt.Printf("client version marshalIndent error: %v", err)
+		}
+		fmt.Printf("Client Version: \n%s\n", cv)
 	},
 }
 
@@ -84,7 +93,11 @@ var getClientVersionCmd = &cobra.Command{
 			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Client Version: \n%s\n", clientVer)
+		cv, err := json.MarshalIndent(clientVer, "", indent)
+		if err != nil {
+			fmt.Printf("client version marshalIndent error: %v", err)
+		}
+		fmt.Printf("Client Version: \n%s\n", cv)
 	},
 }
 
@@ -167,12 +180,12 @@ var getConsensusStatusCmd = &cobra.Command{
 	Long:  `Returns consensus status information within the specified group.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		consensusStatus, err := RPC.GetConsensusStatus(context.Background())
+		raw, err := RPC.GetConsensusStatus(context.Background())
 		if err != nil {
 			fmt.Printf("consensus status not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Consensus Status: \n%s\n", consensusStatus)
+		fmt.Printf("Consensus Status: \n%s\n", raw)
 	},
 }
 
@@ -187,7 +200,11 @@ var getSyncStatusCmd = &cobra.Command{
 			fmt.Printf("synchronization status not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Synchronization Status: \n%s\n", syncStatus)
+		raw, err := json.MarshalIndent(syncStatus, "", indent)
+		if err != nil {
+			fmt.Printf("synchronization status marshalIndent error: %v", err)
+		}
+		fmt.Printf("Synchronization Status: \n%s\n", raw)
 	},
 }
 
@@ -197,10 +214,14 @@ var getPeersCmd = &cobra.Command{
 	Long:  `Returns the information of connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		peers, err := RPC.GetPeers(context.Background())
+		nodes, err := RPC.GetPeers(context.Background())
 		if err != nil {
 			fmt.Printf("peers not found: %v\n", err)
 			return
+		}
+		peers, err := json.MarshalIndent(nodes, "", indent)
+		if err != nil {
+			fmt.Printf("peers marshalIndent error: %v", err)
 		}
 		fmt.Printf("Peers: \n%s\n", peers)
 	},
@@ -290,11 +311,12 @@ For more information please refer:
 		}
 
 		blockHash := common.BytesToHash([]byte(args[0]))
-		peers, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
+		block, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
+		peers, err := json.MarshalIndent(block, "", indent)
 		fmt.Printf("Block: \n%s\n", peers)
 	},
 }
@@ -345,7 +367,8 @@ For more information please refer:
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Block: \n%s\n", block)
+		js, err := json.MarshalIndent(block, "", indent)
+		fmt.Printf("Block: \n%s\n", js)
 	},
 }
 
@@ -411,9 +434,14 @@ For more information please refer:
 		}
 
 		txHash := common.BytesToHash([]byte(args[0]))
-		tx, err := RPC.GetTransactionByHash(context.Background(), txHash)
+		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
+			return
+		}
+		tx, err := json.MarshalIndent(transaction, "", indent)
+		if err != nil {
+			fmt.Printf("transaction marshalIndent error: %v\n", err)
 			return
 		}
 		fmt.Printf("Transaction: \n%s\n", tx)
@@ -449,9 +477,14 @@ For more information please refer:
 			return
 		}
 		blockHash := common.BytesToHash([]byte(args[0]))
-		tx, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
+		transaction, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
+			return
+		}
+		tx, err := json.MarshalIndent(transaction, "", indent)
+		if err != nil {
+			fmt.Printf("transaction marshalIndent error: %v\n", err)
 			return
 		}
 		fmt.Printf("Transaction: \n%s\n", tx)
@@ -497,7 +530,11 @@ For more information please refer:
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Transaction: \n%s\n", tx)
+		raw, err := json.MarshalIndent(tx, "", indent)
+		if err != nil {
+			fmt.Printf("transaction marshalIndent error: %v", err)
+		}
+		fmt.Printf("Transaction: \n%s\n", raw)
 	},
 }
 
@@ -614,7 +651,11 @@ var getTotalTransactionCountCmd = &cobra.Command{
 			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Latest Statistics on Transaction and Block Height: \n%s\n", counts)
+		raw, err := json.MarshalIndent(counts, "", indent)
+		if err != nil {
+			fmt.Printf("totalTransactionCount MarshalIndent error: %v", err)
+		}
+		fmt.Printf("Latest Statistics on Transaction and Block Height: \n%s\n", raw)
 	},
 }
 
@@ -715,7 +756,6 @@ func init() {
 	// add node command
 	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
-	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
 	// add transaction command
