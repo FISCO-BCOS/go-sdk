@@ -17,7 +17,6 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -69,26 +68,18 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 		return nil, err
 	}
 	apiHandler := NewAPIHandler(c)
-	var response []byte
-	response, err = apiHandler.GetClientVersion(ctx)
+
+	cv, err := apiHandler.GetClientVersion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
-	}
-	var raw interface{}
-	err = json.Unmarshal(response, &raw)
-	if err != nil {
-		return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
-	}
-	m, ok := raw.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("parse response json to map error")
 	}
 
 	// get supported FISCO BCOS version
 	var compatibleVersionStr string
-	compatibleVersionStr, ok = m["Supported Version"].(string)
-	if !ok {
+	if cv.GetSupportedVersion() == "" {
 		return nil, errors.New("JSON response does not contains the key : Supported Version")
+	} else {
+		compatibleVersionStr = cv.GetSupportedVersion()
 	}
 	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
 	if err != nil {
@@ -97,9 +88,10 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
 	var fiscoBcosVersion string
-	fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
-	if !ok {
+	if cv.SupportedVersion == "" {
 		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
+	} else {
+		fiscoBcosVersion = cv.GetFiscoBcosVersion()
 	}
 	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
 	if nodeIsSupportedSM != config.IsSMCrypto {
@@ -108,7 +100,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// get node chain ID
 	var nodeChainID int64
-	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
+	nodeChainID, err = strconv.ParseInt(cv.GetChainId(), 10, 64)
 	if err != nil {
 		return nil, errors.New("JSON response does not contains the key : Chain Id")
 	}
@@ -316,7 +308,7 @@ func (c *Client) GetCompatibleVersion() int {
 }
 
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
-func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
+func (c *Client) GetClientVersion(ctx context.Context) (*types.ClientVersion, error) {
 	return c.apiHandler.GetClientVersion(ctx)
 }
 
@@ -361,12 +353,12 @@ func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
 }
 
 // GetSyncStatus returns the synchronization status of the group
-func (c *Client) GetSyncStatus(ctx context.Context) ([]byte, error) {
+func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
 	return c.apiHandler.GetSyncStatus(ctx, c.groupID)
 }
 
 // GetPeers returns the information of the connected peers
-func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
+func (c *Client) GetPeers(ctx context.Context) (*[]types.Node, error) {
 	return c.apiHandler.GetPeers(ctx, c.groupID)
 }
 
@@ -386,12 +378,12 @@ func (c *Client) GetGroupList(ctx context.Context) ([]byte, error) {
 }
 
 // GetBlockByHash returns the block information according to the given block hash
-func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) ([]byte, error) {
+func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) (*types.Block, error) {
 	return c.apiHandler.GetBlockByHash(ctx, c.groupID, blockHash, includeTx)
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
-func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) ([]byte, error) {
+func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) (*types.Block, error) {
 	return c.apiHandler.GetBlockByNumber(ctx, c.groupID, blockNumber, includeTx)
 }
 
@@ -401,19 +393,19 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
-func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) ([]byte, error) {
+func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txHash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
-func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) ([]byte, error) {
+func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, blockHash, txIndex)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
-func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) ([]byte, error) {
+func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, blockNumber, txIndex)
 }
 
@@ -428,7 +420,7 @@ func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (co
 }
 
 // GetPendingTransactions returns information of the pending transactions
-func (c *Client) GetPendingTransactions(ctx context.Context) ([]byte, error) {
+func (c *Client) GetPendingTransactions(ctx context.Context) (*[]types.TransactionPending, error) {
 	return c.apiHandler.GetPendingTransactions(ctx, c.groupID)
 }
 
@@ -443,7 +435,7 @@ func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, e
 }
 
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
-func (c *Client) GetTotalTransactionCount(ctx context.Context) ([]byte, error) {
+func (c *Client) GetTotalTransactionCount(ctx context.Context) (*types.TransactionCount, error) {
 	return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
 }
 
