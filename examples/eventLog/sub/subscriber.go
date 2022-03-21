@@ -12,7 +12,6 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -65,7 +64,7 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEvent(eventLogParams, func(status int, logs []conn.EventLog) {
+	err = c.SubscribeEvent(eventLogParams, func(status int, logs []types.EventLog) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)

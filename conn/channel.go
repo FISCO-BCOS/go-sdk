@@ -61,7 +61,7 @@ type channelSession struct {
 	receiptResponses    map[string]*channelResponse
 	topicMu             sync.RWMutex
 	topicHandlers       map[string]func([]byte, *[]byte)
-	eventHandlers       map[string]func(int, []EventLog)
+	eventHandlers       map[string]func(int, []types.EventLog)
 	asyncMu             sync.RWMutex
 	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
@@ -133,22 +133,9 @@ type channelResponse struct {
 }
 
 type eventLogResponse struct {
-	FilterID string     `json:"filterID"`
-	Logs     []EventLog `json:"logs"`
-	Result   int        `json:"result"`
-}
-
-type EventLog struct {
-	Removed          bool     `json:"removed"`
-	LogIndex         string   `json:"logIndex"`
-	TransactionIndex string   `json:"transactionIndex"`
-	TransactionHash  string   `json:"transactionHash"`
-	BlockHash        string   `json:"blockHash"`
-	BlockNumber      string   `json:"blockNumber"`
-	Address          string   `json:"address"`
-	Data             string   `json:"data"`
-	Type             string   `json:"type"`
-	Topics           []string `json:"topics"`
+	FilterID string           `json:"filterID"`
+	Logs     []types.EventLog `json:"logs"`
+	Result   int              `json:"result"`
 }
 
 type requestAuth struct {
@@ -357,7 +344,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
-			eventHandlers:       make(map[string]func(int, []EventLog)),
+			eventHandlers:       make(map[string]func(int, []types.EventLog)),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
@@ -666,7 +653,18 @@ func (hc *channelSession) sendSubscribedEvent(eventLogParams types.EventLogParam
 	if err != nil {
 		return fmt.Errorf("new topic message failed, err: %v", err)
 	}
-	return hc.sendMessageNoResponse(msg)
+	response, err := hc.sendMessage(msg)
+	if err != nil {
+		return err
+	}
+	result := &struct {
+		Result int `json:"result"`
+	}{}
+	json.Unmarshal(response.body, result)
+	if result.Result != 0 {
+		return fmt.Errorf("send subscribed event failed, result: %v", result.Result)
+	}
+	return nil
 }
 
 func (hc *channelSession) sendSubscribedTopics() error {
@@ -685,17 +683,20 @@ func (hc *channelSession) sendSubscribedTopics() error {
 	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []EventLog)) error {
+func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.EventLog)) error {
 	if handler == nil {
 		return errors.New("handler is nil")
 	}
 	if _, ok := hc.eventHandlers[eventLogParams.FilterID]; ok {
 		return errors.New("already subscribed to event " + eventLogParams.FilterID)
 	}
+	if err := hc.sendSubscribedEvent(eventLogParams); err != nil {
+		return err
+	}
 	hc.topicMu.Lock()
 	hc.eventHandlers[eventLogParams.FilterID] = handler
 	hc.topicMu.Unlock()
-	return hc.sendSubscribedEvent(eventLogParams)
+	return nil
 }
 
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]byte)) error {
@@ -955,7 +956,7 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 		fmt.Printf("unmarshal eventLogResponse failed, err: %v\n", err)
 		return
 	}
-	fmt.Println("process EventLogMessage FilterID:", eventLogResponse.FilterID)
+	// fmt.Println("process EventLogMessage FilterID:", eventLogResponse.FilterID)
 	//fmt.Println("process EventLogMessage result:",eventLogResponse.Result)
 	//fmt.Println("process EventLogMessage Address:",eventLogResponse.Logs[0].Address)
 	hc.topicMu.RLock()
@@ -1042,7 +1043,7 @@ func (hc *channelSession) processMessages() {
 			}
 			hc.mu.Unlock()
 			switch msg.typeN {
-			case rpcMessage, amopResponse, clientHandshake:
+			case rpcMessage, amopResponse, clientHandshake, clientRegisterEventLog:
 				//fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
 				// fmt.Printf("transaction notify:%s", string(msg.body))
