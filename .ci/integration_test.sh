@@ -243,13 +243,13 @@ integration_amop() {
     LOG_INFO "amop unicast testing..."
     execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
     execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
-    ./unicast_publisher 127.0.0.1:20200 hello &
-    ./subscriber 127.0.0.1:20201 hello
+    ./subscriber 127.0.0.1:20201 hello &
+    ./unicast_publisher 127.0.0.1:20200 hello
 
     LOG_INFO "amop broadcast testing..."
     execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
-    ./broadcast_publisher 127.0.0.1:20200 hello1 &
-    ./subscriber 127.0.0.1:20201 hello1
+    ./subscriber 127.0.0.1:20201 hello1 &
+    ./broadcast_publisher 127.0.0.1:20200 hello1
 }
 
 parse_params()

@@ -244,7 +244,7 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
-func (c *Client) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []conn.EventLog)) error {
+func (c *Client) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.EventLog)) error {
 	return c.apiHandler.SubscribeEvent(eventLogParams, handler)
 }
 
