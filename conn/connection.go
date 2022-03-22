@@ -329,7 +329,7 @@ func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*typ
 	return nil
 }
 
-func (c *Connection) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.EventLog)) error {
+func (c *Connection) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
 	hc := c.writeConn.(*channelSession)
 	return hc.subscribeEvent(eventLogParams, handler)
 }
