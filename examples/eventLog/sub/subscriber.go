@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -15,7 +14,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -44,12 +42,6 @@ func main() {
 		log.Fatalf("init subscriber failed, err: %v\n", err)
 	}
 	var eventLogParams types.EventLogParams
-	id, err := uuid.NewUUID()
-	if err != nil {
-		log.Fatalf("newChannelMessage error: %v", err)
-	}
-	fmt.Println(id.String())
-	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
 	eventLogParams.FromBlock = "1"
 	eventLogParams.ToBlock = "latest"
 	eventLogParams.GroupID = "1"
@@ -64,7 +56,7 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEvent(eventLogParams, func(status int, logs []types.Log) {
+	err = c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)

@@ -38,7 +38,8 @@ check_env(){
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
         macOS="macOS"
     fi
-    go get -u github.com/sqs/goreturns
+    go install golang.org/x/tools/cmd/goimports@latest || true
+    go get golang.org/x/tools/cmd/goimports || true
 }
 
 compile_and_ut()
@@ -87,6 +88,22 @@ cat << EOF >> "${output}"
 		fmt.Printf("hello.Get() failed: %v", err)
 		return
 	}
+    done := make(chan bool)
+	err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+		fmt.Printf("receive statud: %d, logs: %v\n", ret, logs)
+        setValue, err := hello.ParseSetValue(logs[0])
+		if err != nil {
+			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+			panic("hello.WatchAllSetValue() failed")
+		}
+		fmt.Printf("receive setValue: %+v\n", *setValue)
+		fmt.Printf("to: %+v\n", setValue.From.Hex())
+		done <- true
+	})
+	if err != nil {
+		fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+		return
+	}
 	fmt.Printf("Get: %s\n", ret)
 	_, _, err = hello.Set("fisco")
 	if err != nil {
@@ -99,9 +116,23 @@ cat << EOF >> "${output}"
 		return
 	}
 	fmt.Printf("Get: %s\n", ret)
+    <-done
+    from := common.HexToAddress("0x83309d045a19c44Dc3722D15A6AbD472f95866aC")
+	hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
+		fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
+		setValue, err := hello.ParseSetValue(logs[0])
+		if err != nil {
+			fmt.Printf("hello.WatchSetValue() failed: %v", err)
+			panic("hello.WatchSetValue() failed")
+		}
+		fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
+		fmt.Printf("WatchSetValue to: %+v\n", setValue.From.Hex())
+		done <- true
+	}, from, from)
+	<-done
 }
 EOF
-    "${GOPATH_BIN}"/goreturns -w  "${output}"
+    "${GOPATH_BIN}"/goimports -w  "${output}"
 }
 
 generate_counter() {
@@ -158,7 +189,7 @@ cat << EOF >> "${output}"
 }
 
 EOF
-    "${GOPATH_BIN}"/goreturns -w  "${output}"
+    "${GOPATH_BIN}"/goimports -w  "${output}"
 }
 
 get_build_chain()
@@ -178,10 +209,10 @@ precompiled_test(){
 integration_std()
 {
     LOG_INFO "integration_std testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.4.25"
+    execute_cmd "bash tools/download_solc.sh -v 0.6.10"
 
     # abigen std
-    execute_cmd "./solc-0.4.25 --bin --abi -o .ci/hello .ci/hello/HelloWorld.sol"
+    execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
     execute_cmd "go build -o hello hello.go"
@@ -193,11 +224,11 @@ integration_std()
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
     ./hello > hello.out
     if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
-    if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call hello failed." && exit 1;fi
+    if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call hello failed." && cat hello.out && exit 1;fi
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
     precompiled_test
     go test -v ./client
-    execute_cmd "./solc-0.4.25 --bin --abi -o .ci/counter .ci/counter/Counter.sol"
+    execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
     execute_cmd "go build -o counter counter.go"
@@ -214,10 +245,10 @@ integration_std()
 integration_gm()
 {
     LOG_INFO "integration_gm testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.4.25 -g"
+    execute_cmd "bash tools/download_solc.sh -v 0.6.10 -g"
 
     # abigen gm
-    execute_cmd "./solc-0.4.25-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
+    execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
     execute_cmd "go build -o hello_gm hello_gm.go"

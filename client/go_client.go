@@ -164,26 +164,6 @@ func toBlockNumArg(number *big.Int) string {
 	return hexutil.EncodeBig(number)
 }
 
-// FilterLogs executes a filter query.
-func (c *Client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
-	var result []types.Log
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	err = c.apiHandler.CallContext(ctx, &result, "eth_getLogs", arg)
-	return result, err
-}
-
-// SubscribeFilterLogs subscribes to the results of a streaming filter query.
-func (c *Client) SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	return c.apiHandler.EthSubscribe(ctx, ch, "logs", arg)
-}
-
 func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 	arg := map[string]interface{}{
 		"address": q.Addresses,
@@ -244,8 +224,8 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
-func (c *Client) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
-	return c.apiHandler.SubscribeEvent(eventLogParams, handler)
+func (c *Client) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+	return c.apiHandler.SubscribeEventLogs(eventLogParams, handler)
 }
 
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {

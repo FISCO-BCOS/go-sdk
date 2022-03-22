@@ -699,6 +699,11 @@ func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, ha
 	if handler == nil {
 		return errors.New("handler is nil")
 	}
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return errors.New("new UUID failed")
+	}
+	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
 	if _, ok := hc.eventHandlers[eventLogParams.FilterID]; ok {
 		return errors.New("already subscribed to event " + eventLogParams.FilterID)
 	}
