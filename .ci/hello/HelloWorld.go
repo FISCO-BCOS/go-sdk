@@ -10,7 +10,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,14 +23,13 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 // HelloWorldABI is the input ABI used to generate the binding from.
-const HelloWorldABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"setValue\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"v\",\"type\":\"string\"}],\"name\":\"set\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const HelloWorldABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"v\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"setValue\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"v\",\"type\":\"string\"}],\"name\":\"set\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // HelloWorldBin is the compiled bytecode used for deploying new contracts.
-var HelloWorldBin = "0x60c060405260016080819052603160f81b60a0908152610020919081610068565b5034801561002d57600080fd5b5060408051808201909152600d8082526c48656c6c6f2c20576f726c642160981b602090920191825261006291600091610068565b50610103565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106100a957805160ff19168380011785556100d6565b828001600101855582156100d6579182015b828111156100d65782518255916020019190600101906100bb565b506100e29291506100e6565b5090565b61010091905b808211156100e257600081556001016100ec565b90565b6103bd806101126000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c80634ed3885e1461004657806354fd4d50146100b85780636d4ce63c14610135575b600080fd5b6100b66004803603602081101561005c57600080fd5b81019060208101813564010000000081111561007757600080fd5b82018360208201111561008957600080fd5b803590602001918460018302840111640100000000831117156100ab57600080fd5b50909250905061013d565b005b6100c06101cb565b6040805160208082528351818301528351919283929083019185019080838360005b838110156100fa5781810151838201526020016100e2565b50505050905090810190601f1680156101275780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6100c0610258565b610149600083836102ef565b50336001600160a01b0316326001600160a01b03167f1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d538484600160405180806020018381526020018281038252858582818152602001925080828437600083820152604051601f909101601f1916909201829003965090945050505050a35050565b60018054604080516020600284861615610100026000190190941693909304601f810184900484028201840190925281815292918301828280156102505780601f1061022557610100808354040283529160200191610250565b820191906000526020600020905b81548152906001019060200180831161023357829003601f168201915b505050505081565b60008054604080516020601f60026000196101006001881615020190951694909404938401819004810282018101909252828152606093909290918301828280156102e45780601f106102b9576101008083540402835291602001916102e4565b820191906000526020600020905b8154815290600101906020018083116102c757829003601f168201915b505050505090505b90565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106103305782800160ff1982351617855561035d565b8280016001018555821561035d579182015b8281111561035d578235825591602001919060010190610342565b5061036992915061036d565b5090565b6102ec91905b80821115610369576000815560010161037356fea26469706673582212202e665fe3d4604e849a7f46eb1f99e72344c78c8b3a6a2aca1e2edd2d5faaf4c964736f6c634300060a0033"
+var HelloWorldBin = "0x60c060405260016080819052603160f81b60a0908152610020919081610068565b5034801561002d57600080fd5b5060408051808201909152600d8082526c48656c6c6f2c20576f726c642160981b602090920191825261006291600091610068565b50610103565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106100a957805160ff19168380011785556100d6565b828001600101855582156100d6579182015b828111156100d65782518255916020019190600101906100bb565b506100e29291506100e6565b5090565b61010091905b808211156100e257600081556001016100ec565b90565b6103bd806101126000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c80634ed3885e1461004657806354fd4d50146100b85780636d4ce63c14610135575b600080fd5b6100b66004803603602081101561005c57600080fd5b81019060208101813564010000000081111561007757600080fd5b82018360208201111561008957600080fd5b803590602001918460018302840111640100000000831117156100ab57600080fd5b50909250905061013d565b005b6100c06101cb565b6040805160208082528351818301528351919283929083019185019080838360005b838110156100fa5781810151838201526020016100e2565b50505050905090810190601f1680156101275780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6100c0610258565b610149600083836102ef565b50336001600160a01b0316326001600160a01b03167f1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d538484600160405180806020018381526020018281038252858582818152602001925080828437600083820152604051601f909101601f1916909201829003965090945050505050a35050565b60018054604080516020600284861615610100026000190190941693909304601f810184900484028201840190925281815292918301828280156102505780601f1061022557610100808354040283529160200191610250565b820191906000526020600020905b81548152906001019060200180831161023357829003601f168201915b505050505081565b60008054604080516020601f60026000196101006001881615020190951694909404938401819004810282018101909252828152606093909290918301828280156102e45780601f106102b9576101008083540402835291602001916102e4565b820191906000526020600020905b8154815290600101906020018083116102c757829003601f168201915b505050505090505b90565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106103305782800160ff1982351617855561035d565b8280016001018555821561035d579182015b8281111561035d578235825591602001919060010190610342565b5061036992915061036d565b5090565b6102ec91905b80821115610369576000815560010161037356fea26469706673582212204a80e82479e39c85b30da9acea9566e1ab9da8ef6873f4502fe3d33297f3398564736f6c634300060a0033"
 
 // DeployHelloWorld deploys a new contract, binding an instance of HelloWorld to it.
 func DeployHelloWorld(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *HelloWorld, error) {
@@ -289,7 +287,7 @@ func (_HelloWorld *HelloWorldTransactorSession) AsyncSet(handler func(*types.Rec
 
 // HelloWorldSetValue represents a SetValue event raised by the HelloWorld contract.
 type HelloWorldSetValue struct {
-	Arg0  string
+	V     string
 	From  common.Address
 	To    common.Address
 	Value *big.Int
@@ -298,18 +296,40 @@ type HelloWorldSetValue struct {
 
 // WatchSetValue is a free log subscription operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
 //
-// Solidity: event setValue(string , address indexed from, address indexed to, uint256 value)
-func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), SetValue, from common.Address, to common.Address) error {
+// Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
+func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) error {
 	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue", from, to)
+}
+
+func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) error {
+	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue")
 }
 
 // ParseSetValue is a log parse operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
 //
-// Solidity: event setValue(string , address indexed from, address indexed to, uint256 value)
+// Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
 func (_HelloWorld *HelloWorldFilterer) ParseSetValue(log types.Log) (*HelloWorldSetValue, error) {
 	event := new(HelloWorldSetValue)
 	if err := _HelloWorld.contract.UnpackLog(event, "setValue", log); err != nil {
 		return nil, err
 	}
 	return event, nil
+}
+
+// WatchSetValue is a free log subscription operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
+//
+// Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
+func (_HelloWorld *HelloWorldSession) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) error {
+	return _HelloWorld.Contract.WatchSetValue(fromBlock, handler, from, to)
+}
+
+func (_HelloWorld *HelloWorldSession) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) error {
+	return _HelloWorld.Contract.WatchAllSetValue(fromBlock, handler)
+}
+
+// ParseSetValue is a log parse operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
+//
+// Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
+func (_HelloWorld *HelloWorldSession) ParseSetValue(log types.Log) (*HelloWorldSetValue, error) {
+	return _HelloWorld.Contract.ParseSetValue(log)
 }

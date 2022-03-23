@@ -90,14 +90,13 @@ cat << EOF >> "${output}"
 	}
     done := make(chan bool)
 	err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
-		fmt.Printf("receive statud: %d, logs: %v\n", ret, logs)
+		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := hello.ParseSetValue(logs[0])
 		if err != nil {
 			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-			panic("hello.WatchAllSetValue() failed")
+			panic("WatchAllSetValue hello.WatchAllSetValue() failed")
 		}
 		fmt.Printf("receive setValue: %+v\n", *setValue)
-		fmt.Printf("to: %+v\n", setValue.From.Hex())
 		done <- true
 	})
 	if err != nil {
@@ -126,7 +125,6 @@ cat << EOF >> "${output}"
 			panic("hello.WatchSetValue() failed")
 		}
 		fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
-		fmt.Printf("WatchSetValue to: %+v\n", setValue.From.Hex())
 		done <- true
 	}, from, from)
 	<-done

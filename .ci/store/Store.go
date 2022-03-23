@@ -10,7 +10,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,7 +23,6 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 // StoreABI is the input ABI used to generate the binding from.
@@ -285,138 +283,4 @@ func (_Store *StoreTransactorSession) SetItem(key [32]byte, value [32]byte) (*ty
 
 func (_Store *StoreTransactorSession) AsyncSetItem(handler func(*types.Receipt, error), key [32]byte, value [32]byte) (*types.Transaction, error) {
 	return _Store.Contract.AsyncSetItem(handler, &_Store.TransactOpts, key, value)
-}
-
-// StoreItemSetIterator is returned from FilterItemSet and is used to iterate over the raw logs and unpacked data for ItemSet events raised by the Store contract.
-type StoreItemSetIterator struct {
-	Event *StoreItemSet // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *StoreItemSetIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(StoreItemSet)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(StoreItemSet)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *StoreItemSetIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *StoreItemSetIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// StoreItemSet represents a ItemSet event raised by the Store contract.
-type StoreItemSet struct {
-	Key   [32]byte
-	Value [32]byte
-	Raw   types.Log // Blockchain specific contextual infos
-}
-
-// FilterItemSet is a free log retrieval operation binding the contract event 0xe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4.
-//
-// Solidity: event ItemSet(bytes32 key, bytes32 value)
-func (_Store *StoreFilterer) FilterItemSet(opts *bind.FilterOpts) (*StoreItemSetIterator, error) {
-
-	logs, sub, err := _Store.contract.FilterLogs(opts, "ItemSet")
-	if err != nil {
-		return nil, err
-	}
-	return &StoreItemSetIterator{contract: _Store.contract, event: "ItemSet", logs: logs, sub: sub}, nil
-}
-
-// WatchItemSet is a free log subscription operation binding the contract event 0xe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4.
-//
-// Solidity: event ItemSet(bytes32 key, bytes32 value)
-func (_Store *StoreFilterer) WatchItemSet(opts *bind.WatchOpts, sink chan<- *StoreItemSet) (event.Subscription, error) {
-
-	logs, sub, err := _Store.contract.WatchLogs(opts, "ItemSet")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(StoreItemSet)
-				if err := _Store.contract.UnpackLog(event, "ItemSet", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseItemSet is a log parse operation binding the contract event 0xe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4.
-//
-// Solidity: event ItemSet(bytes32 key, bytes32 value)
-func (_Store *StoreFilterer) ParseItemSet(log types.Log) (*StoreItemSet, error) {
-	event := new(StoreItemSet)
-	if err := _Store.contract.UnpackLog(event, "ItemSet", log); err != nil {
-		return nil, err
-	}
-	return event, nil
 }
