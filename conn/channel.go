@@ -34,6 +34,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/sha3"
@@ -61,7 +62,7 @@ type channelSession struct {
 	receiptResponses    map[string]*channelResponse
 	topicMu             sync.RWMutex
 	topicHandlers       map[string]func([]byte, *[]byte)
-	eventHandlers       map[string]func(int, []types.EventLog)
+	eventHandlers       map[string]func(int, []types.Log)
 	asyncMu             sync.RWMutex
 	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
@@ -132,10 +133,21 @@ type channelResponse struct {
 	Notify  chan interface{}
 }
 
+type EventLog struct {
+	LogIndex         string   `json:"logIndex"`
+	TransactionIndex string   `json:"transactionIndex"`
+	TransactionHash  string   `json:"transactionHash"`
+	BlockHash        string   `json:"blockHash"`
+	BlockNumber      string   `json:"blockNumber"`
+	Address          string   `json:"address"`
+	Data             string   `json:"data"`
+	Topics           []string `json:"topics"`
+}
+
 type eventLogResponse struct {
-	FilterID string           `json:"filterID"`
-	Logs     []types.EventLog `json:"logs"`
-	Result   int              `json:"result"`
+	FilterID string     `json:"filterID"`
+	Logs     []EventLog `json:"logs"`
+	Result   int        `json:"result"`
 }
 
 type requestAuth struct {
@@ -344,7 +356,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
-			eventHandlers:       make(map[string]func(int, []types.EventLog)),
+			eventHandlers:       make(map[string]func(int, []types.Log)),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
@@ -683,10 +695,15 @@ func (hc *channelSession) sendSubscribedTopics() error {
 	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.EventLog)) error {
+func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
 	if handler == nil {
 		return errors.New("handler is nil")
 	}
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return errors.New("new UUID failed")
+	}
+	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
 	if _, ok := hc.eventHandlers[eventLogParams.FilterID]; ok {
 		return errors.New("already subscribed to event " + eventLogParams.FilterID)
 	}
@@ -949,6 +966,11 @@ func (hc *channelSession) processAuthTopicMessage(msg *channelMessage) {
 	}
 }
 
+func hexToUint64(s string) (uint64, error) {
+	cleaned := strings.Replace(s, "0x", "", -1)
+	return strconv.ParseUint(cleaned, 16, 64)
+}
+
 func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 	var eventLogResponse eventLogResponse
 	err := json.Unmarshal(msg.body, &eventLogResponse)
@@ -956,19 +978,46 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 		fmt.Printf("unmarshal eventLogResponse failed, err: %v\n", err)
 		return
 	}
-	// fmt.Println("process EventLogMessage FilterID:", eventLogResponse.FilterID)
-	//fmt.Println("process EventLogMessage result:",eventLogResponse.Result)
-	//fmt.Println("process EventLogMessage Address:",eventLogResponse.Logs[0].Address)
+	logs := []types.Log{}
+	for _, log := range eventLogResponse.Logs {
+		number, _ := strconv.Atoi(log.BlockNumber)
+		logIndex, err := hexToUint64(log.LogIndex)
+		if err != nil {
+			fmt.Printf("unmarshal logIndex failed, err: %v\n", err)
+			return
+		}
+		txIndex, err := hexToUint64(log.TransactionIndex)
+		if err != nil {
+			fmt.Printf("unmarshal TransactionIndex failed, err: %v\n", err)
+			return
+		}
+		topics := []common.Hash{}
+		for _, topic := range log.Topics {
+			topics = append(topics, common.HexToHash(topic))
+		}
+		data := common.FromHex(log.Data)
+		logs = append(logs, types.Log{
+			Address:     common.HexToAddress(log.Address),
+			Topics:      topics,
+			Data:        data,
+			BlockNumber: uint64(number),
+			TxHash:      common.HexToHash(log.TransactionHash),
+			TxIndex:     uint(txIndex),
+			BlockHash:   common.HexToHash(log.BlockHash),
+			Index:       uint(logIndex),
+			Removed:     false,
+		})
+	}
+
 	hc.topicMu.RLock()
 	handler, ok := hc.eventHandlers[eventLogResponse.FilterID]
 	hc.topicMu.RUnlock()
 	if ok {
-		go handler(eventLogResponse.Result, eventLogResponse.Logs)
-		// return
+		go handler(eventLogResponse.Result, logs)
 	}
 }
 
-// 接受函数
+// processMessages process incoming messages from the node
 func (hc *channelSession) processMessages() {
 	for {
 		select {

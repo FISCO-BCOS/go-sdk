@@ -2,7 +2,7 @@ pragma solidity>=0.4.24 <0.6.11;
 
 contract HelloWorld {
     string value;
-    event setValue(string);
+    event setValue(string v, address indexed from, address indexed to, uint256 value);
     string public version = "1";
 
     constructor() public {
@@ -13,8 +13,8 @@ contract HelloWorld {
         return value;
     }
 
-    function set(string v) public {
+    function set(string calldata v) public {
         value = v;
-        emit setValue(v);
+        emit setValue(v, tx.origin, msg.sender, 1);
     }
 }

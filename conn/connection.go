@@ -24,7 +24,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -293,8 +292,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		err = c.sendHTTP(ctx, op, msg)
 	} else {
 		err = c.sendRPCRequest(ctx, op, msg)
-		// FIXME: remove substration releated code
-		// err = c.send(ctx, op, msg)
 	}
 	if err != nil {
 		return err
@@ -329,7 +326,7 @@ func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*typ
 	return nil
 }
 
-func (c *Connection) SubscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.EventLog)) error {
+func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
 	hc := c.writeConn.(*channelSession)
 	return hc.subscribeEvent(eventLogParams, handler)
 }
@@ -475,62 +472,6 @@ func (c *Connection) Notify(ctx context.Context, method string, args ...interfac
 		return c.sendHTTP(ctx, op, msg)
 	}
 	return c.send(ctx, op, msg)
-}
-
-// EthSubscribe registers a subscripion under the "eth" namespace.
-func (c *Connection) EthSubscribe(ctx context.Context, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	return c.Subscribe(ctx, "eth", channel, args...)
-}
-
-// ShhSubscribe registers a subscripion under the "shh" namespace.
-func (c *Connection) ShhSubscribe(ctx context.Context, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	return c.Subscribe(ctx, "shh", channel, args...)
-}
-
-// Subscribe calls the "<namespace>_subscribe" method with the given arguments,
-// registering a subscription. Server notifications for the subscription are
-// sent to the given channel. The element type of the channel must match the
-// expected type of content returned by the subscription.
-//
-// The context argument cancels the RPC request that sets up the subscription but has no
-// effect on the subscription after Subscribe has returned.
-//
-// Slow subscribers will be dropped eventually. Connection buffers up to 20000 notifications
-// before considering the subscriber dead. The subscription Err channel will receive
-// ErrSubscriptionQueueOverflow. Use a sufficiently large buffer on the channel or ensure
-// that the channel usually has at least one reader to prevent this issue.
-func (c *Connection) Subscribe(ctx context.Context, namespace string, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	// Check type of channel first.
-	chanVal := reflect.ValueOf(channel)
-	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
-		panic("first argument to Subscribe must be a writable channel")
-	}
-	if chanVal.IsNil() {
-		panic("channel given to Subscribe must not be nil")
-	}
-	if c.isHTTP {
-		return nil, ErrNotificationsUnsupported
-	}
-
-	msg, err := c.newMessage(namespace+subscribeMethodSuffix, args...)
-	if err != nil {
-		return nil, err
-	}
-	op := &requestOp{
-		ids:  []json.RawMessage{msg.ID},
-		resp: make(chan *jsonrpcMessage),
-		sub:  newClientSubscription(c, namespace, chanVal),
-	}
-
-	// Send the subscription request.
-	// The arrival and validity of the response is signaled on sub.quit.
-	if err := c.send(ctx, op, msg); err != nil {
-		return nil, err
-	}
-	if _, err := op.wait(ctx, c); err != nil {
-		return nil, err
-	}
-	return op.sub, nil
 }
 
 func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {

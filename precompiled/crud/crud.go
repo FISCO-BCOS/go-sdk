@@ -10,7 +10,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,7 +23,6 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 // CrudABI is the input ABI used to generate the binding from.

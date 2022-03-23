@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
+	"strconv"
+	"sync/atomic"
+
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
-	"math/big"
-	"strconv"
-	"sync/atomic"
 )
 
 const (
@@ -127,20 +128,6 @@ func (c *ContractProxy) SMCrypto() bool {
 	return c.smCrypto
 }
 
-// FilterLogs executes a log filter operation, blocking during execution and
-// returning all the results in one batch.
-//
-// TODO(karalabe): Deprecate when the subscription one can return past data too.
-func (c *ContractProxy) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
-	panic("implement me")
-}
-
-// SubscribeFilterLogs creates a background log filtering operation, returning
-// a subscription immediately, which can be used to stream the found events.
-func (c *ContractProxy) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
-	panic("implement me")
-}
-
 func (c *ContractProxy) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
@@ -185,6 +172,11 @@ func (c *ContractProxy) CallContext(ctx context.Context, result interface{}, met
 	} else {
 		return json.Unmarshal(resp.Result, &result)
 	}
+}
+
+// SubscribeEventLogs
+func (c *ContractProxy) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+	panic("implement me")
 }
 
 func (c *ContractProxy) nextID() json.RawMessage {
