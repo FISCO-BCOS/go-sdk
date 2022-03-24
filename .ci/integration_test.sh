@@ -2,7 +2,7 @@
 
 set -e
 
-start_time=10
+start_time=15
 macOS=
 check_amop=
 GOPATH_BIN=$(go env GOPATH)/bin
@@ -219,7 +219,7 @@ integration_std()
 
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -o nodes
     cp nodes/127.0.0.1/sdk/* ./
-    bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
+    bash nodes/127.0.0.1/start_all.sh && bash nodes/127.0.0.1/stop_all.sh && bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
     ./hello > hello.out
     if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
     if [ ! -z "$(./hello | grep failed)" ];then LOG_ERROR "call hello failed." && cat hello.out && exit 1;fi
@@ -237,7 +237,6 @@ integration_std()
     fi
     bash nodes/127.0.0.1/stop_all.sh
     LOG_INFO "integration_std testing pass."
-
 }
 
 integration_gm()
@@ -255,7 +254,7 @@ integration_gm()
 
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -g -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./
-    bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
+    bash nodes_gm/127.0.0.1/start_all.sh && bash nodes_gm/127.0.0.1/stop_all.sh && bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi

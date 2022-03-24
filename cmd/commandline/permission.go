@@ -6,6 +6,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/precompiled/permission"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -29,17 +30,17 @@ For more information please refer:
 		tableName := args[0]
 		accountAddress := args[1]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantUserTableManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantUserTableManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantUserTableManager(tableName, common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantUserTableManager failed, permissionService.GrantUserTableManager err: %v\n", err)
+			logrus.Printf("grantUserTableManager failed, permissionService.GrantUserTableManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -70,17 +71,17 @@ For more information please refer:
 		tableName := args[0]
 		accountAddress := args[1]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeUserTableManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeUserTableManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeUserTableManager(tableName, common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeUserTableManager failed, permissionService.RevokeUserTableManager err: %v\n", err)
+			logrus.Printf("revokeUserTableManager failed, permissionService.RevokeUserTableManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -110,17 +111,17 @@ For more information please refer:
 		tableName := args[0]
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listUserTableManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("listUserTableManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		managers, err := permissionService.ListUserTableManager(tableName)
 		if err != nil {
-			fmt.Printf("listUserTableManager failed, permissionService.ListUserTableManager err: %v\n", err)
+			logrus.Printf("listUserTableManager failed, permissionService.ListUserTableManager err: %v\n", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "user table managers")
 		if err != nil {
-			fmt.Printf("listUserTableManager failed, ListToJsonStr err: %v\n", err)
+			logrus.Printf("listUserTableManager failed, ListToJsonStr err: %v\n", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -145,17 +146,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantDeployAndCreateManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantDeployAndCreateManager failed, permissionService.GrantDeployAndCreateManager err: %v\n", err)
+			logrus.Printf("grantDeployAndCreateManager failed, permissionService.GrantDeployAndCreateManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -184,17 +185,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeDeployAndCreateManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeDeployAndCreateManager failed, permissionService.RevokeDeployAndCreateManager err: %v\n", err)
+			logrus.Printf("revokeDeployAndCreateManager failed, permissionService.RevokeDeployAndCreateManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -220,17 +221,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("listDeployAndCreateManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		managers, err := permissionService.ListDeployAndCreateManager()
 		if err != nil {
-			fmt.Printf("listDeployAndCreateManager failed, permissionService.ListDeployAndCreateManager err: %v\n", err)
+			logrus.Printf("listDeployAndCreateManager failed, permissionService.ListDeployAndCreateManager err: %v\n", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("listDeployAndCreateManager failed, ListToJsonStr err: %v\n", err)
+			logrus.Printf("listDeployAndCreateManager failed, ListToJsonStr err: %v\n", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -259,17 +260,17 @@ For more information please refer:
 		}
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantPermissionManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantPermissionManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantPermissionManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantPermissionManager failed, permissionService.GrantPermissionManager err: %v\n", err)
+			logrus.Printf("grantPermissionManager failed, permissionService.GrantPermissionManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -302,17 +303,17 @@ For more information please refer:
 		}
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokePermissionManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokePermissionManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokePermissionManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokePermissionManager failed, permissionService.RevokePermissionManager err: %v\n", err)
+			logrus.Printf("revokePermissionManager failed, permissionService.RevokePermissionManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -338,17 +339,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listPermissionManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("listPermissionManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		managers, err := permissionService.ListPermissionManager()
 		if err != nil {
-			fmt.Printf("listPermissionManager failed, permissionService.ListPermissionManager err: %v\n", err)
+			logrus.Printf("listPermissionManager failed, permissionService.ListPermissionManager err: %v\n", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("listPermissionManager failed, ListToJsonStr err: %v\n", err)
+			logrus.Printf("listPermissionManager failed, ListToJsonStr err: %v\n", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -373,17 +374,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantNodeManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantNodeManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantNodeManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantNodeManager failed, permissionService.GrantNodeManager err: %v\n", err)
+			logrus.Printf("grantNodeManager failed, permissionService.GrantNodeManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -412,17 +413,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeNodeManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeNodeManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeNodeManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeNodeManager failed, permissionService.RevokeNodeManager err: %v\n", err)
+			logrus.Printf("revokeNodeManager failed, permissionService.RevokeNodeManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -448,17 +449,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listNodeManager failed, permission.NewPermissionService err:%v", err)
+			logrus.Printf("listNodeManager failed, permission.NewPermissionService err:%v", err)
 			return
 		}
 		managers, err := permissionService.ListNodeManager()
 		if err != nil {
-			fmt.Printf("listNodeManager failed, permissionService.ListNodeManager err: %v", err)
+			logrus.Printf("listNodeManager failed, permissionService.ListNodeManager err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("listNodeManager failed, ListToJsonStr err: %v", err)
+			logrus.Printf("listNodeManager failed, ListToJsonStr err: %v", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -483,17 +484,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantCNSManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantCNSManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantCNSManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantCNSManager failed, permissionService.GrantCNSManager err: %v\n", err)
+			logrus.Printf("grantCNSManager failed, permissionService.GrantCNSManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -522,17 +523,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeCNSManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeCNSManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeCNSManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeCNSManager failed, permissionService.RevokeCNSManager err: %v\n", err)
+			logrus.Printf("revokeCNSManager failed, permissionService.RevokeCNSManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -558,17 +559,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listCNSManager failed, permission.NewPermissionService err:%v", err)
+			logrus.Printf("listCNSManager failed, permission.NewPermissionService err:%v", err)
 			return
 		}
 		managers, err := permissionService.ListCNSManager()
 		if err != nil {
-			fmt.Printf("listCNSManager failed, permissionService.ListCNSManager err: %v", err)
+			logrus.Printf("listCNSManager failed, permissionService.ListCNSManager err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("listCNSManager failed, ListToJsonStr err: %v", err)
+			logrus.Printf("listCNSManager failed, ListToJsonStr err: %v", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -593,17 +594,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantSysConfigManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantSysConfigManager failed, permissionService.GrantSysConfigManager err: %v\n", err)
+			logrus.Printf("grantSysConfigManager failed, permissionService.GrantSysConfigManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -632,17 +633,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeSysConfigManager failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeSysConfigManager(common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeSysConfigManager failed, permissionService.RevokeSysConfigManager err: %v\n", err)
+			logrus.Printf("revokeSysConfigManager failed, permissionService.RevokeSysConfigManager err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -668,17 +669,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("listSysConfigManager failed, permission.NewPermissionService err:%v", err)
+			logrus.Printf("listSysConfigManager failed, permission.NewPermissionService err:%v", err)
 			return
 		}
 		managers, err := permissionService.ListSysConfigManager()
 		if err != nil {
-			fmt.Printf("listSysConfigManager failed, permissionService.ListSysConfigManager err: %v", err)
+			logrus.Printf("listSysConfigManager failed, permissionService.ListSysConfigManager err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("listSysConfigManager failed, ListToJsonStr err: %v", err)
+			logrus.Printf("listSysConfigManager failed, ListToJsonStr err: %v", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -701,22 +702,22 @@ For example:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
 		if !IsValidAccount(contractAddress) {
-			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			logrus.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
 			return
 		}
 		accountAddress := args[1]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("grantWrite failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("grantWrite failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.GrantContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("grantWrite failed, permissionService.GrantWrite err: %v\n", err)
+			logrus.Printf("grantWrite failed, permissionService.GrantWrite err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -743,22 +744,22 @@ For example:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
 		if !IsValidAccount(contractAddress) {
-			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			logrus.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
 			return
 		}
 		accountAddress := args[1]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("revokeWrite failed, permission.NewPermissionService err:%v\n", err)
+			logrus.Printf("revokeWrite failed, permission.NewPermissionService err:%v\n", err)
 			return
 		}
 		result, err := permissionService.RevokeContractWritePermission(common.HexToAddress(contractAddress), common.HexToAddress(accountAddress))
 		if err != nil {
-			fmt.Printf("revokeWrite failed, permissionService.RevokeWrite err: %v\n", err)
+			logrus.Printf("revokeWrite failed, permissionService.RevokeWrite err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -784,22 +785,22 @@ For example:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddress := args[0]
 		if !IsValidAccount(contractAddress) {
-			fmt.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
+			logrus.Printf("the format of contractAddress %v is unvalid\n", contractAddress)
 			return
 		}
 		permissionService, err := permission.NewPermissionService(RPC)
 		if err != nil {
-			fmt.Printf("queryPermission failed, permission.NewPermissionService err:%v", err)
+			logrus.Printf("queryPermission failed, permission.NewPermissionService err:%v", err)
 			return
 		}
 		managers, err := permissionService.ListContractWritePermission(common.HexToAddress(contractAddress))
 		if err != nil {
-			fmt.Printf("queryPermission failed, permissionService.QueryPermission err: %v", err)
+			logrus.Printf("queryPermission failed, permissionService.QueryPermission err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(managers, "managers")
 		if err != nil {
-			fmt.Printf("queryPermission failed, ListToJsonStr err: %v", err)
+			logrus.Printf("queryPermission failed, ListToJsonStr err: %v", err)
 			return
 		}
 		fmt.Println(jsonStr)

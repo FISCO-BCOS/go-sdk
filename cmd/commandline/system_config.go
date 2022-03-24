@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/FISCO-BCOS/go-sdk/precompiled/config"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -38,16 +39,16 @@ For more information please refer:
 		value := args[1]
 		sysConfig, err := config.NewSystemConfigService(RPC)
 		if err != nil {
-			fmt.Printf("setSystemConfigByKeyCmd failed, config.NewSystemConfigService err: %v\n", err)
+			logrus.Printf("setSystemConfigByKeyCmd failed, config.NewSystemConfigService err: %v\n", err)
 			return
 		}
 		result, err := sysConfig.SetValueByKey(key, value)
 		if err != nil {
-			fmt.Printf("setSystemConfigByKeyCmd failed, sysConfig.SetValueByKey err: %v\n", err)
+			logrus.Printf("setSystemConfigByKeyCmd failed, sysConfig.SetValueByKey err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			fmt.Printf("setSystemConfigByKeyCmd failed, the result is: %v", result)
+			logrus.Printf("setSystemConfigByKeyCmd failed, the result is: %v", result)
 			return
 		}
 		fmt.Println("success")
