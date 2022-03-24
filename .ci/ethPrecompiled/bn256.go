@@ -18,7 +18,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
@@ -33,7 +32,6 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 // BN256ABI is the input ABI used to generate the binding from.
