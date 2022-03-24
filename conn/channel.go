@@ -1048,6 +1048,7 @@ func (hc *channelSession) processMessages() {
 			for {
 				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
 				if err != nil {
+					logrus.Warnf("tls.Dial %v failed, err: %v\n", hc.endpoint, err)
 					continue
 				}
 				hc.c = con
@@ -1056,26 +1057,29 @@ func (hc *channelSession) processMessages() {
 				hc.nodeInfo.Protocol = 1
 				go hc.processMessages()
 				if err = hc.handshakeChannel(); err != nil {
-					logrus.Errorf("handshake channel protocol failed, use default protocol version")
+					logrus.Warnf("handshake channel protocol failed, use default protocol version")
 				}
 				err = hc.sendSubscribedTopics() // re-subscribe topic
 				if err != nil {
-					logrus.Errorf("re-subscriber topic failed")
+					logrus.Errorf("re-subscriber topic failed, err: %v\n", err)
 				}
+				// FIXME: resubscribe contract event
 				return
 			}
 		default:
 			receiveBuf := make([]byte, 4096)
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				logrus.Errorf("channel Read error:%v\n", err)
-				hc.Close()
+				if err == io.EOF {
+					logrus.Warnf("channel Read error:%v\n", err)
+					hc.Close()
+				}
 				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
 			msg, err := decodeChannelMessage(hc.buf)
 			if err != nil {
-				logrus.Errorf("decodeChannelMessage error:%v", err)
+				logrus.Debugf("decodeChannelMessage error:%v", err)
 				continue
 			}
 			hc.buf = hc.buf[msg.length:]
