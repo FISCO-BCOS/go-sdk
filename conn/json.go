@@ -31,6 +31,7 @@ import (
 )
 
 const (
+	defaultErrorCode         = -32000
 	vsn                      = "2.0"
 	serviceMethodSeparator   = "_"
 	subscribeMethodSuffix    = "_subscribe"

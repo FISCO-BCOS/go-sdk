@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -78,10 +77,7 @@ type BatchElem struct {
 
 // Connection represents a connection to an RPC server.
 type Connection struct {
-	idgen    func() ID // for subscriptions
-	isHTTP   bool
-	services *serviceRegistry
-
+	isHTTP    bool
 	idCounter uint32
 
 	// This function, if non-nil, is called when the connection is lost.
@@ -109,18 +105,14 @@ type reconnectFunc func(ctx context.Context) (ServerCodec, error)
 type clientContextKey struct{}
 
 type clientConn struct {
-	codec   ServerCodec
-	handler *handler
+	codec ServerCodec
 }
 
 func (c *Connection) newClientConn(conn ServerCodec) *clientConn {
-	ctx := context.WithValue(context.Background(), clientContextKey{}, c)
-	handler := newHandler(ctx, conn, c.idgen, c.services)
-	return &clientConn{conn, handler}
+	return &clientConn{conn}
 }
 
 func (cc *clientConn) close(err error, inflightReq *requestOp) {
-	cc.handler.close(err, inflightReq)
 	cc.codec.Close()
 }
 
@@ -133,7 +125,6 @@ type requestOp struct {
 	ids  []json.RawMessage
 	err  error
 	resp chan *jsonrpcMessage // receives up to len(ids) responses
-	sub  *ClientSubscription  // only set for EthSubscribe requests
 }
 
 func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, error) {
@@ -199,17 +190,15 @@ func newClient(initctx context.Context, connect reconnectFunc) (*Connection, err
 	if err != nil {
 		return nil, err
 	}
-	c := initClient(conn, randomIDGenerator(), new(serviceRegistry))
+	c := initClient(conn)
 	c.reconnectFunc = connect
 	return c, nil
 }
 
-func initClient(conn ServerCodec, idgen func() ID, services *serviceRegistry) *Connection {
+func initClient(conn ServerCodec) *Connection {
 	_, isHTTP := conn.(*httpConn)
 	c := &Connection{
-		idgen:       idgen,
 		isHTTP:      isHTTP,
-		services:    services,
 		writeConn:   conn,
 		close:       make(chan struct{}),
 		closing:     make(chan struct{}),
@@ -221,19 +210,7 @@ func initClient(conn ServerCodec, idgen func() ID, services *serviceRegistry) *C
 		reqSent:     make(chan error, 1),
 		reqTimeout:  make(chan *requestOp),
 	}
-	// FIXME: remove substration releated code
-	// if !isHTTP {
-	// 	go c.dispatch(conn)
-	// }
 	return c
-}
-
-// RegisterName creates a service for the given receiver type under the given name. When no
-// methods on the given receiver match the criteria to be either a RPC method or a
-// subscription an error is returned. Otherwise a new service is created and added to the
-// service collection this client provides to the server.
-func (c *Connection) RegisterName(name string, receiver interface{}) error {
-	return c.services.registerName(name, receiver)
 }
 
 func (c *Connection) nextID() json.RawMessage {
@@ -258,12 +235,6 @@ func (c *Connection) Close() {
 	}
 	hc := c.writeConn.(*channelSession)
 	hc.Close()
-	// FIXME: remove substration releated code
-	// select {
-	// case c.close <- struct{}{}:
-	// 	<-c.didClose
-	// case <-c.didClose:
-	// }
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
@@ -541,88 +512,6 @@ func (c *Connection) reconnect(ctx context.Context) error {
 	}
 }
 
-// dispatch is the main loop of the client.
-// It sends read messages to waiting calls to Call and BatchCall
-// and subscription notifications to registered subscriptions.
-func (c *Connection) dispatch(codec ServerCodec) {
-	var (
-		lastOp      *requestOp  // tracks last send operation
-		reqInitLock = c.reqInit // nil while the send lock is held
-		conn        = c.newClientConn(codec)
-		reading     = true
-	)
-	defer func() {
-		close(c.closing)
-		if reading {
-			conn.close(ErrClientQuit, nil)
-			c.drainRead()
-		}
-		close(c.didClose)
-	}()
-
-	// Spawn the initial read loop.
-	go c.read(codec)
-
-	for {
-		select {
-		case <-c.close:
-			return
-
-		// Read path:
-		case op := <-c.readOp:
-			if op.batch {
-				conn.handler.handleBatch(op.msgs)
-			} else {
-				conn.handler.handleMsg(op.msgs[0])
-			}
-
-		case err := <-c.readErr:
-			// conn.handler.log.Debug("RPC connection read error", "err", err)
-			conn.close(err, lastOp)
-			reading = false
-
-		// Reconnect:
-		case newcodec := <-c.reconnected:
-			// log.Debug("RPC client reconnected", "reading", reading, "conn", newcodec.RemoteAddr())
-			if reading {
-				// Wait for the previous read loop to exit. This is a rare case which
-				// happens if this loop isn't notified in time after the connection breaks.
-				// In those cases the caller will notice first and reconnect. Closing the
-				// handler terminates all waiting requests (closing op.resp) except for
-				// lastOp, which will be transferred to the new handler.
-				conn.close(errClientReconnected, lastOp)
-				c.drainRead()
-			}
-			go c.read(newcodec)
-			reading = true
-			conn = c.newClientConn(newcodec)
-			// Re-register the in-flight request on the new handler
-			// because that's where it will be sent.
-			conn.handler.addRequestOp(lastOp)
-
-		// Send path:
-		case op := <-reqInitLock:
-			// Stop listening for further requests until the current one has been sent.
-			reqInitLock = nil
-			lastOp = op
-			conn.handler.addRequestOp(op)
-
-		case err := <-c.reqSent:
-			if err != nil {
-				// Remove response handlers for the last send. When the read loop
-				// goes down, it will signal all other current operations.
-				conn.handler.removeRequestOp(lastOp)
-			}
-			// Let the next request in.
-			reqInitLock = c.reqInit
-			lastOp = nil
-
-		case op := <-c.reqTimeout:
-			conn.handler.removeRequestOp(op)
-		}
-	}
-}
-
 // drainRead drops read messages until an error occurs.
 func (c *Connection) drainRead() {
 	for {
@@ -631,24 +520,6 @@ func (c *Connection) drainRead() {
 		case <-c.readErr:
 			return
 		}
-	}
-}
-
-// read decodes RPC messages from a codec, feeding them into dispatch.
-func (c *Connection) read(codec ServerCodec) {
-	for {
-		msgs, batch, err := codec.Read()
-		if _, ok := err.(*json.SyntaxError); ok {
-			err := codec.Write(context.Background(), errorMessage(&parseError{err.Error()}))
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		if err != nil {
-			c.readErr <- err
-			return
-		}
-		c.readOp <- readOp{msgs, batch}
 	}
 }
 
