@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -37,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -165,7 +165,7 @@ type updateAuthTopicStatus struct {
 func newChannelMessage(msgType uint16, body []byte) (*channelMessage, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
-		log.Printf("newChannelMessage error: %v", err)
+		logrus.Warnf("newChannelMessage error: %v", err)
 		return nil, err
 	}
 	idString := strings.ReplaceAll(id.String(), "-", "")
@@ -190,16 +190,16 @@ func (t *topicData) Encode() []byte {
 	buf := bytes.NewBuffer(raw)
 	err := binary.Write(buf, binary.LittleEndian, t.length)
 	if err != nil {
-		log.Fatal("encode length error:", err)
+		logrus.Fatal("encode length error:", err)
 	}
 	err = binary.Write(buf, binary.LittleEndian, []byte(t.topic))
 	if err != nil {
-		log.Fatal("encode type error:", err)
+		logrus.Fatal("encode type error:", err)
 	}
 
 	err = binary.Write(buf, binary.LittleEndian, t.data)
 	if err != nil {
-		log.Fatal("encode data error:", err)
+		logrus.Fatal("encode data error:", err)
 	}
 	return buf.Bytes()
 }
@@ -209,27 +209,27 @@ func (msg *channelMessage) Encode() []byte {
 	buf := bytes.NewBuffer(raw)
 	err := binary.Write(buf, binary.BigEndian, msg.length)
 	if err != nil {
-		log.Fatal("encode length error:", err)
+		logrus.Fatal("encode length error:", err)
 	}
 	err = binary.Write(buf, binary.BigEndian, msg.typeN)
 	if err != nil {
-		log.Fatal("encode type error:", err)
+		logrus.Fatal("encode type error:", err)
 	}
 	err = binary.Write(buf, binary.LittleEndian, []byte(msg.uuid))
 	if err != nil {
-		log.Fatal("encode uuid error:", err)
+		logrus.Fatal("encode uuid error:", err)
 	}
 	err = binary.Write(buf, binary.BigEndian, msg.errorCode)
 	if err != nil {
-		log.Fatal("encode ErrorCode error:", err)
+		logrus.Fatal("encode ErrorCode error:", err)
 	}
 	err = binary.Write(buf, binary.LittleEndian, msg.body)
 	if err != nil {
-		log.Fatal("encode Body error:", err)
+		logrus.Fatal("encode Body error:", err)
 	}
 	if uint32(buf.Len()) != msg.length {
-		fmt.Printf("%d != %d\n, buf is %v", buf.Len(), msg.length, buf.String())
-		log.Fatal("encode error length error:", err)
+		logrus.Warnf("%d != %d\n, buf is %v", buf.Len(), msg.length, buf.String())
+		logrus.Fatal("encode error length error:", err)
 	}
 	return buf.Bytes()
 }
@@ -239,32 +239,32 @@ func decodeChannelMessage(raw []byte) (*channelMessage, error) {
 	result := new(channelMessage)
 	err := binary.Read(buf, binary.BigEndian, &result.length)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	if uint32(len(raw)) < result.length {
 		return nil, errors.New("uncomplete message")
 	}
 	err = binary.Read(buf, binary.BigEndian, &result.typeN)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	var uuid [32]byte
 	err = binary.Read(buf, binary.LittleEndian, &uuid)
 	if err != nil {
-		// log.Fatal("encode error:", err)
-		fmt.Println("binary.Read failed:", err)
+		// logrus.Fatal("encode error:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	result.uuid = string(uuid[:])
 
 	err = binary.Read(buf, binary.BigEndian, &result.errorCode)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	dataLength := result.length - messageHeaderLength
 	result.body = make([]byte, dataLength)
 	err = binary.Read(buf, binary.BigEndian, &result.body)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	return result, nil
 }
@@ -274,19 +274,19 @@ func decodeTopic(raw []byte) (*topicData, error) {
 	result := new(topicData)
 	err := binary.Read(buf, binary.LittleEndian, &result.length)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	topic := make([]byte, result.length-1)
 	err = binary.Read(buf, binary.LittleEndian, &topic)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	result.topic = string(topic)
 	dataLength := len(raw) - int(result.length)
 	result.data = make([]byte, dataLength)
 	err = binary.Read(buf, binary.LittleEndian, &result.data)
 	if err != nil {
-		fmt.Println("binary.Read failed:", err)
+		logrus.Println("binary.Read failed:", err)
 	}
 	return result, nil
 }
@@ -363,7 +363,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			tlsConfig: config}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
-			fmt.Printf("handshake channel protocol failed, use default protocol version")
+			logrus.Errorf("handshake channel protocol failed, use default protocol version")
 		}
 		ch.topicHandlers[blockNotifyPrefix+strconv.Itoa(groupID)] = nil
 		if err = ch.sendSubscribedTopics(); err != nil {
@@ -509,7 +509,7 @@ func (hc *channelSession) sendTransaction(ctx context.Context, msg interface{}) 
 	if respmsg.Error != nil {
 		return nil, fmt.Errorf("send transaction error, code=%d, message=%s", respmsg.Error.Code, respmsg.Error.Message)
 	}
-	// fmt.Printf("sendTransaction reveived response,seq:%s message:%s\n ", rpcMsg.uuid, respmsg.Result)
+	// logrus.Warnf("sendTransaction reveived response,seq:%s message:%s\n ", rpcMsg.uuid, respmsg.Result)
 	<-receiptResponse.Notify
 	hc.mu.RLock()
 	receiptResponse = hc.receiptResponses[rpcMsg.uuid]
@@ -652,7 +652,7 @@ func (hc *channelSession) handshakeChannel() error {
 		return fmt.Errorf("parse handshake channel protocol response failed %w", err)
 	}
 	hc.nodeInfo = info
-	// fmt.Printf("node info:%+v", info)
+	// logrus.Warnf("node info:%+v", info)
 	return nil
 }
 
@@ -789,22 +789,23 @@ func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.
 		var authInfo requestAuth
 		err := json.Unmarshal(data, &authInfo)
 		if err != nil {
-			log.Printf("unmarshal authInfo failed, err: %v", err)
+			logrus.Warnf("unmarshal authInfo failed, err: %v", err)
 			return
 		}
 		randomData := generateRandomNum()
 		signature, err := hc.sendAMOPMsg(authInfo.TopicForCert, randomData)
 		if err != nil {
-			log.Printf("send message failed, err: %v", err)
+			logrus.Warnf("send message failed, err: %v", err)
+			return
 		}
 		if len(signature) == 0 {
-			log.Println("signature is empty")
+			logrus.Println("signature is empty")
 			return
 		}
 		var checkResult = 1 // 1 is false
 		hw := sha3.NewLegacyKeccak256()
 		if _, err = hw.Write(randomData); err != nil {
-			log.Printf("keccak256 failed, err: %v\n", err)
+			logrus.Warnf("keccak256 failed, err: %v\n", err)
 			return
 		}
 		digest := hw.Sum(nil)
@@ -812,7 +813,7 @@ func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.
 			publicKeyBytes := crypto.FromECDSAPub(publicKeys[i])
 			if crypto.VerifySignature(publicKeyBytes, digest, signature[:len(signature)-1]) {
 				checkResult = 0
-				// log.Printf("verify NodeID %v success", authInfo.NodeID)
+				// logrus.Printf("verify NodeID %v success", authInfo.NodeID)
 				break
 			}
 		}
@@ -822,15 +823,15 @@ func (hc *channelSession) publishPrivateTopic(topic string, publicKeys []*ecdsa.
 		updateNodeTopicStatus.NodeID = authInfo.NodeID
 		jsonBytes, err := json.Marshal(updateNodeTopicStatus)
 		if err != nil {
-			log.Printf("nodeUpdateTopicStatus marshal failed, err: %v", err)
+			logrus.Warnf("nodeUpdateTopicStatus marshal failed, err: %v", err)
 		}
 		newMessage, err := newChannelMessage(amopUpdateTopicStatus, jsonBytes)
 		if err != nil {
-			log.Printf("new topic message failed, err: %v", err)
+			logrus.Warnf("new topic message failed, err: %v", err)
 		}
 		err = hc.sendMessageNoResponse(newMessage)
 		if err != nil {
-			log.Printf("send message no response failed, err: %v", err)
+			logrus.Warnf("send message no response failed, err: %v", err)
 		}
 	}
 	hc.topicMu.Lock()
@@ -864,13 +865,13 @@ func (hc *channelSession) subscribePrivateTopic(topic string, privateKey *ecdsa.
 		// sign random number and send back
 		hw := sha3.NewLegacyKeccak256()
 		if _, err = hw.Write(data); err != nil {
-			log.Printf("keccak256 failed, err: %v\n", err)
+			logrus.Warnf("keccak256 failed, err: %v\n", err)
 			return
 		}
 		digest := hw.Sum(nil)
 		signature, err := crypto.Sign(digest, privateKey)
 		if err != nil {
-			log.Printf("sign random number failed, err: %v\n", err)
+			logrus.Warnf("sign random number failed, err: %v\n", err)
 			return
 		}
 		*response = signature
@@ -912,7 +913,7 @@ func (hc *channelSession) broadcastAMOPPrivateMsg(topic string, data []byte) err
 func (hc *channelSession) processTopicMessage(msg *channelMessage) {
 	topic, err := decodeTopic(msg.body)
 	if err != nil {
-		// fmt.Printf("decode topic failed: %+v\n", msg)
+		// logrus.Warnf("decode topic failed: %+v\n", msg)
 		return
 	}
 	hc.topicMu.RLock()
@@ -924,38 +925,37 @@ func (hc *channelSession) processTopicMessage(msg *channelMessage) {
 	}
 	responseMessage, err := newTopicMessage(topic.topic, *responseData, amopResponse)
 	if err != nil {
-		// fmt.Printf("err: %v\n", err)
+		logrus.Warnf("newTopicMessage failed, err: %v\n", err)
 		return
 	}
 	responseMessage.uuid = msg.uuid
 	err = hc.sendMessageNoResponse(responseMessage)
 	if err != nil {
-		// fmt.Println("response message failed")
+		logrus.Warnf("response message failed, uuid: %v, err: %v\n", msg.uuid, err)
 		return
 	}
-	// fmt.Printf("unsubscribed topic %s\n", topic.topic)
 }
 
 func (hc *channelSession) processAuthTopicMessage(msg *channelMessage) {
 	var requestAuthInfo requestAuth
 	err := json.Unmarshal(msg.body, &requestAuthInfo)
 	if err != nil {
-		// fmt.Printf("unmarshal authInfo failed, err: %v\n", err)
+		// logrus.Warnf("unmarshal authInfo failed, err: %v\n", err)
 		return
 	}
 
 	responseMessage, err := newTopicMessage(authChannelPrefix+requestAuthInfo.TopicForCert, nil, amopResponse)
 	if err != nil {
-		// fmt.Printf("err: %v\n", err)
+		// logrus.Warnf("err: %v\n", err)
 		return
 	}
 	responseMessage.uuid = msg.uuid
 	err = hc.sendMessageNoResponse(responseMessage)
 	if err != nil {
-		// fmt.Println("response message failed")
+		// logrus.Println("response message failed")
 		return
 	}
-	// fmt.Printf("unsubscribed topic %s\n", requestAuthInfo.Topic)
+	// logrus.Warnf("unsubscribed topic %s\n", requestAuthInfo.Topic)
 	hc.topicMu.RLock()
 	handler, ok := hc.topicHandlers[pushChannelPrefix+requestAuthInfo.Topic]
 	hc.topicMu.RUnlock()
@@ -975,7 +975,7 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 	var eventLogResponse eventLogResponse
 	err := json.Unmarshal(msg.body, &eventLogResponse)
 	if err != nil {
-		fmt.Printf("unmarshal eventLogResponse failed, err: %v\n", err)
+		logrus.Warnf("unmarshal eventLogResponse failed, err: %v\n", err)
 		return
 	}
 	logs := []types.Log{}
@@ -983,12 +983,12 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 		number, _ := strconv.Atoi(log.BlockNumber)
 		logIndex, err := hexToUint64(log.LogIndex)
 		if err != nil {
-			fmt.Printf("unmarshal logIndex failed, err: %v\n", err)
+			logrus.Warnf("unmarshal logIndex failed, err: %v\n", err)
 			return
 		}
 		txIndex, err := hexToUint64(log.TransactionIndex)
 		if err != nil {
-			fmt.Printf("unmarshal TransactionIndex failed, err: %v\n", err)
+			logrus.Warnf("unmarshal TransactionIndex failed, err: %v\n", err)
 			return
 		}
 		topics := []common.Hash{}
@@ -1022,7 +1022,7 @@ func (hc *channelSession) processMessages() {
 	for {
 		select {
 		case <-hc.closed:
-			// fmt.Println("exit from processMessage")
+			// logrus.Println("exit from processMessage")
 			// delete old network
 			_ = hc.c.Close()
 			hc.c = nil
@@ -1056,11 +1056,11 @@ func (hc *channelSession) processMessages() {
 				hc.nodeInfo.Protocol = 1
 				go hc.processMessages()
 				if err = hc.handshakeChannel(); err != nil {
-					fmt.Printf("handshake channel protocol failed, use default protocol version")
+					logrus.Errorf("handshake channel protocol failed, use default protocol version")
 				}
 				err = hc.sendSubscribedTopics() // re-subscribe topic
 				if err != nil {
-					log.Printf("re-subscriber topic failed")
+					logrus.Errorf("re-subscriber topic failed")
 				}
 				return
 			}
@@ -1068,17 +1068,16 @@ func (hc *channelSession) processMessages() {
 			receiveBuf := make([]byte, 4096)
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				// fmt.Printf("channel Read error:%v\n", err)
+				logrus.Errorf("channel Read error:%v\n", err)
 				hc.Close()
 				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
 			msg, err := decodeChannelMessage(hc.buf)
 			if err != nil {
-				// fmt.Printf("decodeChannelMessage error:%v", err)
+				logrus.Errorf("decodeChannelMessage error:%v", err)
 				continue
 			}
-			// fmt.Printf("message %+v\n", msg)
 			hc.buf = hc.buf[msg.length:]
 			// TODO: move notify into switch
 			hc.mu.Lock()
@@ -1093,9 +1092,8 @@ func (hc *channelSession) processMessages() {
 			hc.mu.Unlock()
 			switch msg.typeN {
 			case rpcMessage, amopResponse, clientHandshake, clientRegisterEventLog:
-				//fmt.Printf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
+				logrus.Debugf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
-				// fmt.Printf("transaction notify:%s", string(msg.body))
 				hc.mu.Lock()
 				if receipt, ok := hc.receiptResponses[msg.uuid]; ok {
 					receipt.Message = msg
@@ -1134,11 +1132,11 @@ func (hc *channelSession) processMessages() {
 				go hc.processTopicMessage(msg)
 			case amopAuthTopic:
 				go hc.processAuthTopicMessage(msg)
-				// fmt.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
+				// logrus.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
 			case eventLogPush:
 				go hc.processEventLogMessage(msg)
 			default:
-				fmt.Printf("unknown message type:%d, msg:%+v", msg.typeN, msg)
+				logrus.Errorf("unknown message type:%d, msg:%+v", msg.typeN, msg)
 			}
 		}
 	}
@@ -1149,19 +1147,19 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 	var groupID uint64
 	topic, err := decodeTopic(msg.body)
 	if err != nil {
-		fmt.Printf("decodeTopic msg.body failed, err: %v\n", err)
+		logrus.Warnf("decodeTopic msg.body failed, err: %v\n", err)
 		return
 	}
 	if hc.nodeInfo.Protocol == 1 {
 		response := strings.Split(string(topic.data), ",")
 		blockNumber, err = strconv.ParseInt(response[1], 10, 32)
 		if err != nil {
-			fmt.Printf("v1 block notify parse blockNumber failed, %v\n", string(topic.data))
+			logrus.Warnf("v1 block notify parse blockNumber failed, %v\n", string(topic.data))
 			return
 		}
 		groupID, err = strconv.ParseUint(response[0], 10, 32)
 		if err != nil {
-			fmt.Printf("v1 block notify parse GroupID failed, %v\n", string(topic.data))
+			logrus.Warnf("v1 block notify parse GroupID failed, %v\n", string(topic.data))
 			return
 		}
 	} else {
@@ -1171,13 +1169,13 @@ func (hc *channelSession) updateBlockNumber(msg *channelMessage) {
 		}
 		err = json.Unmarshal(topic.data, &notify)
 		if err != nil {
-			fmt.Printf("block notify parse blockNumber failed, %v\n", string(topic.data))
+			logrus.Warnf("block notify parse blockNumber failed, %v\n", string(topic.data))
 			return
 		}
 		blockNumber = notify.BlockNumber
 		groupID = notify.GroupID
 	}
-	// fmt.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
+	// logrus.Printf("blockNumber updated %d -> %d", hc.nodeInfo.blockNumber, blockNumber)
 	hc.nodeInfo.blockNumber = blockNumber
 
 	if handler, ok := hc.blockNotifyHandlers[groupID]; ok {

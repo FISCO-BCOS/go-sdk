@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/FISCO-BCOS/go-sdk/precompiled/cns"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +31,7 @@ For more information please refer:
 		var err error
 		cnsService, err := cns.NewCnsService(RPC)
 		if err != nil {
-			fmt.Printf("queryCNS failed, cns.NewCnsService err: %v\n", err)
+			logrus.Printf("queryCNS failed, cns.NewCnsService err: %v\n", err)
 			return
 		}
 		contractName = args[0]
@@ -41,13 +42,13 @@ For more information please refer:
 			infos, err = cnsService.QueryCnsByNameAndVersion(contractName, version)
 		}
 		if err != nil {
-			fmt.Printf("queryCNS failed, cnsService.QueryCnsByName or cnsService.QueryCnsByNameAndVersion err: %v\n", err)
+			logrus.Printf("queryCNS failed, cnsService.QueryCnsByName or cnsService.QueryCnsByNameAndVersion err: %v\n", err)
 			return
 		}
 		if len(args) == 1 && len(infos) == 0 {
-			fmt.Printf("contract %v is not existed\n", args[0])
+			logrus.Printf("contract %v is not existed\n", args[0])
 		} else if len(args) == 2 && len(infos) == 0 {
-			fmt.Printf("contract %v, version %v is not existed\n", args[0], args[1])
+			logrus.Printf("contract %v, version %v is not existed\n", args[0], args[1])
 		}
 		// abi info is not printed
 		for i := 0; i < len(infos); i++ {
@@ -75,14 +76,14 @@ For example:
 		var err error
 		cnsService, err := cns.NewCnsService(RPC)
 		if err != nil {
-			fmt.Printf("getAddressByContractNameAndVersion failed, cns.NewCnsService err: %v\n", err)
+			logrus.Printf("getAddressByContractNameAndVersion failed, cns.NewCnsService err: %v\n", err)
 			return
 		}
 		contractName = args[0]
 		version = args[1]
 		address, err := cnsService.GetAddressByContractNameAndVersion(contractName, version)
 		if err != nil {
-			fmt.Printf("getAddressByContractNameAndVersion failed, cnsService.GetAddressByContractNameAndVersion err: %v\n", err)
+			logrus.Printf("getAddressByContractNameAndVersion failed, cnsService.GetAddressByContractNameAndVersion err: %v\n", err)
 			return
 		}
 		fmt.Println(address.Hex())

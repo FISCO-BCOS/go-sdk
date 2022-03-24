@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -105,7 +106,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 		} else if strings.EqualFold(connectionType, "channel") {
 			config.IsHTTP = false
 		} else {
-			fmt.Printf("Network.Type %s is not supported, use channel", connectionType)
+			logrus.Printf("Network.Type %s is not supported, use channel", connectionType)
 		}
 		config.CAFile = viper.GetString("Network.CAFile")
 		config.Key = viper.GetString("Network.Key")

@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/sirupsen/logrus"
 )
 
 // APIHandler defines typed wrappers for the FISCO BCOS RPC API.
@@ -108,7 +109,7 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) (*types.Receipt, error) {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
-		fmt.Printf("rlp encode tx error!")
+		logrus.Printf("rlp encode tx error, err: %v", err)
 		return nil, err
 	}
 	var receipt *types.Receipt
@@ -130,7 +131,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 				if strings.Contains(errorStr, "connection refused") {
 					return nil, err
 				}
-				//fmt.Printf("Receipt retrieval failed, err: %v\n", err)
+				//logrus.Printf("Receipt retrieval failed, err: %v\n", err)
 			} else {
 				fmt.Println("Transaction not yet mined")
 			}
@@ -164,7 +165,7 @@ func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *
 func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
-		fmt.Printf("rlp encode tx error!")
+		logrus.Printf("rlp encode tx error, err: %v", err)
 		return err
 	}
 	if api.IsHTTP() {
