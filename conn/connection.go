@@ -22,7 +22,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -157,17 +156,13 @@ func DialContextHTTP(rawurl string) (*Connection, error) {
 }
 
 // DialContextChannel creates a new Channel client, just like Dial.
-func DialContextChannel(rawurl, caFile, certFile, keyFile string, groupID int) (*Connection, error) {
+func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int) (*Connection, error) {
 	roots := x509.NewCertPool()
-	rootPEM, err := ioutil.ReadFile(caFile)
-	if err != nil {
-		panic(err)
-	}
-	ok := roots.AppendCertsFromPEM([]byte(rootPEM))
+	ok := roots.AppendCertsFromPEM(caRoot)
 	if !ok {
 		panic("failed to parse root certificate")
 	}
-	cer, err := tls.LoadX509KeyPair(certFile, keyFile)
+	cer, err := tls.X509KeyPair(certContext, keyContext)
 	if err != nil {
 		// log.Println(err)
 		return nil, err

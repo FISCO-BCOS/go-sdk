@@ -1036,7 +1036,6 @@ func (hc *channelSession) processMessages() {
 	for {
 		select {
 		case <-hc.closed:
-			// logrus.Println("exit from processMessage")
 			// delete old network
 			_ = hc.c.Close()
 			hc.c = nil
@@ -1090,10 +1089,8 @@ func (hc *channelSession) processMessages() {
 			receiveBuf := make([]byte, 4096)
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				if err == io.EOF {
-					logrus.Warnf("channel Read error:%v\n", err)
-					hc.Close()
-				}
+				logrus.Warnf("channel Read error:%v\n", err)
+				hc.Close()
 				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
