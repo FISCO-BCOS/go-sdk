@@ -53,6 +53,11 @@ type nodeInfo struct {
 	CompatibleVersion string `json:"nodeVersion"`
 }
 
+type eventInfo struct {
+	params  *types.EventLogParams
+	handler func(int, []types.Log)
+}
+
 type channelSession struct {
 	// groupID   uint
 	c         *tls.Conn
@@ -62,7 +67,8 @@ type channelSession struct {
 	receiptResponses    map[string]*channelResponse
 	topicMu             sync.RWMutex
 	topicHandlers       map[string]func([]byte, *[]byte)
-	eventHandlers       map[string]func(int, []types.Log)
+	eventLogMu          sync.RWMutex
+	eventLogHandlers    map[string]eventInfo
 	asyncMu             sync.RWMutex
 	asyncHandlers       map[string]func(*types.Receipt, error)
 	blockNotifyMu       sync.RWMutex
@@ -356,7 +362,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
 			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
-			eventHandlers:       make(map[string]func(int, []types.Log)),
+			eventLogHandlers:    make(map[string]eventInfo),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
@@ -656,8 +662,8 @@ func (hc *channelSession) handshakeChannel() error {
 	return nil
 }
 
-func (hc *channelSession) sendSubscribedEvent(eventLogParams types.EventLogParams) error {
-	data, err := json.Marshal(eventLogParams)
+func (hc *channelSession) sendSubscribedEvent(eventLogParams *types.EventLogParams) error {
+	data, err := json.Marshal(*eventLogParams)
 	if err != nil {
 		return errors.New("marshal eventLogParams failed")
 	}
@@ -704,15 +710,18 @@ func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, ha
 		return errors.New("new UUID failed")
 	}
 	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
-	if _, ok := hc.eventHandlers[eventLogParams.FilterID]; ok {
+	hc.eventLogMu.RLock()
+	_, ok := hc.eventLogHandlers[eventLogParams.FilterID]
+	hc.eventLogMu.RUnlock()
+	if ok {
 		return errors.New("already subscribed to event " + eventLogParams.FilterID)
 	}
-	if err := hc.sendSubscribedEvent(eventLogParams); err != nil {
+	if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
 		return err
 	}
-	hc.topicMu.Lock()
-	hc.eventHandlers[eventLogParams.FilterID] = handler
-	hc.topicMu.Unlock()
+	hc.eventLogMu.Lock()
+	hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
+	hc.eventLogMu.Unlock()
 	return nil
 }
 
@@ -979,6 +988,7 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 		return
 	}
 	logs := []types.Log{}
+	var nextBlock uint64
 	for _, log := range eventLogResponse.Logs {
 		number, _ := strconv.Atoi(log.BlockNumber)
 		logIndex, err := hexToUint64(log.LogIndex)
@@ -1007,13 +1017,17 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 			Index:       uint(logIndex),
 			Removed:     false,
 		})
+		nextBlock = uint64(number) + 1
 	}
 
-	hc.topicMu.RLock()
-	handler, ok := hc.eventHandlers[eventLogResponse.FilterID]
-	hc.topicMu.RUnlock()
+	hc.eventLogMu.RLock()
+	eventLogInfo, ok := hc.eventLogHandlers[eventLogResponse.FilterID]
 	if ok {
-		go handler(eventLogResponse.Result, logs)
+		eventLogInfo.params.FromBlock = strconv.FormatUint(nextBlock, 10)
+	}
+	hc.eventLogMu.RUnlock()
+	if ok {
+		go eventLogInfo.handler(eventLogResponse.Result, logs)
 	}
 }
 
@@ -1063,7 +1077,13 @@ func (hc *channelSession) processMessages() {
 				if err != nil {
 					logrus.Errorf("re-subscriber topic failed, err: %v\n", err)
 				}
-				// FIXME: resubscribe contract event
+				// resubscribe contract event
+				for _, eventLogInfo := range hc.eventLogHandlers {
+					err = hc.sendSubscribedEvent(eventLogInfo.params)
+					if err != nil {
+						logrus.Errorf("re-subscriber event failed, event: %+v, err: %v\n", *eventLogInfo.params, err)
+					}
+				}
 				return
 			}
 		default:
