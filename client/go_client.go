@@ -19,6 +19,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"strconv"
 	"strings"
@@ -62,6 +63,25 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if config.IsHTTP {
 		c, err = conn.DialContextHTTP(config.NodeURL)
 	} else {
+		// try to parse use file
+		if config.TLSCAContext == nil {
+			config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
+			}
+		}
+		if config.TLSCertContext == nil {
+			config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
+			}
+		}
+		if config.TLSKeyContext == nil {
+			config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
+			}
+		}
 		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
 	}
 	if err != nil {

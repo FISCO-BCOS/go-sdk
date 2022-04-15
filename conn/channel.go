@@ -25,6 +25,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -45,6 +46,8 @@ const (
 	messageHeaderLength = 42
 	protocolVersion     = 3
 	clientType          = "Go-SDK"
+	heartBeatInterval   = 30
+	tlsConnReadDeadline = 10
 )
 
 type nodeInfo struct {
@@ -60,6 +63,7 @@ type eventInfo struct {
 
 type channelSession struct {
 	// groupID   uint
+	connMu    sync.Mutex
 	c         *tls.Conn
 	mu        sync.RWMutex
 	responses map[string]*channelResponse
@@ -79,6 +83,7 @@ type channelSession struct {
 	closed              chan interface{}
 	endpoint            string
 	tlsConfig           *tls.Config
+	heartBeat           *time.Ticker
 }
 
 const (
@@ -366,7 +371,8 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
-			tlsConfig: config}
+			tlsConfig: config,
+			heartBeat: time.NewTicker(heartBeatInterval * time.Second)}
 		go ch.processMessages()
 		if err = ch.handshakeChannel(); err != nil {
 			logrus.Errorf("handshake channel protocol failed, use default protocol version")
@@ -603,7 +609,9 @@ func (hc *channelSession) sendMessage(msg *channelMessage) (*channelMessage, err
 	if hc.c == nil {
 		return nil, errors.New("connection unavailable")
 	}
+	hc.connMu.Lock()
 	_, err := hc.c.Write(msgBytes)
+	hc.connMu.Unlock()
 	if err != nil {
 		return nil, err
 	}
@@ -767,6 +775,19 @@ func (hc *channelSession) sendAMOPMsg(topic string, data []byte) ([]byte, error)
 		return nil, err
 	}
 	return responseTopicData.data, nil
+}
+
+func (hc *channelSession) sendHeartbeatMsg() error {
+	msg, err := newChannelMessage(clientHeartbeat, nil)
+	if err != nil {
+		return fmt.Errorf("new topic message failed, err: %v", err)
+	}
+	// ignore response, because if wait response will block the process message
+	err = hc.sendMessageNoResponse(msg)
+	if err != nil {
+		return fmt.Errorf("sendMessage failed, err: %v", err)
+	}
+	return nil
 }
 
 func (hc *channelSession) broadcastAMOPMsg(topic string, data []byte) error {
@@ -1062,6 +1083,7 @@ func (hc *channelSession) processMessages() {
 				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
 				if err != nil {
 					logrus.Warnf("tls.Dial %v failed, err: %v\n", hc.endpoint, err)
+					time.Sleep(5 * time.Second)
 					continue
 				}
 				hc.c = con
@@ -1085,12 +1107,18 @@ func (hc *channelSession) processMessages() {
 				}
 				return
 			}
+		case <-hc.heartBeat.C:
+			hc.sendHeartbeatMsg()
 		default:
 			receiveBuf := make([]byte, 4096)
+			hc.c.SetReadDeadline(time.Now().Add(tlsConnReadDeadline * time.Second))
 			b, err := hc.c.Read(receiveBuf)
 			if err != nil {
-				logrus.Warnf("channel Read error:%v\n", err)
-				hc.Close()
+				nerr, ok := err.(net.Error)
+				if !ok || !nerr.Timeout() {
+					logrus.Warnf("channel Read error:%v\n", err)
+					hc.Close()
+				}
 				continue
 			}
 			hc.buf = append(hc.buf, receiveBuf[:b]...)
@@ -1112,7 +1140,7 @@ func (hc *channelSession) processMessages() {
 			}
 			hc.mu.Unlock()
 			switch msg.typeN {
-			case rpcMessage, amopResponse, clientHandshake, clientRegisterEventLog:
+			case rpcMessage, amopResponse, clientHandshake, clientRegisterEventLog, clientHeartbeat:
 				logrus.Debugf("response type:%d seq:%s, msg:%s", msg.typeN, msg.uuid, string(msg.body))
 			case transactionNotify:
 				hc.mu.Lock()
