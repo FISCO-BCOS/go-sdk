@@ -4,6 +4,7 @@ package conf
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -14,15 +15,18 @@ import (
 
 // Config contains configuration items for sdk
 type Config struct {
-	IsHTTP     bool
-	ChainID    int64
-	CAFile     string
-	Key        string
-	Cert       string
-	IsSMCrypto bool
-	PrivateKey []byte
-	GroupID    int
-	NodeURL    string
+	IsHTTP         bool
+	ChainID        int64
+	CAFile         string
+	TLSCAContext   []byte
+	Key            string
+	TLSKeyContext  []byte
+	Cert           string
+	TLSCertContext []byte
+	IsSMCrypto     bool
+	PrivateKey     []byte
+	GroupID        int
+	NodeURL        string
 }
 
 // ParseConfigFile parses the configuration from toml config file
@@ -57,17 +61,20 @@ func ParseConfigFile(cfgFile string) ([]Config, error) {
 // ParseConfig parses the configuration from []byte
 func ParseConfig(buffer []byte) ([]Config, error) {
 	viper.SetConfigType("toml")
+	viper.SetDefault("SMCrypto", false)
+	viper.SetDefault("Network.Type", "rpc")
+	viper.SetDefault("Network.CAFile", "ca.crt")
+	viper.SetDefault("Network.Key", "sdk.key")
+	viper.SetDefault("Network.Cert", "sdk.crt")
+	viper.SetDefault("Network.CAContext", "")
+	viper.SetDefault("Network.KeyContext", "")
+	viper.SetDefault("Network.CertContext", "")
 	err := viper.ReadConfig(bytes.NewBuffer(buffer))
 	if err != nil {
 		return nil, fmt.Errorf("viper .ReadConfig failed, err: %v", err)
 	}
 	config := new(Config)
 	var configs []Config
-	viper.SetDefault("SMCrypto", false)
-	viper.SetDefault("Network.Type", "rpc")
-	viper.SetDefault("Network.CAFile", "ca.crt")
-	viper.SetDefault("Network.Key", "sdk.key")
-	viper.SetDefault("Network.Cert", "sdk.crt")
 
 	if viper.IsSet("Chain") {
 		if viper.IsSet("Chain.ChainID") {
@@ -111,6 +118,27 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 		config.CAFile = viper.GetString("Network.CAFile")
 		config.Key = viper.GetString("Network.Key")
 		config.Cert = viper.GetString("Network.Cert")
+		config.TLSCAContext = []byte(viper.GetString("Network.CAContext"))
+		config.TLSKeyContext = []byte(viper.GetString("Network.KeyContext"))
+		config.TLSCertContext = []byte(viper.GetString("Network.CertContext"))
+		if len(config.TLSCAContext) == 0 {
+			config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
+			if err != nil {
+				panic(err)
+			}
+		}
+		if len(config.TLSKeyContext) == 0 {
+			config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
+			if err != nil {
+				panic(err)
+			}
+		}
+		if len(config.TLSCertContext) == 0 {
+			config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
+			if err != nil {
+				panic(err)
+			}
+		}
 		var connections []struct {
 			GroupID int
 			NodeURL string

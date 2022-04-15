@@ -159,5 +159,5 @@ type NewLog struct {
 	// supplied by the contract, usually ABI-encoded
 	Data string `json:"data"`
 	// list of topics provided by the contract.
-	Topics []interface{} `json:"topics" `
+	Topics []string `json:"topics"`
 }
