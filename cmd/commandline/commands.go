@@ -310,7 +310,7 @@ For more information please refer:
 			includeTx = _includeTx
 		}
 
-		blockHash := common.BytesToHash([]byte(args[0]))
+		blockHash := common.HexToHash(args[0])
 		block, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
@@ -433,7 +433,7 @@ For more information please refer:
 			return
 		}
 
-		txHash := common.BytesToHash([]byte(args[0]))
+		txHash := common.HexToHash(args[0])
 		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
@@ -476,7 +476,7 @@ For more information please refer:
 			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
 		}
-		blockHash := common.BytesToHash([]byte(args[0]))
+		blockHash := common.HexToHash(args[0])
 		transaction, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
@@ -560,7 +560,7 @@ For more information please refer:
 			return
 		}
 
-		txHash := common.BytesToHash([]byte(args[0]))
+		txHash := common.HexToHash(args[0])
 		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
 		if err != nil {
 			fmt.Printf("transaction receipt not found: %v\n", err)
