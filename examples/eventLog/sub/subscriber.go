@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -14,11 +13,12 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200 hello", os.Args[0])
+		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200 hello", os.Args[0])
 	}
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
@@ -30,16 +30,16 @@ func main() {
 		indent = "  "
 	)
 	for i := 0; i < 3; i++ {
-		log.Printf("%d try to connect\n", i)
+		logrus.Printf("%d try to connect\n", i)
 		c, err = client.Dial(config)
 		if err != nil {
-			log.Printf("init subscriber failed, err: %v, retrying\n", err)
+			logrus.Printf("init subscriber failed, err: %v, retrying\n", err)
 			continue
 		}
 		break
 	}
 	if err != nil {
-		log.Fatalf("init subscriber failed, err: %v\n", err)
+		logrus.Fatalf("init subscriber failed, err: %v\n", err)
 	}
 	var eventLogParams types.EventLogParams
 	eventLogParams.FromBlock = "1"
@@ -62,14 +62,14 @@ func main() {
 			fmt.Printf("logs marshalIndent error: %v", err)
 		}
 
-		log.Printf("received: %s\n", logRes)
-		log.Printf("received status: %d\n", status)
+		logrus.Printf("received: %s\n", logRes)
+		logrus.Printf("received status: %d\n", status)
 		queryTicker.Stop()
 		queryTicker = time.NewTicker(timeout)
 		done <- true
 	})
 	if err != nil {
-		log.Printf("subscribe event failed, err: %v\n", err)
+		logrus.Printf("subscribe event failed, err: %v\n", err)
 		return
 	}
 
@@ -78,13 +78,13 @@ func main() {
 	for {
 		select {
 		case <-done:
-			log.Println("Done!")
+			logrus.Println("Done!")
 			os.Exit(0)
 		case <-queryTicker.C:
-			log.Printf("can't receive message after 10s, %s\n", time.Now().String())
+			logrus.Printf("can't receive message after 10s, %s\n", time.Now().String())
 			os.Exit(1)
 		case <-killSignal:
-			log.Println("user exit")
+			logrus.Println("user exit")
 			os.Exit(0)
 		}
 	}

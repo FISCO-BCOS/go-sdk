@@ -23,11 +23,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -219,7 +220,7 @@ func (c *jsonCodec) Write(ctx context.Context, v interface{}) error {
 	}
 	err := c.conn.SetWriteDeadline(deadline)
 	if err != nil {
-		log.Print(err)
+		logrus.Print(err)
 	}
 	return c.encode(v)
 }
@@ -230,7 +231,7 @@ func (c *jsonCodec) Close() {
 		close(c.closed)
 		err := c.conn.Close()
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 	})
 }
@@ -249,21 +250,21 @@ func parseMessage(raw json.RawMessage) ([]*jsonrpcMessage, bool) {
 		msgs := []*jsonrpcMessage{{}}
 		err := json.Unmarshal(raw, &msgs[0])
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		return msgs, false
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	_, err := dec.Token() // skip '['
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	var msgs []*jsonrpcMessage
 	for dec.More() {
 		msgs = append(msgs, new(jsonrpcMessage))
 		err := dec.Decode(&msgs[len(msgs)-1])
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 	}
 	return msgs, true
