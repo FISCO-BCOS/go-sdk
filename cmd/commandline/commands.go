@@ -471,7 +471,7 @@ For more information please refer:
 			return
 		}
 
-		txIndex, err := strconv.ParseInt(args[0], 0, 0)
+		txIndex, err := strconv.ParseInt(args[1], 0, 0)
 		if err != nil {
 			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
@@ -581,7 +581,7 @@ var getPendingTransactionsCmd = &cobra.Command{
 			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Pending Transactions: \n%s\n", tx)
+		fmt.Printf("Pending Transactions: \n%+v\n", *tx)
 	},
 }
 
