@@ -6,7 +6,6 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/precompiled/chaingovernance"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -32,21 +31,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("grantCommitteeMember failed, chaingovernance.NewService err, err: %v\n", err)
+			fmt.Printf("grantCommitteeMember failed, chaingovernance.NewService err, err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.GrantCommitteeMember(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("grantCommitteeMember failed, chainGovernanceService.GrantCommitteeMember err: %v\n", err)
+			fmt.Printf("grantCommitteeMember failed, chainGovernanceService.GrantCommitteeMember err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("grantCommitteeMember failed, the result is: %v\n", result)
+			fmt.Printf("grantCommitteeMember failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -71,21 +70,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("revokeCommitteeMember failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("revokeCommitteeMember failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.RevokeCommitteeMember(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("revokeCommitteeMember failed, chainGovernanceService.RevokeCommitteeMember err: %v\n", err)
+			fmt.Printf("revokeCommitteeMember failed, chainGovernanceService.RevokeCommitteeMember err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("revokeCommitteeMember failed, the result is: %v\n", result)
+			fmt.Printf("revokeCommitteeMember failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -107,17 +106,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("listCommitteeMembers failed, chaingovernance.NewService err: %v", err)
+			fmt.Printf("listCommitteeMembers failed, chaingovernance.NewService err: %v", err)
 			return
 		}
 		committeeMembers, err := chainGovernanceService.ListCommitteeMembers()
 		if err != nil {
-			logrus.Printf("listCommitteeMembers failed, chainGovernanceService.ListCommitteeMembers err: %v", err)
+			fmt.Printf("listCommitteeMembers failed, chainGovernanceService.ListCommitteeMembers err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(committeeMembers, "committee_members")
 		if err != nil {
-			logrus.Printf("listCommitteeMembers failed, ListToJsonStr err: %v\n", err)
+			fmt.Printf("listCommitteeMembers failed, ListToJsonStr err: %v\n", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -142,20 +141,20 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("queryCommitteeMemberWeight failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("queryCommitteeMemberWeight failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.QueryCommitteeMemberWeight(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("queryCommitteeMemberWeight failed, chainGovernanceService.QueryCommitteeMemberWeight err: %v\n", err)
+			fmt.Printf("queryCommitteeMemberWeight failed, chainGovernanceService.QueryCommitteeMemberWeight err: %v\n", err)
 			return
 		}
-		logrus.Printf("success, the weight %v is %v\n", accountAddress, result)
+		fmt.Printf("success, the weight %v is %v\n", accountAddress, result)
 	},
 }
 
@@ -178,7 +177,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		num, err := strconv.Atoi(args[1])
@@ -193,16 +192,16 @@ For more information please refer:
 		weight := uint64(num)
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("updateCommitteeMemberWeight failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("updateCommitteeMemberWeight failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.UpdateCommitteeMemberWeight(common.HexToAddress(accountAddress), weight)
 		if err != nil {
-			logrus.Printf("updateCommitteeMemberWeight failed, chainGovernanceService.UpdateCommitteeMemberWeight err: %v\n", err)
+			fmt.Printf("updateCommitteeMemberWeight failed, chainGovernanceService.UpdateCommitteeMemberWeight err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("updateCommitteeMemberWeight failed, the result is: %v\n", result)
+			fmt.Printf("updateCommitteeMemberWeight failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -237,16 +236,16 @@ For more information please refer:
 		threshold := uint64(num)
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("updateThreshold failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("updateThreshold failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.UpdateThreshold(threshold)
 		if err != nil {
-			logrus.Printf("updateThreshold failed, chainGovernanceService.UpdateThreshold err: %v\n", err)
+			fmt.Printf("updateThreshold failed, chainGovernanceService.UpdateThreshold err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("updateThreshold failed, the result is: %v\n", result)
+			fmt.Printf("updateThreshold failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -268,15 +267,15 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("queryThreshold failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("queryThreshold failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.QueryThreshold()
 		if err != nil {
-			logrus.Printf("queryThreshold failed, chainGovernanceService.QueryThreshold err: %v\n", err)
+			fmt.Printf("queryThreshold failed, chainGovernanceService.QueryThreshold err: %v\n", err)
 			return
 		}
-		logrus.Printf("success, the effective threshold of voting is %v\n", result)
+		fmt.Printf("success, the effective threshold of voting is %v\n", result)
 	},
 }
 
@@ -298,21 +297,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("grantOperator failed, chaingovernance.NewService err, err: %v\n", err)
+			fmt.Printf("grantOperator failed, chaingovernance.NewService err, err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.GrantOperator(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("grantOperator failed, chainGovernanceService.GrantOperator err: %v\n", err)
+			fmt.Printf("grantOperator failed, chainGovernanceService.GrantOperator err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("grantOperator failed, the result is: %v\n", result)
+			fmt.Printf("grantOperator failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -337,21 +336,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("revokeOperator failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("revokeOperator failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.RevokeOperator(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("revokeOperator failed, chainGovernanceService.RevokeOperator err: %v\n", err)
+			fmt.Printf("revokeOperator failed, chainGovernanceService.RevokeOperator err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("revokeOperator failed, the result is: %v\n", result)
+			fmt.Printf("revokeOperator failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -373,17 +372,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("listOperators failed, chaingovernance.NewService err: %v", err)
+			fmt.Printf("listOperators failed, chaingovernance.NewService err: %v", err)
 			return
 		}
 		operators, err := chainGovernanceService.ListOperators()
 		if err != nil {
-			logrus.Printf("listOperators failed, chainGovernanceService.ListOperators err: %v", err)
+			fmt.Printf("listOperators failed, chainGovernanceService.ListOperators err: %v", err)
 			return
 		}
 		jsonStr, err := ListToJSONStr(operators, "operators")
 		if err != nil {
-			logrus.Printf("listOperators failed, ListToJsonStr err: %v\n", err)
+			fmt.Printf("listOperators failed, ListToJsonStr err: %v\n", err)
 			return
 		}
 		fmt.Println(jsonStr)
@@ -409,21 +408,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("freezeAccount failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("freezeAccount failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.FreezeAccount(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("freezeAccount failed, chainGovernanceService.FreezeAccount err: %v\n", err)
+			fmt.Printf("freezeAccount failed, chainGovernanceService.FreezeAccount err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("freezeAccount failed, the result is: %v\n", result)
+			fmt.Printf("freezeAccount failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -449,21 +448,21 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("unfreezeAccount failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("unfreezeAccount failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.UnfreezeAccount(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("unfreezeAccount failed, chainGovernanceService.UnfreezeAccount err: %v\n", err)
+			fmt.Printf("unfreezeAccount failed, chainGovernanceService.UnfreezeAccount err: %v\n", err)
 			return
 		}
 		if result != 1 {
-			logrus.Printf("unfreezeAccount failed, the result is: %v\n", result)
+			fmt.Printf("unfreezeAccount failed, the result is: %v\n", result)
 			return
 		}
 		fmt.Println("success")
@@ -488,17 +487,17 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			logrus.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
 			return
 		}
 		chainGovernanceService, err := chaingovernance.NewService(RPC)
 		if err != nil {
-			logrus.Printf("getAccountStatus failed, chaingovernance.NewService err: %v\n", err)
+			fmt.Printf("getAccountStatus failed, chaingovernance.NewService err: %v\n", err)
 			return
 		}
 		result, err := chainGovernanceService.GetAccountStatus(common.HexToAddress(accountAddress))
 		if err != nil {
-			logrus.Printf("getAccountStatus failed, chainGovernanceService.GetAccountStatus err: %v\n", err)
+			fmt.Printf("getAccountStatus failed, chainGovernanceService.GetAccountStatus err: %v\n", err)
 			return
 		}
 		fmt.Println(result)

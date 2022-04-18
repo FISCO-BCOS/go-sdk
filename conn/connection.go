@@ -212,16 +212,6 @@ func (c *Connection) nextID() json.RawMessage {
 	return strconv.AppendUint(nil, uint64(id), 10)
 }
 
-// SupportedModules calls the rpc_modules method, retrieving the list of
-// APIs that are available on the server.
-func (c *Connection) SupportedModules() (map[string]string, error) {
-	var result map[string]string
-	ctx, cancel := context.WithTimeout(context.Background(), subscribeTimeout)
-	defer cancel()
-	err := c.CallContext(ctx, &result, "rpc_modules")
-	return result, err
-}
-
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) Close() {
 	if c.isHTTP {

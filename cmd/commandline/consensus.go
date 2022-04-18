@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/FISCO-BCOS/go-sdk/precompiled/consensus"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -27,12 +26,12 @@ For more information please refer:
 		nodeID := args[0]
 		consensusService, err := consensus.NewConsensusService(RPC)
 		if err != nil {
-			logrus.Printf("addObserver failed, consensus.NewConsensusService err: %v\n", err)
+			fmt.Printf("addObserver failed, consensus.NewConsensusService err: %v\n", err)
 			return
 		}
 		result, err := consensusService.AddObserver(nodeID)
 		if err != nil {
-			logrus.Printf("addObserver failed, consensusService.AddObserver err: %v\n", err)
+			fmt.Printf("addObserver failed, consensusService.AddObserver err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -62,12 +61,12 @@ For more information please refer:
 		nodeID := args[0]
 		consensusService, err := consensus.NewConsensusService(RPC)
 		if err != nil {
-			logrus.Printf("addSealer failed, consensus.NewConsensusService err: %v\n", err)
+			fmt.Printf("addSealer failed, consensus.NewConsensusService err: %v\n", err)
 			return
 		}
 		result, err := consensusService.AddSealer(nodeID)
 		if err != nil {
-			logrus.Printf("addSealer failed, consensusService.AddSealer err: %v\n", err)
+			fmt.Printf("addSealer failed, consensusService.AddSealer err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -97,12 +96,12 @@ For more information please refer:
 		nodeID := args[0]
 		consensusService, err := consensus.NewConsensusService(RPC)
 		if err != nil {
-			logrus.Printf("removeNode failed, consensus.NewConsensusService err:%v\n", err)
+			fmt.Printf("removeNode failed, consensus.NewConsensusService err:%v\n", err)
 			return
 		}
 		result, err := consensusService.RemoveNode(nodeID)
 		if err != nil {
-			logrus.Printf("removeNode failed, consensusService.RemoveNode err: %v\n", err)
+			fmt.Printf("removeNode failed, consensusService.RemoveNode err: %v\n", err)
 			return
 		}
 		if result != 1 {
