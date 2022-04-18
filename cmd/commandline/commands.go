@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -70,14 +69,14 @@ var newAccountCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		clientVer, err := RPC.GetClientVersion(context.Background())
 		if err != nil {
-			logrus.Printf("client version not found: %v\n", err)
+			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
 		cv, err := json.MarshalIndent(clientVer, "", indent)
 		if err != nil {
-			logrus.Printf("client version marshalIndent error: %v", err)
+			fmt.Printf("client version marshalIndent error: %v", err)
 		}
-		logrus.Printf("Client Version: \n%s\n", cv)
+		fmt.Printf("Client Version: \n%s\n", cv)
 	},
 }
 
@@ -91,14 +90,14 @@ var getClientVersionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		clientVer, err := RPC.GetClientVersion(context.Background())
 		if err != nil {
-			logrus.Printf("client version not found: %v\n", err)
+			fmt.Printf("client version not found: %v\n", err)
 			return
 		}
 		cv, err := json.MarshalIndent(clientVer, "", indent)
 		if err != nil {
-			logrus.Printf("client version marshalIndent error: %v", err)
+			fmt.Printf("client version marshalIndent error: %v", err)
 		}
-		logrus.Printf("Client Version: \n%s\n", cv)
+		fmt.Printf("Client Version: \n%s\n", cv)
 	},
 }
 
@@ -109,7 +108,7 @@ var getGroupIDCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		groupID := RPC.GetGroupID()
-		logrus.Printf("Group ID: \n%s\n", groupID)
+		fmt.Printf("Group ID: \n%s\n", groupID)
 	},
 }
 
@@ -122,10 +121,10 @@ The block height is encoded in hex`,
 	Run: func(cmd *cobra.Command, args []string) {
 		blockNumber, err := RPC.GetBlockNumber(context.Background())
 		if err != nil {
-			logrus.Printf("block number not found: %v\n", err)
+			fmt.Printf("block number not found: %v\n", err)
 			return
 		}
-		logrus.Printf("blocknumber: %d\n", blockNumber)
+		fmt.Printf("blocknumber: %d\n", blockNumber)
 	},
 }
 
@@ -138,10 +137,10 @@ The PBFT view is encoded in hex`,
 	Run: func(cmd *cobra.Command, args []string) {
 		pbft, err := RPC.GetPBFTView(context.Background())
 		if err != nil {
-			logrus.Printf("PBFT view not found: %v\n", err)
+			fmt.Printf("PBFT view not found: %v\n", err)
 			return
 		}
-		logrus.Printf("PBFT view: \n%s\n", pbft)
+		fmt.Printf("PBFT view: \n%s\n", pbft)
 	},
 }
 
@@ -153,10 +152,10 @@ var getSealerListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		sealerList, err := RPC.GetSealerList(context.Background())
 		if err != nil {
-			logrus.Printf("sealer list not found: %v\n", err)
+			fmt.Printf("sealer list not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Sealer List: \n%s\n", sealerList)
+		fmt.Printf("Sealer List: \n%s\n", sealerList)
 	},
 }
 
@@ -168,10 +167,10 @@ var getObserverListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		observerList, err := RPC.GetObserverList(context.Background())
 		if err != nil {
-			logrus.Printf("observer list not found: %v\n", err)
+			fmt.Printf("observer list not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Observer List: \n%s\n", observerList)
+		fmt.Printf("Observer List: \n%s\n", observerList)
 	},
 }
 
@@ -183,10 +182,10 @@ var getConsensusStatusCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		raw, err := RPC.GetConsensusStatus(context.Background())
 		if err != nil {
-			logrus.Printf("consensus status not found: %v\n", err)
+			fmt.Printf("consensus status not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Consensus Status: \n%s\n", raw)
+		fmt.Printf("Consensus Status: \n%s\n", raw)
 	},
 }
 
@@ -198,14 +197,14 @@ var getSyncStatusCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		syncStatus, err := RPC.GetSyncStatus(context.Background())
 		if err != nil {
-			logrus.Printf("synchronization status not found: %v\n", err)
+			fmt.Printf("synchronization status not found: %v\n", err)
 			return
 		}
 		raw, err := json.MarshalIndent(syncStatus, "", indent)
 		if err != nil {
-			logrus.Printf("synchronization status marshalIndent error: %v", err)
+			fmt.Printf("synchronization status marshalIndent error: %v", err)
 		}
-		logrus.Printf("Synchronization Status: \n%s\n", raw)
+		fmt.Printf("Synchronization Status: \n%s\n", raw)
 	},
 }
 
@@ -217,14 +216,14 @@ var getPeersCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		nodes, err := RPC.GetPeers(context.Background())
 		if err != nil {
-			logrus.Printf("peers not found: %v\n", err)
+			fmt.Printf("peers not found: %v\n", err)
 			return
 		}
 		peers, err := json.MarshalIndent(nodes, "", indent)
 		if err != nil {
-			logrus.Printf("peers marshalIndent error: %v", err)
+			fmt.Printf("peers marshalIndent error: %v", err)
 		}
-		logrus.Printf("Peers: \n%s\n", peers)
+		fmt.Printf("Peers: \n%s\n", peers)
 	},
 }
 
@@ -236,10 +235,10 @@ var getGroupPeersCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		peers, err := RPC.GetGroupPeers(context.Background())
 		if err != nil {
-			logrus.Printf("peers not found: %v\n", err)
+			fmt.Printf("peers not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Peers: \n%s\n", peers)
+		fmt.Printf("Peers: \n%s\n", peers)
 	},
 }
 
@@ -251,10 +250,10 @@ var getNodeIDListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		peers, err := RPC.GetNodeIDList(context.Background())
 		if err != nil {
-			logrus.Printf("node ID list not found: %v\n", err)
+			fmt.Printf("node ID list not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Node ID list: \n%s\n", peers)
+		fmt.Printf("Node ID list: \n%s\n", peers)
 	},
 }
 
@@ -266,10 +265,10 @@ var getGroupListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		peers, err := RPC.GetGroupList(context.Background())
 		if err != nil {
-			logrus.Printf("group IDs list not found: %v\n", err)
+			fmt.Printf("group IDs list not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Group ID List: \n%s\n", peers)
+		fmt.Printf("Group List: \n%s\n", peers)
 	},
 }
 
@@ -305,7 +304,7 @@ For more information please refer:
 		} else {
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
-				logrus.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
+				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
 				return
 			}
 			includeTx = _includeTx
@@ -314,11 +313,11 @@ For more information please refer:
 		blockHash := common.BytesToHash([]byte(args[0]))
 		block, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
 		if err != nil {
-			logrus.Printf("block not found: %v\n", err)
+			fmt.Printf("block not found: %v\n", err)
 			return
 		}
 		peers, err := json.MarshalIndent(block, "", indent)
-		logrus.Printf("Block: \n%s\n", peers)
+		fmt.Printf("Block: \n%s\n", peers)
 	},
 }
 
@@ -343,7 +342,7 @@ For more information please refer:
 
 		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
-			logrus.Printf("parse block number failed, err: %v", err)
+			fmt.Printf("parse block number failed, err: %v", err)
 			return
 		}
 		_, err = isBlockNumberOutOfRange(blockNumber)
@@ -357,7 +356,7 @@ For more information please refer:
 		} else {
 			_includeTx, err := strconv.ParseBool(args[1])
 			if err != nil {
-				logrus.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
+				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
 				return
 			}
 			includeTx = _includeTx
@@ -365,11 +364,11 @@ For more information please refer:
 
 		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, includeTx)
 		if err != nil {
-			logrus.Printf("block not found: %v\n", err)
+			fmt.Printf("block not found: %v\n", err)
 			return
 		}
 		js, err := json.MarshalIndent(block, "", indent)
-		logrus.Printf("Block: \n%s\n", js)
+		fmt.Printf("Block: \n%s\n", js)
 	},
 }
 
@@ -391,7 +390,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
-			logrus.Printf("parse block number failed, %s", args[0])
+			fmt.Printf("parse block number failed, %s", args[0])
 			return
 		}
 
@@ -403,10 +402,10 @@ For more information please refer:
 
 		blockHash, err := RPC.GetBlockHashByNumber(context.Background(), blockNumber)
 		if err != nil {
-			logrus.Printf("block not found: %v\n", err)
+			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Block Hash: \n%s\n", blockHash.Hex())
+		fmt.Printf("Block Hash: \n%s\n", blockHash.Hex())
 	},
 }
 
@@ -437,15 +436,15 @@ For more information please refer:
 		txHash := common.BytesToHash([]byte(args[0]))
 		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash)
 		if err != nil {
-			logrus.Printf("transaction not found: %v\n", err)
+			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
 		tx, err := json.MarshalIndent(transaction, "", indent)
 		if err != nil {
-			logrus.Printf("transaction marshalIndent error: %v\n", err)
+			fmt.Printf("transaction marshalIndent error: %v\n", err)
 			return
 		}
-		logrus.Printf("Transaction: \n%s\n", tx)
+		fmt.Printf("Transaction: \n%s\n", tx)
 	},
 }
 
@@ -474,21 +473,21 @@ For more information please refer:
 
 		txIndex, err := strconv.ParseInt(args[0], 0, 0)
 		if err != nil {
-			logrus.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
+			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
 		}
 		blockHash := common.BytesToHash([]byte(args[0]))
 		transaction, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
 		if err != nil {
-			logrus.Printf("transaction not found: %v\n", err)
+			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
 		tx, err := json.MarshalIndent(transaction, "", indent)
 		if err != nil {
-			logrus.Printf("transaction marshalIndent error: %v\n", err)
+			fmt.Printf("transaction marshalIndent error: %v\n", err)
 			return
 		}
-		logrus.Printf("Transaction: \n%s\n", tx)
+		fmt.Printf("Transaction: \n%s\n", tx)
 	},
 }
 
@@ -511,7 +510,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
-			logrus.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
+			fmt.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
 			return
 		}
 
@@ -523,19 +522,19 @@ For more information please refer:
 
 		txIndex, err := strconv.Atoi(args[1])
 		if err != nil {
-			logrus.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
+			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
 			return
 		}
 		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
 		if err != nil {
-			logrus.Printf("transaction not found: %v\n", err)
+			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
 		raw, err := json.MarshalIndent(tx, "", indent)
 		if err != nil {
-			logrus.Printf("transaction marshalIndent error: %v", err)
+			fmt.Printf("transaction marshalIndent error: %v", err)
 		}
-		logrus.Printf("Transaction: \n%s\n", raw)
+		fmt.Printf("Transaction: \n%s\n", raw)
 	},
 }
 
@@ -564,10 +563,10 @@ For more information please refer:
 		txHash := common.BytesToHash([]byte(args[0]))
 		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
 		if err != nil {
-			logrus.Printf("transaction receipt not found: %v\n", err)
+			fmt.Printf("transaction receipt not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Transaction Receipt: \n%s\n", tx)
+		fmt.Printf("Transaction Receipt: \n%s\n", tx)
 	},
 }
 
@@ -579,10 +578,10 @@ var getPendingTransactionsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		tx, err := RPC.GetPendingTransactions(context.Background())
 		if err != nil {
-			logrus.Printf("transaction not found: %v\n", err)
+			fmt.Printf("transaction not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Pending Transactions: \n%s\n", tx)
+		fmt.Printf("Pending Transactions: \n%s\n", tx)
 	},
 }
 
@@ -594,10 +593,10 @@ var getPendingTxSizeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		tx, err := RPC.GetPendingTxSize(context.Background())
 		if err != nil {
-			logrus.Printf("transactions not found: %v\n", err)
+			fmt.Printf("transactions not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Pending Transactions Count: \n    hex: %s\n", tx)
+		fmt.Printf("Pending Transactions Count: \n    hex: %s\n", tx)
 	},
 }
 
@@ -625,10 +624,10 @@ For more information please refer:
 			return
 		}
 
-		contractAdd := common.BytesToAddress([]byte(args[0]))
+		contractAdd := common.HexToAddress(args[0])
 		code, err := RPC.GetCode(context.Background(), contractAdd)
 		if err != nil {
-			logrus.Printf("This address does not exist: %v\n", err)
+			fmt.Printf("This address does not exist: %v\n", err)
 			return
 		}
 
@@ -637,7 +636,7 @@ For more information please refer:
 			return
 		}
 
-		logrus.Printf("Contract Code: \n%s\n", code)
+		fmt.Printf("Contract Code: \n%s\n", code)
 	},
 }
 
@@ -649,14 +648,14 @@ var getTotalTransactionCountCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		counts, err := RPC.GetTotalTransactionCount(context.Background())
 		if err != nil {
-			logrus.Printf("information not found: %v\n", err)
+			fmt.Printf("information not found: %v\n", err)
 			return
 		}
 		raw, err := json.MarshalIndent(counts, "", indent)
 		if err != nil {
-			logrus.Printf("totalTransactionCount MarshalIndent error: %v", err)
+			fmt.Printf("totalTransactionCount MarshalIndent error: %v", err)
 		}
-		logrus.Printf("Latest Statistics on Transaction and Block Height: \n%s\n", raw)
+		fmt.Printf("Latest Statistics on Transaction and Block Height: \n%s\n", raw)
 	},
 }
 
@@ -689,10 +688,10 @@ For more information please refer:
 		key := args[0]
 		value, err := RPC.GetSystemConfigByKey(context.Background(), key)
 		if err != nil {
-			logrus.Printf("information not found: %v\n", err)
+			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		logrus.Printf("Result: \n%s\n", value)
+		fmt.Printf("Result: \n%s\n", value)
 	},
 }
 
@@ -754,9 +753,11 @@ $ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
 func init() {
 	// add common command
 	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(newAccountCmd)
 	// add node command
 	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
+	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
 	// add transaction command
