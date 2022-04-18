@@ -164,7 +164,6 @@ func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, g
 	}
 	cer, err := tls.X509KeyPair(certContext, keyContext)
 	if err != nil {
-		// log.Println(err)
 		return nil, err
 	}
 	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
@@ -270,7 +269,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case resp.Error != nil:
 		return resp.Error
 	case len(resp.Result) == 0:
-		// log.Printf("result is null, %+v, err:%+v \n", resp, err)
+		// logrus.Printf("result is null, %+v, err:%+v \n", resp, err)
 		return ErrNoResult
 	default:
 		return json.Unmarshal(resp.Result, &result)
@@ -494,7 +493,7 @@ func (c *Connection) reconnect(ctx context.Context) error {
 	}
 	newconn, err := c.reconnectFunc(ctx)
 	if err != nil {
-		// log.Trace("RPC client reconnect failed", "err", err)
+		// logrus.Trace("RPC client reconnect failed", "err", err)
 		return err
 	}
 	select {

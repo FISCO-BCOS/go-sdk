@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -39,7 +38,7 @@ func ParseConfigFile(cfgFile string) ([]Config, error) {
 	defer func() {
 		err = file.Close()
 		if err != nil {
-			log.Fatalf("close file failed, err: %v", err)
+			logrus.Fatalf("close file failed, err: %v", err)
 		}
 	}()
 
