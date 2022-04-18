@@ -17,7 +17,6 @@
 package conn
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
@@ -341,94 +340,6 @@ func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
 	return hc.unSubscribeBlockNumberNotify(groupID)
 }
 
-// BatchCall sends all given requests as a single batch and waits for the server
-// to return a response for all of them.
-//
-// In contrast to Call, BatchCall only returns I/O errors. Any error specific to
-// a request is reported through the Error field of the corresponding BatchElem.
-//
-// Note that batch calls may not be executed atomically on the server side.
-func (c *Connection) BatchCall(b []BatchElem) error {
-	ctx := context.Background()
-	return c.BatchCallContext(ctx, b)
-}
-
-// BatchCallContext sends all given requests as a single batch and waits for the server
-// to return a response for all of them. The wait duration is bounded by the
-// context's deadline.
-//
-// In contrast to CallContext, BatchCallContext only returns errors that have occurred
-// while sending the request. Any error specific to a request is reported through the
-// Error field of the corresponding BatchElem.
-//
-// Note that batch calls may not be executed atomically on the server side.
-func (c *Connection) BatchCallContext(ctx context.Context, b []BatchElem) error {
-	msgs := make([]*jsonrpcMessage, len(b))
-	op := &requestOp{
-		ids:  make([]json.RawMessage, len(b)),
-		resp: make(chan *jsonrpcMessage, len(b)),
-	}
-	for i, elem := range b {
-		msg, err := c.newMessage(elem.Method, elem.Args...)
-		if err != nil {
-			return err
-		}
-		msgs[i] = msg
-		op.ids[i] = msg.ID
-	}
-
-	var err error
-	if c.isHTTP {
-		err = c.sendBatchHTTP(ctx, op, msgs)
-	} else {
-		err = c.send(ctx, op, msgs)
-	}
-
-	// Wait for all responses to come back.
-	for n := 0; n < len(b) && err == nil; n++ {
-		var resp *jsonrpcMessage
-		resp, err = op.wait(ctx, c)
-		if err != nil {
-			break
-		}
-		// Find the element corresponding to this response.
-		// The element is guaranteed to be present because dispatch
-		// only sends valid IDs to our channel.
-		var elem *BatchElem
-		for i := range msgs {
-			if bytes.Equal(msgs[i].ID, resp.ID) {
-				elem = &b[i]
-				break
-			}
-		}
-		if resp.Error != nil {
-			elem.Error = resp.Error
-			continue
-		}
-		if len(resp.Result) == 0 {
-			elem.Error = ErrNoResult
-			continue
-		}
-		elem.Error = json.Unmarshal(resp.Result, elem.Result)
-	}
-	return err
-}
-
-// Notify sends a notification, i.e. a method call that doesn't expect a response.
-func (c *Connection) Notify(ctx context.Context, method string, args ...interface{}) error {
-	op := new(requestOp)
-	msg, err := c.newMessage(method, args...)
-	if err != nil {
-		return err
-	}
-	msg.ID = nil
-
-	if c.isHTTP {
-		return c.sendHTTP(ctx, op, msg)
-	}
-	return c.send(ctx, op, msg)
-}
-
 func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
 	msg := &jsonrpcMessage{Version: vsn, ID: c.nextID(), Method: method}
 	if paramsIn != nil { // prevent sending "params":null
@@ -438,37 +349,6 @@ func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrp
 		}
 	}
 	return msg, nil
-}
-
-// send registers op with the dispatch loop, then sends msg on the connection.
-// if sending fails, op is deregistered.
-func (c *Connection) send(ctx context.Context, op *requestOp, msg interface{}) error {
-	select {
-	case c.reqInit <- op:
-		err := c.write(ctx, msg)
-		c.reqSent <- err
-		return err
-	case <-ctx.Done():
-		// This can happen if the client is overloaded or unable to keep up with
-		// subscription notifications.
-		return ctx.Err()
-	case <-c.closing:
-		return ErrClientQuit
-	}
-}
-
-func (c *Connection) write(ctx context.Context, msg interface{}) error {
-	// The previous write failed. Try to establish a new connection.
-	if c.writeConn == nil {
-		if err := c.reconnect(ctx); err != nil {
-			return err
-		}
-	}
-	err := c.writeConn.Write(ctx, msg)
-	if err != nil {
-		c.writeConn = nil
-	}
-	return err
 }
 
 func (c *Connection) reconnect(ctx context.Context) error {
