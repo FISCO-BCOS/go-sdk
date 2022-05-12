@@ -93,7 +93,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -107,7 +106,6 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 {{$structs := .Structs}}
@@ -382,133 +380,21 @@ var (
 	{{end}}
 
 	{{range .Events}}
-		// {{$contract.Type}}{{.Normalized.Name}}Iterator is returned from Filter{{.Normalized.Name}} and is used to iterate over the raw logs and unpacked data for {{.Normalized.Name}} events raised by the {{$contract.Type}} contract.
-		type {{$contract.Type}}{{.Normalized.Name}}Iterator struct {
-			Event *{{$contract.Type}}{{.Normalized.Name}} // Event containing the contract specifics and raw log
-
-			contract *bind.BoundContract // Generic contract to use for unpacking event data
-			event    string              // Event name to use for unpacking event data
-
-			logs chan types.Log        // Log channel receiving the found contract events
-			sub  ethereum.Subscription // Subscription for errors, completion and termination
-			done bool                  // Whether the subscription completed delivering logs
-			fail error                 // Occurred error to stop iteration
-		}
-		// Next advances the iterator to the subsequent event, returning whether there
-		// are any more events found. In case of a retrieval or parsing error, false is
-		// returned and Error() can be queried for the exact failure.
-		func (it *{{$contract.Type}}{{.Normalized.Name}}Iterator) Next() bool {
-			// If the iterator failed, stop iterating
-			if (it.fail != nil) {
-				return false
-			}
-			// If the iterator completed, deliver directly whatever's available
-			if (it.done) {
-				select {
-				case log := <-it.logs:
-					it.Event = new({{$contract.Type}}{{.Normalized.Name}})
-					if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-						it.fail = err
-						return false
-					}
-					it.Event.Raw = log
-					return true
-
-				default:
-					return false
-				}
-			}
-			// Iterator still in progress, wait for either a data or an error event
-			select {
-			case log := <-it.logs:
-				it.Event = new({{$contract.Type}}{{.Normalized.Name}})
-				if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-					it.fail = err
-					return false
-				}
-				it.Event.Raw = log
-				return true
-
-			case err := <-it.sub.Err():
-				it.done = true
-				it.fail = err
-				return it.Next()
-			}
-		}
-		// Error returns any retrieval or parsing error occurred during filtering.
-		func (it *{{$contract.Type}}{{.Normalized.Name}}Iterator) Error() error {
-			return it.fail
-		}
-		// Close terminates the iteration process, releasing any pending underlying
-		// resources.
-		func (it *{{$contract.Type}}{{.Normalized.Name}}Iterator) Close() error {
-			it.sub.Unsubscribe()
-			return nil
-		}
-
 		// {{$contract.Type}}{{.Normalized.Name}} represents a {{.Normalized.Name}} event raised by the {{$contract.Type}} contract.
 		type {{$contract.Type}}{{.Normalized.Name}} struct { {{range .Normalized.Inputs}}
 			{{capitalise .Name}} {{if .Indexed}}{{bindtopictype .Type $structs}}{{else}}{{bindtype .Type $structs}}{{end}}; {{end}}
 			Raw types.Log // Blockchain specific contextual infos
 		}
 
-		// Filter{{.Normalized.Name}} is a free log retrieval operation binding the contract event 0x{{printf "%x" .Original.ID}}.
-		//
-		// Solidity: {{formatevent .Original $structs}}
- 		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) Filter{{.Normalized.Name}}(opts *bind.FilterOpts{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} []{{bindtype .Type $structs}}{{end}}{{end}}) (*{{$contract.Type}}{{.Normalized.Name}}Iterator, error) {
-			{{range .Normalized.Inputs}}
-			{{if .Indexed}}var {{.Name}}Rule []interface{}
-			for _, {{.Name}}Item := range {{.Name}} {
-				{{.Name}}Rule = append({{.Name}}Rule, {{.Name}}Item)
-			}{{end}}{{end}}
-
-			logs, sub, err := _{{$contract.Type}}.contract.FilterLogs(opts, "{{.Original.Name}}"{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}Rule{{end}}{{end}})
-			if err != nil {
-				return nil, err
-			}
-			return &{{$contract.Type}}{{.Normalized.Name}}Iterator{contract: _{{$contract.Type}}.contract, event: "{{.Original.Name}}", logs: logs, sub: sub}, nil
- 		}
-
 		// Watch{{.Normalized.Name}} is a free log subscription operation binding the contract event 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatevent .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) Watch{{.Normalized.Name}}(opts *bind.WatchOpts, sink chan<- *{{$contract.Type}}{{.Normalized.Name}}{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} []{{bindtype .Type $structs}}{{end}}{{end}}) (event.Subscription, error) {
-			{{range .Normalized.Inputs}}
-			{{if .Indexed}}var {{.Name}}Rule []interface{}
-			for _, {{.Name}}Item := range {{.Name}} {
-				{{.Name}}Rule = append({{.Name}}Rule, {{.Name}}Item)
-			}{{end}}{{end}}
+		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) Watch{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) error {
+			return _{{$contract.Type}}.contract.WatchLogs(fromBlock, handler, "{{.Original.Name}}"{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}{{end}}{{end}})
+		}
 
-			logs, sub, err := _{{$contract.Type}}.contract.WatchLogs(opts, "{{.Original.Name}}"{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}Rule{{end}}{{end}})
-			if err != nil {
-				return nil, err
-			}
-			return event.NewSubscription(func(quit <-chan struct{}) error {
-				defer sub.Unsubscribe()
-				for {
-					select {
-					case log := <-logs:
-						// New log arrived, parse the event and forward to the user
-						event := new({{$contract.Type}}{{.Normalized.Name}})
-						if err := _{{$contract.Type}}.contract.UnpackLog(event, "{{.Original.Name}}", log); err != nil {
-							return err
-						}
-						event.Raw = log
-
-						select {
-						case sink <- event:
-						case err := <-sub.Err():
-							return err
-						case <-quit:
-							return nil
-						}
-					case err := <-sub.Err():
-						return err
-					case <-quit:
-						return nil
-					}
-				}
-			}), nil
+		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) WatchAll{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log)) error {
+			return _{{$contract.Type}}.contract.WatchLogs(fromBlock, handler, "{{.Original.Name}}")
 		}
 
 		// Parse{{.Normalized.Name}} is a log parse operation binding the contract event 0x{{printf "%x" .Original.ID}}.
@@ -520,6 +406,24 @@ var (
 				return nil, err
 			}
 			return event, nil
+		}
+
+		// Watch{{.Normalized.Name}} is a free log subscription operation binding the contract event 0x{{printf "%x" .Original.ID}}.
+		//
+		// Solidity: {{formatevent .Original $structs}}
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) Watch{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) error {
+			return _{{$contract.Type}}.Contract.Watch{{.Normalized.Name}}(fromBlock, handler {{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}{{end}}{{end}})
+		}
+
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) WatchAll{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log)) error {
+			return _{{$contract.Type}}.Contract.WatchAll{{.Normalized.Name}}(fromBlock, handler)
+		}
+
+		// Parse{{.Normalized.Name}} is a log parse operation binding the contract event 0x{{printf "%x" .Original.ID}}.
+		//
+		// Solidity: {{formatevent .Original $structs}}
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) Parse{{.Normalized.Name}}(log types.Log) (*{{$contract.Type}}{{.Normalized.Name}}, error) {
+			return _{{$contract.Type}}.Contract.Parse{{.Normalized.Name}}(log)
 		}
 
  	{{end}}
@@ -716,7 +620,7 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}}
 	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}{
 	{{if .Normalized.Inputs}}NSArray * __resArr = @[
         {{range $i, $_ :=.Normalized.Inputs}}{{if ne $i 0}},
@@ -729,7 +633,7 @@ const tmplSourceObjc = `// Code generated - DO NOT EDIT.
 	return [self.sdk sendTransaction:self.abi address:self.address method:@"{{.Original.Name}}" params:__params];
 }
 {{end}}
-	
+
 - (instancetype)init{
 	self.abi = @"{{.InputABI}}";
 	self.bin = @"0x{{.InputBin}}";
@@ -760,7 +664,7 @@ const tmplSourceObjcHeader = `#import <Foundation/Foundation.h>
 #import <FiscoBcosIosSdk/FiscoBcosIosSdk.h>
 
 NS_ASSUME_NONNULL_BEGIN
-{{$structs := .Structs}}{{range $contract := .Contracts}}{{$contractName := .Type}} 
+{{$structs := .Structs}}{{range $contract := .Contracts}}{{$contractName := .Type}}
 {{range $structs}}// {{.Name}} is an auto generated low-level Go binding around an user-defined struct.
 @interface {{$contractName}}_{{.Name}} : NSObject
 {{range $field := .Fields}}@property (nonatomic, assign) {{$field.Type}} {{$field.Name}};
@@ -783,14 +687,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// deploy {{range .Constructor.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Constructor.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileReceiptResult*)  deploy {{range $i, $_ := .Constructor.Inputs}}{{if ne $i 0}} 
+- (MobileReceiptResult*)  deploy {{range $i, $_ := .Constructor.Inputs}}{{if ne $i 0}}
 	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}}; {{end}}
 
 {{range .Calls}}
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}} {{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileCallResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+- (MobileCallResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}}
 	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}};
 {{end}}
 
@@ -798,7 +702,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// {{.Normalized.Name}}{{range .Normalized.Inputs}}
 /// @param {{.Name}} {{.Type}} type argument{{objcPrintArgComment .Type}}{{end}}{{range .Normalized.Outputs}}
 /// @return {{.Name}} {{.Type}} type argument{{end}}
-- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}} 
+- (MobileReceiptResult *) {{.Normalized.Name}} {{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}}
 	{{.Name}}:{{else}} :{{end}}({{objcFormatStructType .Type $structs $contractName}}) {{.Name}}{{end}};
 {{end}}
 

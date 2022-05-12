@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -58,7 +60,8 @@ func TestBlockHashByNumber(t *testing.T) {
 	if err != nil {
 		t.Fatalf("block not found: %v", err)
 	}
-	t.Logf("block by hash:\n%+v", block)
+	peers, err := json.MarshalIndent(block, "", indent)
+	t.Logf("block by hash:\n%+v", peers)
 	_, err = c.GetTransactionByBlockHashAndIndex(context.Background(), *blockHash, 0)
 	if err != nil {
 		t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
@@ -68,9 +71,14 @@ func TestBlockHashByNumber(t *testing.T) {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
 	t.Logf("transaction receipt by transaction hash:\n%s", raw)
-	tx, err := c.GetTransactionByHash(context.Background(), *txHash)
+	transaction, err := c.GetTransactionByHash(context.Background(), *txHash)
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
+	}
+	tx, err := json.MarshalIndent(transaction, "", indent)
+	if err != nil {
+		fmt.Printf("transaction marshalIndent error: %v\n", err)
+		return
 	}
 	t.Logf("transaction by hash:\n%+v", tx)
 }
@@ -78,11 +86,14 @@ func TestBlockHashByNumber(t *testing.T) {
 func TestClientVersion(t *testing.T) {
 	c := GetClient(t)
 
-	cv, err := c.GetClientVersion(context.Background())
+	clientVersion, err := c.GetClientVersion(context.Background())
 	if err != nil {
 		t.Fatalf("client version not found: %v", err)
 	}
-
+	cv, err := json.MarshalIndent(clientVersion, "", indent)
+	if err != nil {
+		t.Fatalf("client version marshalIndent error: %v", err)
+	}
 	t.Logf("client version:\n%s", cv)
 }
 
@@ -172,22 +183,28 @@ func TestConsensusStatus(t *testing.T) {
 func TestSyncStatus(t *testing.T) {
 	c := GetClient(t)
 
-	raw, err := c.GetSyncStatus(context.Background())
+	syncStatus, err := c.GetSyncStatus(context.Background())
 	if err != nil {
 		t.Fatalf("synchronization status not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(syncStatus, "", indent)
+	if err != nil {
+		t.Fatalf("synchronization status marshalIndent error: %v", err)
+	}
 	t.Logf("synchronization Status:\n%s", raw)
 }
 
 func TestPeers(t *testing.T) {
 	c := GetClient(t)
 
-	raw, err := c.GetPeers(context.Background())
+	nodes, err := c.GetPeers(context.Background())
 	if err != nil {
 		t.Fatalf("peers not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(nodes, "", indent)
+	if err != nil {
+		t.Fatalf("peers marshalIndent error: %v", err)
+	}
 	t.Logf("peers:\n%s", raw)
 }
 
@@ -228,11 +245,14 @@ func TestBlockByNumber(t *testing.T) {
 
 	var blockNumber int64 = 1
 	includeTx := true
-	raw, err := c.GetBlockByNumber(context.Background(), blockNumber, includeTx)
+	block, err := c.GetBlockByNumber(context.Background(), blockNumber, includeTx)
 	if err != nil {
 		t.Fatalf("block not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(block, "", indent)
+	if err != nil {
+		t.Fatalf("peers marshalIndent error: %v", err)
+	}
 	t.Logf("block by number:\n%s", raw)
 }
 
@@ -241,22 +261,28 @@ func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 
 	var blockNumber int64 = 1
 	txIndex := 0
-	raw, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
+	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(transcation, "", indent)
+	if err != nil {
+		t.Fatalf("transaction marshalIndent error: %v", err)
+	}
 	t.Logf("transaction by block number and transaction index:\n%s", raw)
 }
 
 func TestPendingTransactions(t *testing.T) {
 	c := GetClient(t)
 
-	raw, err := c.GetPendingTransactions(context.Background())
+	pendingTransactions, err := c.GetPendingTransactions(context.Background())
 	if err != nil {
 		t.Fatalf("pending transactions not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
+	if err != nil {
+		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
+	}
 	t.Logf("pending transactions:\n%s", raw)
 }
 
@@ -297,11 +323,14 @@ func TestGetCode(t *testing.T) {
 func TestTotalTransactionCount(t *testing.T) {
 	c := GetClient(t)
 
-	raw, err := c.GetTotalTransactionCount(context.Background())
+	totalTransactionCount, err := c.GetTotalTransactionCount(context.Background())
 	if err != nil {
 		t.Fatalf("transactions not found: %v", err)
 	}
-
+	raw, err := json.MarshalIndent(totalTransactionCount, "", indent)
+	if err != nil {
+		t.Fatalf("totalTransactionCount MarshalIndent error: %v", err)
+	}
 	t.Logf("the total transactions and present block height:\n%s", raw)
 }
 

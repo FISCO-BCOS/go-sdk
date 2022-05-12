@@ -22,10 +22,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -319,84 +319,29 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 	return signedTx, nil
 }
 
-// FilterLogs filters contract logs for past blocks, returning the necessary
-// channels to construct a strongly typed bound iterator on top of them.
-func (c *BoundContract) FilterLogs(opts *FilterOpts, name string, query ...[]interface{}) (chan types.Log, event.Subscription, error) {
-	// Don't crash on a lazy user
-	if opts == nil {
-		opts = new(FilterOpts)
-	}
-	// Append the event selector to the query parameters and construct the topic set
-	query = append([][]interface{}{{c.abi.Events[name].ID()}}, query...)
-
-	topics, err := makeTopics(query...)
-	if err != nil {
-		return nil, nil, err
-	}
-	// Start the background filtering
-	logs := make(chan types.Log, 128)
-
-	config := ethereum.FilterQuery{
-		Addresses: []common.Address{c.address},
-		Topics:    topics,
-		FromBlock: new(big.Int).SetUint64(opts.Start),
-	}
-	if opts.End != nil {
-		config.ToBlock = new(big.Int).SetUint64(*opts.End)
-	}
-	/* TODO(karalabe): Replace the rest of the method below with this when supported
-	sub, err := c.filterer.SubscribeFilterLogs(ensureContext(opts.Context), config, logs)
-	*/
-	buff, err := c.filterer.FilterLogs(ensureContext(opts.Context), config)
-	if err != nil {
-		return nil, nil, err
-	}
-	sub, err := event.NewSubscription(func(quit <-chan struct{}) error {
-		for _, log := range buff {
-			select {
-			case logs <- log:
-			case <-quit:
-				return nil
-			}
-		}
-		return nil
-	}), nil
-
-	if err != nil {
-		return nil, nil, err
-	}
-	return logs, sub, nil
-}
-
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(opts *WatchOpts, name string, query ...[]interface{}) (chan types.Log, event.Subscription, error) {
+func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
+	from := string("latest")
 	// Don't crash on a lazy user
-	if opts == nil {
-		opts = new(WatchOpts)
+	if fromBlock != nil {
+		from = strconv.FormatUint(*fromBlock, 10)
 	}
 	// Append the event selector to the query parameters and construct the topic set
-	query = append([][]interface{}{{c.abi.Events[name].ID()}}, query...)
+	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
 
 	topics, err := makeTopics(query...)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	// Start the background filtering
-	logs := make(chan types.Log, 128)
-
-	config := ethereum.FilterQuery{
-		Addresses: []common.Address{c.address},
+	eventLogParams := types.EventLogParams{
+		FromBlock: from,
+		ToBlock:   "latest",
+		Addresses: []string{c.address.Hex()},
 		Topics:    topics,
+		GroupID:   c.transactor.GetGroupID().Text(16),
 	}
-	if opts.Start != nil {
-		config.FromBlock = new(big.Int).SetUint64(*opts.Start)
-	}
-	sub, err := c.filterer.SubscribeFilterLogs(ensureContext(opts.Context), config, logs)
-	if err != nil {
-		return nil, nil, err
-	}
-	return logs, sub, nil
+	return c.filterer.SubscribeEventLogs(eventLogParams, handler)
 }
 
 // UnpackLog unpacks a retrieved log into the provided output structure.

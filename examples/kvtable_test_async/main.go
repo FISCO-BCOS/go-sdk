@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -38,7 +38,7 @@ func invokeSetHandler(receipt *types.Receipt, err error) {
 	}
 	setedLines, err := parseOutput(kvtable.KVTableTestABI, "set", receipt)
 	if err != nil {
-		log.Fatalf("error when transfer string to int: %v\n", err)
+		logrus.Fatalf("error when transfer string to int: %v\n", err)
 	}
 	fmt.Printf("seted lines: %v\n", setedLines.Int64())
 	channel <- 0
@@ -47,7 +47,7 @@ func invokeSetHandler(receipt *types.Receipt, err error) {
 func main() {
 	configs, err := conf.ParseConfigFile("config.toml")
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	config := &configs[0]
 
@@ -55,11 +55,11 @@ func main() {
 	fmt.Println("-------------------starting deploy contract-----------------------")
 	client, err := client.Dial(config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	tx, err := kvtable.AsyncDeployKVTableTest(client.GetTransactOpts(), deployContractHandler, client)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	fmt.Println("transaction hash: ", tx.Hash().Hex())
 	<-channel
@@ -68,7 +68,7 @@ func main() {
 	fmt.Println("\n-------------------starting invoke Set to insert info-----------------------")
 	instance, err := kvtable.NewKVTableTest(contractAddress, client)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	kvtabletestSession := &kvtable.KVTableTestSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 	id := "100010001001"
@@ -76,7 +76,7 @@ func main() {
 	item_price := big.NewInt(6000)
 	tx, err = kvtabletestSession.AsyncSet(invokeSetHandler, id, item_price, item_name) // call set API
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 	<-channel
@@ -85,10 +85,10 @@ func main() {
 	fmt.Println("\n-------------------starting invoke Get to query info-----------------------")
 	bool, item_price, item_name, err := kvtabletestSession.Get(id) // call get API
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	if !bool {
-		log.Fatalf("id：%v is not found \n", id)
+		logrus.Fatalf("id：%v is not found \n", id)
 	}
 	fmt.Printf("id: %v, item_price: %v, item_name: %v \n", id, item_price, item_name)
 }

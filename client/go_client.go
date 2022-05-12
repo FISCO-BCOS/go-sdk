@@ -17,10 +17,9 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"math/big"
 	"strconv"
 	"strings"
@@ -33,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sirupsen/logrus"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
@@ -63,32 +63,43 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	if config.IsHTTP {
 		c, err = conn.DialContextHTTP(config.NodeURL)
 	} else {
-		c, err = conn.DialContextChannel(config.NodeURL, config.CAFile, config.Cert, config.Key, config.GroupID)
+		// try to parse use file
+		if config.TLSCAContext == nil {
+			config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
+			}
+		}
+		if config.TLSCertContext == nil {
+			config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
+			}
+		}
+		if config.TLSKeyContext == nil {
+			config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
+			if err != nil {
+				return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
+			}
+		}
+		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
 	}
 	if err != nil {
 		return nil, err
 	}
 	apiHandler := NewAPIHandler(c)
-	var response []byte
-	response, err = apiHandler.GetClientVersion(ctx)
+
+	cv, err := apiHandler.GetClientVersion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
-	}
-	var raw interface{}
-	err = json.Unmarshal(response, &raw)
-	if err != nil {
-		return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
-	}
-	m, ok := raw.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("parse response json to map error")
 	}
 
 	// get supported FISCO BCOS version
 	var compatibleVersionStr string
-	compatibleVersionStr, ok = m["Supported Version"].(string)
-	if !ok {
+	if cv.GetSupportedVersion() == "" {
 		return nil, errors.New("JSON response does not contains the key : Supported Version")
+	} else {
+		compatibleVersionStr = cv.GetSupportedVersion()
 	}
 	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
 	if err != nil {
@@ -97,9 +108,10 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
 	var fiscoBcosVersion string
-	fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
-	if !ok {
+	if cv.SupportedVersion == "" {
 		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
+	} else {
+		fiscoBcosVersion = cv.GetFiscoBcosVersion()
 	}
 	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
 	if nodeIsSupportedSM != config.IsSMCrypto {
@@ -108,7 +120,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 	// get node chain ID
 	var nodeChainID int64
-	nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
+	nodeChainID, err = strconv.ParseInt(cv.GetChainId(), 10, 64)
 	if err != nil {
 		return nil, errors.New("JSON response does not contains the key : Chain Id")
 	}
@@ -122,7 +134,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	} else {
 		privateKey, err := crypto.ToECDSA(config.PrivateKey)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		client.auth = bind.NewKeyedTransactor(privateKey)
 	}
@@ -170,26 +182,6 @@ func toBlockNumArg(number *big.Int) string {
 		return "latest"
 	}
 	return hexutil.EncodeBig(number)
-}
-
-// FilterLogs executes a filter query.
-func (c *Client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
-	var result []types.Log
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	err = c.apiHandler.CallContext(ctx, &result, "eth_getLogs", arg)
-	return result, err
-}
-
-// SubscribeFilterLogs subscribes to the results of a streaming filter query.
-func (c *Client) SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
-	arg, err := toFilterArg(q)
-	if err != nil {
-		return nil, err
-	}
-	return c.apiHandler.EthSubscribe(ctx, ch, "logs", arg)
 }
 
 func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
@@ -252,6 +244,10 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
+func (c *Client) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+	return c.apiHandler.SubscribeEventLogs(eventLogParams, handler)
+}
+
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
@@ -312,7 +308,7 @@ func (c *Client) GetCompatibleVersion() int {
 }
 
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
-func (c *Client) GetClientVersion(ctx context.Context) ([]byte, error) {
+func (c *Client) GetClientVersion(ctx context.Context) (*types.ClientVersion, error) {
 	return c.apiHandler.GetClientVersion(ctx)
 }
 
@@ -357,12 +353,12 @@ func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
 }
 
 // GetSyncStatus returns the synchronization status of the group
-func (c *Client) GetSyncStatus(ctx context.Context) ([]byte, error) {
+func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
 	return c.apiHandler.GetSyncStatus(ctx, c.groupID)
 }
 
 // GetPeers returns the information of the connected peers
-func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
+func (c *Client) GetPeers(ctx context.Context) (*[]types.Node, error) {
 	return c.apiHandler.GetPeers(ctx, c.groupID)
 }
 
@@ -382,12 +378,12 @@ func (c *Client) GetGroupList(ctx context.Context) ([]byte, error) {
 }
 
 // GetBlockByHash returns the block information according to the given block hash
-func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) ([]byte, error) {
+func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) (*types.Block, error) {
 	return c.apiHandler.GetBlockByHash(ctx, c.groupID, blockHash, includeTx)
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
-func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) ([]byte, error) {
+func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) (*types.Block, error) {
 	return c.apiHandler.GetBlockByNumber(ctx, c.groupID, blockNumber, includeTx)
 }
 
@@ -397,19 +393,19 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
-func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) ([]byte, error) {
+func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txHash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
-func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) ([]byte, error) {
+func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, blockHash, txIndex)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
-func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) ([]byte, error) {
+func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) (*types.TransactionDetail, error) {
 	return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, blockNumber, txIndex)
 }
 
@@ -424,7 +420,7 @@ func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (co
 }
 
 // GetPendingTransactions returns information of the pending transactions
-func (c *Client) GetPendingTransactions(ctx context.Context) ([]byte, error) {
+func (c *Client) GetPendingTransactions(ctx context.Context) (*[]types.TransactionPending, error) {
 	return c.apiHandler.GetPendingTransactions(ctx, c.groupID)
 }
 
@@ -439,7 +435,7 @@ func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, e
 }
 
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
-func (c *Client) GetTotalTransactionCount(ctx context.Context) ([]byte, error) {
+func (c *Client) GetTotalTransactionCount(ctx context.Context) (*types.TransactionCount, error) {
 	return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
 }
 

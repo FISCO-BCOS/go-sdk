@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 func onPush(data []byte, response *[]byte) {
-	log.Printf("received: %s\n", string(data))
+	logrus.Printf("received: %s\n", string(data))
 }
 
 var (
@@ -41,7 +41,7 @@ func main() {
 			return
 		}
 	} else if len(os.Args) < 3 {
-		log.Fatal("the number of arguments less than 3")
+		logrus.Fatal("the number of arguments less than 3")
 	}
 
 	endpoint := os.Args[1]
@@ -51,12 +51,12 @@ func main() {
 		IsSMCrypto: false, GroupID: 1, PrivateKey: signKey, NodeURL: endpoint}
 	c, err := client.Dial(config)
 	if err != nil {
-		log.Fatalf("init client failed, err: %v\n", err)
+		logrus.Fatalf("init client failed, err: %v\n", err)
 	}
 
 	err = c.SubscribePrivateTopic(topic, privateKey, onPush)
 	if err != nil {
-		log.Fatalf("SubscribeAuthTopic failed, err: %v\n", err)
+		logrus.Fatalf("SubscribeAuthTopic failed, err: %v\n", err)
 	}
 	fmt.Println("Subscriber success")
 

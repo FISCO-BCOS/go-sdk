@@ -5,6 +5,12 @@ Type="channel"
 CAFile="ca.crt"
 Cert="sdk.crt"
 Key="sdk.key"
+# if the certificate context is not empty, use it, otherwise read from the certificate file
+# multi lines use triple quotes
+CAContext=''''''
+KeyContext=''''''
+CertContext=''''''
+
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
 GroupID=1

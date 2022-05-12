@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
-	"log"
 	"math/big"
 
 	"github.com/FISCO-BCOS/crypto/ecdsa"
 	"github.com/FISCO-BCOS/crypto/elliptic"
 	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
+	"github.com/sirupsen/logrus"
 )
 
 const defaultSM2ID = "1234567812345678"
@@ -21,35 +21,35 @@ func SM2PreProcess(src []byte, id string, priv *ecdsa.PrivateKey) ([]byte, error
 	buf := bytes.NewBuffer(data)
 	err := binary.Write(buf, binary.BigEndian, length)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write([]byte(id))
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(elliptic.Sm2p256v1().Params().A.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(elliptic.Sm2p256v1().Params().B.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(elliptic.Sm2p256v1().Params().Gx.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(elliptic.Sm2p256v1().Params().Gy.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(priv.X.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	_, err = buf.Write(priv.Y.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	z := sm3.Hash(buf.Bytes())
 	// fmt.Printf("digest sm3 hash :%x\n", z)

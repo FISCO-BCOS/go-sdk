@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 
@@ -12,24 +11,25 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	kvtable "github.com/FISCO-BCOS/go-sdk/examples" // import kvtabletest
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	configs, err := conf.ParseConfigFile("config.toml")
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	config := &configs[0]
 	client, err := client.Dial(config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	// deploy contract
 	fmt.Println("-------------------starting deploy contract-----------------------")
 	address, tx, instance, err := kvtable.DeployKVTableTest(client.GetTransactOpts(), client)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	fmt.Println("contract address: ", address.Hex()) // the address should be saved
 	fmt.Println("transaction hash: ", tx.Hash().Hex())
@@ -43,12 +43,12 @@ func main() {
 	item_price := big.NewInt(6000)
 	tx, receipt, err := kvtabletestSession.Set(id, item_price, item_name) // call set API
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 	setedLines, err := parseOutput(kvtable.KVTableTestABI, "set", receipt)
 	if err != nil {
-		log.Fatalf("error when transfer string to int: %v\n", err)
+		logrus.Fatalf("error when transfer string to int: %v\n", err)
 	}
 	fmt.Printf("seted lines: %v\n", setedLines.Int64())
 
@@ -56,10 +56,10 @@ func main() {
 	fmt.Println("\n-------------------starting invoke Get to query info-----------------------")
 	bool, item_price, item_name, err := kvtabletestSession.Get(id) // call get API
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	if !bool {
-		log.Fatalf("id：%v is not found \n", id)
+		logrus.Fatalf("id：%v is not found \n", id)
 	}
 	fmt.Printf("id: %v, item_price: %v, item_name: %v \n", id, item_price, item_name)
 }

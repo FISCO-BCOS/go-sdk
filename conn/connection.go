@@ -17,14 +17,10 @@
 package conn
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"log"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -79,10 +75,7 @@ type BatchElem struct {
 
 // Connection represents a connection to an RPC server.
 type Connection struct {
-	idgen    func() ID // for subscriptions
-	isHTTP   bool
-	services *serviceRegistry
-
+	isHTTP    bool
 	idCounter uint32
 
 	// This function, if non-nil, is called when the connection is lost.
@@ -110,18 +103,14 @@ type reconnectFunc func(ctx context.Context) (ServerCodec, error)
 type clientContextKey struct{}
 
 type clientConn struct {
-	codec   ServerCodec
-	handler *handler
+	codec ServerCodec
 }
 
 func (c *Connection) newClientConn(conn ServerCodec) *clientConn {
-	ctx := context.WithValue(context.Background(), clientContextKey{}, c)
-	handler := newHandler(ctx, conn, c.idgen, c.services)
-	return &clientConn{conn, handler}
+	return &clientConn{conn}
 }
 
 func (cc *clientConn) close(err error, inflightReq *requestOp) {
-	cc.handler.close(err, inflightReq)
 	cc.codec.Close()
 }
 
@@ -134,7 +123,6 @@ type requestOp struct {
 	ids  []json.RawMessage
 	err  error
 	resp chan *jsonrpcMessage // receives up to len(ids) responses
-	sub  *ClientSubscription  // only set for EthSubscribe requests
 }
 
 func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, error) {
@@ -167,19 +155,14 @@ func DialContextHTTP(rawurl string) (*Connection, error) {
 }
 
 // DialContextChannel creates a new Channel client, just like Dial.
-func DialContextChannel(rawurl, caFile, certFile, keyFile string, groupID int) (*Connection, error) {
+func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int) (*Connection, error) {
 	roots := x509.NewCertPool()
-	rootPEM, err := ioutil.ReadFile(caFile)
-	if err != nil {
-		panic(err)
-	}
-	ok := roots.AppendCertsFromPEM([]byte(rootPEM))
+	ok := roots.AppendCertsFromPEM(caRoot)
 	if !ok {
 		panic("failed to parse root certificate")
 	}
-	cer, err := tls.LoadX509KeyPair(certFile, keyFile)
+	cer, err := tls.X509KeyPair(certContext, keyContext)
 	if err != nil {
-		// log.Println(err)
 		return nil, err
 	}
 	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
@@ -200,17 +183,15 @@ func newClient(initctx context.Context, connect reconnectFunc) (*Connection, err
 	if err != nil {
 		return nil, err
 	}
-	c := initClient(conn, randomIDGenerator(), new(serviceRegistry))
+	c := initClient(conn)
 	c.reconnectFunc = connect
 	return c, nil
 }
 
-func initClient(conn ServerCodec, idgen func() ID, services *serviceRegistry) *Connection {
+func initClient(conn ServerCodec) *Connection {
 	_, isHTTP := conn.(*httpConn)
 	c := &Connection{
-		idgen:       idgen,
 		isHTTP:      isHTTP,
-		services:    services,
 		writeConn:   conn,
 		close:       make(chan struct{}),
 		closing:     make(chan struct{}),
@@ -222,34 +203,12 @@ func initClient(conn ServerCodec, idgen func() ID, services *serviceRegistry) *C
 		reqSent:     make(chan error, 1),
 		reqTimeout:  make(chan *requestOp),
 	}
-	// FIXME: remove substration releated code
-	// if !isHTTP {
-	// 	go c.dispatch(conn)
-	// }
 	return c
-}
-
-// RegisterName creates a service for the given receiver type under the given name. When no
-// methods on the given receiver match the criteria to be either a RPC method or a
-// subscription an error is returned. Otherwise a new service is created and added to the
-// service collection this client provides to the server.
-func (c *Connection) RegisterName(name string, receiver interface{}) error {
-	return c.services.registerName(name, receiver)
 }
 
 func (c *Connection) nextID() json.RawMessage {
 	id := atomic.AddUint32(&c.idCounter, 1)
 	return strconv.AppendUint(nil, uint64(id), 10)
-}
-
-// SupportedModules calls the rpc_modules method, retrieving the list of
-// APIs that are available on the server.
-func (c *Connection) SupportedModules() (map[string]string, error) {
-	var result map[string]string
-	ctx, cancel := context.WithTimeout(context.Background(), subscribeTimeout)
-	defer cancel()
-	err := c.CallContext(ctx, &result, "rpc_modules")
-	return result, err
 }
 
 // Close closes the client, aborting any in-flight requests.
@@ -259,12 +218,6 @@ func (c *Connection) Close() {
 	}
 	hc := c.writeConn.(*channelSession)
 	hc.Close()
-	// FIXME: remove substration releated code
-	// select {
-	// case c.close <- struct{}{}:
-	// 	<-c.didClose
-	// case <-c.didClose:
-	// }
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
@@ -293,8 +246,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		err = c.sendHTTP(ctx, op, msg)
 	} else {
 		err = c.sendRPCRequest(ctx, op, msg)
-		// FIXME: remove substration releated code
-		// err = c.send(ctx, op, msg)
 	}
 	if err != nil {
 		return err
@@ -307,7 +258,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case resp.Error != nil:
 		return resp.Error
 	case len(resp.Result) == 0:
-		// log.Printf("result is null, %+v, err:%+v \n", resp, err)
+		// logrus.Printf("result is null, %+v, err:%+v \n", resp, err)
 		return ErrNoResult
 	default:
 		return json.Unmarshal(resp.Result, &result)
@@ -327,6 +278,11 @@ func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*typ
 		return err
 	}
 	return nil
+}
+
+func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+	hc := c.writeConn.(*channelSession)
+	return hc.subscribeEvent(eventLogParams, handler)
 }
 
 func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
@@ -384,150 +340,6 @@ func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
 	return hc.unSubscribeBlockNumberNotify(groupID)
 }
 
-// BatchCall sends all given requests as a single batch and waits for the server
-// to return a response for all of them.
-//
-// In contrast to Call, BatchCall only returns I/O errors. Any error specific to
-// a request is reported through the Error field of the corresponding BatchElem.
-//
-// Note that batch calls may not be executed atomically on the server side.
-func (c *Connection) BatchCall(b []BatchElem) error {
-	ctx := context.Background()
-	return c.BatchCallContext(ctx, b)
-}
-
-// BatchCallContext sends all given requests as a single batch and waits for the server
-// to return a response for all of them. The wait duration is bounded by the
-// context's deadline.
-//
-// In contrast to CallContext, BatchCallContext only returns errors that have occurred
-// while sending the request. Any error specific to a request is reported through the
-// Error field of the corresponding BatchElem.
-//
-// Note that batch calls may not be executed atomically on the server side.
-func (c *Connection) BatchCallContext(ctx context.Context, b []BatchElem) error {
-	msgs := make([]*jsonrpcMessage, len(b))
-	op := &requestOp{
-		ids:  make([]json.RawMessage, len(b)),
-		resp: make(chan *jsonrpcMessage, len(b)),
-	}
-	for i, elem := range b {
-		msg, err := c.newMessage(elem.Method, elem.Args...)
-		if err != nil {
-			return err
-		}
-		msgs[i] = msg
-		op.ids[i] = msg.ID
-	}
-
-	var err error
-	if c.isHTTP {
-		err = c.sendBatchHTTP(ctx, op, msgs)
-	} else {
-		err = c.send(ctx, op, msgs)
-	}
-
-	// Wait for all responses to come back.
-	for n := 0; n < len(b) && err == nil; n++ {
-		var resp *jsonrpcMessage
-		resp, err = op.wait(ctx, c)
-		if err != nil {
-			break
-		}
-		// Find the element corresponding to this response.
-		// The element is guaranteed to be present because dispatch
-		// only sends valid IDs to our channel.
-		var elem *BatchElem
-		for i := range msgs {
-			if bytes.Equal(msgs[i].ID, resp.ID) {
-				elem = &b[i]
-				break
-			}
-		}
-		if resp.Error != nil {
-			elem.Error = resp.Error
-			continue
-		}
-		if len(resp.Result) == 0 {
-			elem.Error = ErrNoResult
-			continue
-		}
-		elem.Error = json.Unmarshal(resp.Result, elem.Result)
-	}
-	return err
-}
-
-// Notify sends a notification, i.e. a method call that doesn't expect a response.
-func (c *Connection) Notify(ctx context.Context, method string, args ...interface{}) error {
-	op := new(requestOp)
-	msg, err := c.newMessage(method, args...)
-	if err != nil {
-		return err
-	}
-	msg.ID = nil
-
-	if c.isHTTP {
-		return c.sendHTTP(ctx, op, msg)
-	}
-	return c.send(ctx, op, msg)
-}
-
-// EthSubscribe registers a subscripion under the "eth" namespace.
-func (c *Connection) EthSubscribe(ctx context.Context, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	return c.Subscribe(ctx, "eth", channel, args...)
-}
-
-// ShhSubscribe registers a subscripion under the "shh" namespace.
-func (c *Connection) ShhSubscribe(ctx context.Context, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	return c.Subscribe(ctx, "shh", channel, args...)
-}
-
-// Subscribe calls the "<namespace>_subscribe" method with the given arguments,
-// registering a subscription. Server notifications for the subscription are
-// sent to the given channel. The element type of the channel must match the
-// expected type of content returned by the subscription.
-//
-// The context argument cancels the RPC request that sets up the subscription but has no
-// effect on the subscription after Subscribe has returned.
-//
-// Slow subscribers will be dropped eventually. Connection buffers up to 20000 notifications
-// before considering the subscriber dead. The subscription Err channel will receive
-// ErrSubscriptionQueueOverflow. Use a sufficiently large buffer on the channel or ensure
-// that the channel usually has at least one reader to prevent this issue.
-func (c *Connection) Subscribe(ctx context.Context, namespace string, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
-	// Check type of channel first.
-	chanVal := reflect.ValueOf(channel)
-	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
-		panic("first argument to Subscribe must be a writable channel")
-	}
-	if chanVal.IsNil() {
-		panic("channel given to Subscribe must not be nil")
-	}
-	if c.isHTTP {
-		return nil, ErrNotificationsUnsupported
-	}
-
-	msg, err := c.newMessage(namespace+subscribeMethodSuffix, args...)
-	if err != nil {
-		return nil, err
-	}
-	op := &requestOp{
-		ids:  []json.RawMessage{msg.ID},
-		resp: make(chan *jsonrpcMessage),
-		sub:  newClientSubscription(c, namespace, chanVal),
-	}
-
-	// Send the subscription request.
-	// The arrival and validity of the response is signaled on sub.quit.
-	if err := c.send(ctx, op, msg); err != nil {
-		return nil, err
-	}
-	if _, err := op.wait(ctx, c); err != nil {
-		return nil, err
-	}
-	return op.sub, nil
-}
-
 func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
 	msg := &jsonrpcMessage{Version: vsn, ID: c.nextID(), Method: method}
 	if paramsIn != nil { // prevent sending "params":null
@@ -537,37 +349,6 @@ func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrp
 		}
 	}
 	return msg, nil
-}
-
-// send registers op with the dispatch loop, then sends msg on the connection.
-// if sending fails, op is deregistered.
-func (c *Connection) send(ctx context.Context, op *requestOp, msg interface{}) error {
-	select {
-	case c.reqInit <- op:
-		err := c.write(ctx, msg)
-		c.reqSent <- err
-		return err
-	case <-ctx.Done():
-		// This can happen if the client is overloaded or unable to keep up with
-		// subscription notifications.
-		return ctx.Err()
-	case <-c.closing:
-		return ErrClientQuit
-	}
-}
-
-func (c *Connection) write(ctx context.Context, msg interface{}) error {
-	// The previous write failed. Try to establish a new connection.
-	if c.writeConn == nil {
-		if err := c.reconnect(ctx); err != nil {
-			return err
-		}
-	}
-	err := c.writeConn.Write(ctx, msg)
-	if err != nil {
-		c.writeConn = nil
-	}
-	return err
 }
 
 func (c *Connection) reconnect(ctx context.Context) error {
@@ -582,7 +363,7 @@ func (c *Connection) reconnect(ctx context.Context) error {
 	}
 	newconn, err := c.reconnectFunc(ctx)
 	if err != nil {
-		// log.Trace("RPC client reconnect failed", "err", err)
+		// logrus.Trace("RPC client reconnect failed", "err", err)
 		return err
 	}
 	select {
@@ -595,88 +376,6 @@ func (c *Connection) reconnect(ctx context.Context) error {
 	}
 }
 
-// dispatch is the main loop of the client.
-// It sends read messages to waiting calls to Call and BatchCall
-// and subscription notifications to registered subscriptions.
-func (c *Connection) dispatch(codec ServerCodec) {
-	var (
-		lastOp      *requestOp  // tracks last send operation
-		reqInitLock = c.reqInit // nil while the send lock is held
-		conn        = c.newClientConn(codec)
-		reading     = true
-	)
-	defer func() {
-		close(c.closing)
-		if reading {
-			conn.close(ErrClientQuit, nil)
-			c.drainRead()
-		}
-		close(c.didClose)
-	}()
-
-	// Spawn the initial read loop.
-	go c.read(codec)
-
-	for {
-		select {
-		case <-c.close:
-			return
-
-		// Read path:
-		case op := <-c.readOp:
-			if op.batch {
-				conn.handler.handleBatch(op.msgs)
-			} else {
-				conn.handler.handleMsg(op.msgs[0])
-			}
-
-		case err := <-c.readErr:
-			// conn.handler.log.Debug("RPC connection read error", "err", err)
-			conn.close(err, lastOp)
-			reading = false
-
-		// Reconnect:
-		case newcodec := <-c.reconnected:
-			// log.Debug("RPC client reconnected", "reading", reading, "conn", newcodec.RemoteAddr())
-			if reading {
-				// Wait for the previous read loop to exit. This is a rare case which
-				// happens if this loop isn't notified in time after the connection breaks.
-				// In those cases the caller will notice first and reconnect. Closing the
-				// handler terminates all waiting requests (closing op.resp) except for
-				// lastOp, which will be transferred to the new handler.
-				conn.close(errClientReconnected, lastOp)
-				c.drainRead()
-			}
-			go c.read(newcodec)
-			reading = true
-			conn = c.newClientConn(newcodec)
-			// Re-register the in-flight request on the new handler
-			// because that's where it will be sent.
-			conn.handler.addRequestOp(lastOp)
-
-		// Send path:
-		case op := <-reqInitLock:
-			// Stop listening for further requests until the current one has been sent.
-			reqInitLock = nil
-			lastOp = op
-			conn.handler.addRequestOp(op)
-
-		case err := <-c.reqSent:
-			if err != nil {
-				// Remove response handlers for the last send. When the read loop
-				// goes down, it will signal all other current operations.
-				conn.handler.removeRequestOp(lastOp)
-			}
-			// Let the next request in.
-			reqInitLock = c.reqInit
-			lastOp = nil
-
-		case op := <-c.reqTimeout:
-			conn.handler.removeRequestOp(op)
-		}
-	}
-}
-
 // drainRead drops read messages until an error occurs.
 func (c *Connection) drainRead() {
 	for {
@@ -685,24 +384,6 @@ func (c *Connection) drainRead() {
 		case <-c.readErr:
 			return
 		}
-	}
-}
-
-// read decodes RPC messages from a codec, feeding them into dispatch.
-func (c *Connection) read(codec ServerCodec) {
-	for {
-		msgs, batch, err := codec.Read()
-		if _, ok := err.(*json.SyntaxError); ok {
-			err := codec.Write(context.Background(), errorMessage(&parseError{err.Error()}))
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		if err != nil {
-			c.readErr <- err
-			return
-		}
-		c.readOp <- readOp{msgs, batch}
 	}
 }
 

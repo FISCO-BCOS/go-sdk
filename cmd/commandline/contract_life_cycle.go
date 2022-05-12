@@ -14,7 +14,7 @@ var freezeContract = &cobra.Command{
 	Short: "[contractAddress]                  Freeze the contract",
 	Long: `Freeze the contract.
 Arguments:
-	  [contractAddress]: 
+	  [contractAddress]:
 
 For example:
 
@@ -53,7 +53,7 @@ var unfreezeContract = &cobra.Command{
 	Short: "[contractAddress]                  Unfreeze the contract",
 	Long: `Unfreeze the contract.
 Arguments:
-	  [contractAddress]: 
+	  [contractAddress]:
 
 For example:
 
@@ -92,8 +92,8 @@ var grantContractStatusManager = &cobra.Command{
 	Short: "[contractAddress] [accountAddress] Grant contract authorization to the user",
 	Long: `Grant contract authorization to the user.
 Arguments:
-	  [contractAddress]: 
-      [accountAddress]: 
+	  [contractAddress]:
+      [accountAddress]:
 
 For example:
 
@@ -141,7 +141,7 @@ var getContractStatus = &cobra.Command{
 	Short: "[contractAddress]                  Get the status of the contract",
 	Long: `Get the status of the contract, whether the contract is frozen.
 Arguments:
-	  [contractAddress]: 
+	  [contractAddress]:
 
 For example:
 
@@ -180,7 +180,7 @@ var listContractStatusManager = &cobra.Command{
 	Short: "[contractAddress]                  List the authorization of the contract",
 	Long: `List managers that have the permission to manage contract.
 Arguments:
-	  [contractAddress]: 
+	  [contractAddress]:
 
 For example:
 

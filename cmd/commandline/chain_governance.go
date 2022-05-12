@@ -12,8 +12,8 @@ import (
 var grantCommitteeMember = &cobra.Command{
 	Use:   "grantCommitteeMember",
 	Short: "[accountAddress]                   Grant a committee member",
-	Long: `Grant the permission of committee for a user account, which can add and 
-delete committee members,modify the weight of the committee members, modify the 
+	Long: `Grant the permission of committee for a user account, which can add and
+delete committee members,modify the weight of the committee members, modify the
 effective voting threshold, add and delete nodes, modify chain configuration items,
 freeze and unfreeze contracts, freeze and unfreeze accounts,add and cancel operator
 accounts, and write permissions for user tables.

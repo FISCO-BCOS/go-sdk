@@ -10,7 +10,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/FISCO-BCOS/go-sdk/event"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,7 +23,6 @@ var (
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
 // KVTableTestABI is the input ABI used to generate the binding from.
@@ -280,113 +278,10 @@ type KVTableTestSetResultIterator struct {
 	fail error                 // Occurred error to stop iteration
 }
 
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *KVTableTestSetResultIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(KVTableTestSetResult)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(KVTableTestSetResult)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *KVTableTestSetResultIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *KVTableTestSetResultIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
 // KVTableTestSetResult represents a SetResult event raised by the KVTableTest contract.
 type KVTableTestSetResult struct {
 	Count *big.Int
 	Raw   types.Log // Blockchain specific contextual infos
-}
-
-// FilterSetResult is a free log retrieval operation binding the contract event 0xb103249d88cd818b10c5cd6889874103a7699c5834cb078d8f35925dca8a62d6.
-//
-// Solidity: event SetResult(int256 count)
-func (_KVTableTest *KVTableTestFilterer) FilterSetResult(opts *bind.FilterOpts) (*KVTableTestSetResultIterator, error) {
-
-	logs, sub, err := _KVTableTest.contract.FilterLogs(opts, "SetResult")
-	if err != nil {
-		return nil, err
-	}
-	return &KVTableTestSetResultIterator{contract: _KVTableTest.contract, event: "SetResult", logs: logs, sub: sub}, nil
-}
-
-// WatchSetResult is a free log subscription operation binding the contract event 0xb103249d88cd818b10c5cd6889874103a7699c5834cb078d8f35925dca8a62d6.
-//
-// Solidity: event SetResult(int256 count)
-func (_KVTableTest *KVTableTestFilterer) WatchSetResult(opts *bind.WatchOpts, sink chan<- *KVTableTestSetResult) (event.Subscription, error) {
-
-	logs, sub, err := _KVTableTest.contract.WatchLogs(opts, "SetResult")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(KVTableTestSetResult)
-				if err := _KVTableTest.contract.UnpackLog(event, "SetResult", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
 }
 
 // ParseSetResult is a log parse operation binding the contract event 0xb103249d88cd818b10c5cd6889874103a7699c5834cb078d8f35925dca8a62d6.
