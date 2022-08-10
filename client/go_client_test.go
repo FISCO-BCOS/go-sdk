@@ -302,7 +302,7 @@ func deployHelloWorld(t *testing.T) (*common.Address, *common.Hash) {
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
 	address, tx, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
 	if err != nil {
-		t.Errorf("DeployHelloWorld failed: %v", err)
+		t.Errorf("DeployHelloWorld failed 11: %v", err)
 		return nil, nil
 	}
 	txHash := tx.Hash()
