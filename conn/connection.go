@@ -21,6 +21,9 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/sirupsen/logrus"
+	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -28,12 +31,13 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
 )
 
 var (
 	ErrClientQuit                = errors.New("client is closed")
 	ErrNoResult                  = errors.New("no result in JSON-RPC response")
+	ErrNoRpcMehtod               = errors.New("no rpc method")
 	ErrSubscriptionQueueOverflow = errors.New("subscription queue overflow")
 	errClientReconnected         = errors.New("client reconnected")
 	errDead                      = errors.New("connection lost")
@@ -76,6 +80,7 @@ type BatchElem struct {
 // Connection represents a connection to an RPC server.
 type Connection struct {
 	isHTTP    bool
+	csdk      *csdk.CSDK
 	idCounter uint32
 
 	// This function, if non-nil, is called when the connection is lost.
@@ -120,12 +125,59 @@ type readOp struct {
 }
 
 type requestOp struct {
-	ids  []json.RawMessage
-	err  error
-	resp chan *jsonrpcMessage // receives up to len(ids) responses
+	ids          []json.RawMessage
+	err          error
+	resp         chan *jsonrpcMessage // receives up to len(ids) responses
+	respData     chan *resRpcMessage  // receives up to len(ids) responses
+	respChanData *csdk.ChanData
 }
 
-func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, error) {
+func (op *requestOp) wait1(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
+	select {
+	case respBody := <-op.respChanData.Data:
+		var respData resRpcMessage
+		if err := json.Unmarshal([]byte(respBody[:len(respBody)-1]), &respData); err != nil {
+			log.Println("json unmarshal res body:", respBody)
+			log.Println("json unmarshal err:", err)
+			return nil, nil, err
+		}
+		return &respData, respData.Result, op.err
+	}
+}
+
+func (op *requestOp) waitEventLogMsg(ctx context.Context, method string, handler interface{}) error {
+	for true {
+		select {
+		//case <-ctx.Done():
+		//	// Send the timeout to dispatch so it can remove the request IDs.
+		//	// FIXME: remove the code below
+		//	return ctx.Err()
+		case respBody := <-op.respChanData.Data:
+			switch method {
+			case "subscribeEventLogs":
+				eventHander := handler.(func(int, string))
+				eventHander(1, respBody)
+			case "subscribeTopic":
+				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+			case "SendAMOPMsg":
+				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+			case "broadcastAMOPMsg":
+				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+			case "subscribeBlockNumberNotify":
+				//log.Println("subscribeBlockNumberNotify respBody:",respBody)
+				blockNum, err := strconv.Atoi(respBody)
+				if err == nil {
+					handler.(func(int64))(int64(blockNum))
+				}
+			default:
+				return ErrNoResult
+			}
+		}
+	}
+	return nil
+}
+
+func (op *requestOp) wait(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
 	select {
 	// case <-ctx.Done():
 	// 	// Send the timeout to dispatch so it can remove the request IDs.
@@ -137,8 +189,14 @@ func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, 
 	// 		}
 	// 	}
 	// 	return nil, ctx.Err()
-	case resp := <-op.resp:
-		return resp, op.err
+	case respBody := <-op.respChanData.Data:
+		var respData resRpcMessage
+		if err := json.Unmarshal([]byte(respBody[:len(respBody)-1]), &respData); err != nil {
+			log.Println("json unmarshal res body:", respBody)
+			log.Println("json unmarshal err:", err)
+			return nil, nil, err
+		}
+		return &respData, respData.Result, op.err
 	}
 }
 
@@ -159,7 +217,7 @@ func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, g
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(caRoot)
 	if !ok {
-		panic("failed to parse root certificate")
+		//panic("failed to parse root certificate")
 	}
 	cer, err := tls.X509KeyPair(certContext, keyContext)
 	if err != nil {
@@ -176,6 +234,13 @@ func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, g
 func ClientFromContext(ctx context.Context) (*Connection, bool) {
 	client, ok := ctx.Value(clientContextKey{}).(*Connection)
 	return client, ok
+}
+
+func NewClient1(connect reconnectFunc, sdk *csdk.CSDK) (*Connection, error) {
+	c := initClient(nil)
+	c.reconnectFunc = connect
+	c.csdk = sdk
+	return c, nil
 }
 
 func newClient(initctx context.Context, connect reconnectFunc) (*Connection, error) {
@@ -236,33 +301,110 @@ func (c *Connection) Call(result interface{}, method string, args ...interface{}
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
 func (c *Connection) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	msg, err := c.newMessage(method, args...)
-	if err != nil {
-		return err
-	}
-	op := &requestOp{ids: []json.RawMessage{msg.ID}, resp: make(chan *jsonrpcMessage, 1)}
+	log.Println("CallContext method:", method)
+	//msg, err := c.newMessage(method, args...)
+	//if err != nil {
+	//	return err
+	//}
+	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 
-	if c.isHTTP {
-		err = c.sendHTTP(ctx, op, msg)
-	} else {
-		err = c.sendRPCRequest(ctx, op, msg)
-	}
-	if err != nil {
-		return err
+	//symbol := map[string]func(interface{},interface{})string{"test1":c.csdk.GetBlockHashByNumber, "test2":test2, "test":test3}
+
+	switch method {
+	case "call":
+		arg := args[1].(map[string]interface{})
+		data := arg["data"].(string)
+		to := arg["to"].(string)
+		c.csdk.Call(op.respChanData, to, data)
+	case "getGroupPeers":
+		c.csdk.GetGroupPeers(op.respChanData)
+	case "getPeers":
+		c.csdk.GetGroupPeers(op.respChanData)
+	case "getBlockNumber":
+		c.csdk.GetCBlockNumber(op.respChanData)
+	case "getBlockHashByNumber":
+		blockNumber := args[1].(int64)
+		c.csdk.GetBlockHashByNumber(op.respChanData, blockNumber)
+	case "getPbftView":
+		c.csdk.GetPbftView(op.respChanData)
+	case "getCode":
+		address := args[1].(string)
+		c.csdk.GetCode(op.respChanData, address)
+	case "getSyncStatus":
+		c.csdk.GetSyncStatus(op.respChanData)
+	case "getConsensusStatus":
+		c.csdk.GetConsensusStatus(op.respChanData)
+	case "getSealerList":
+		c.csdk.GetSealerList(op.respChanData)
+	case "getObserverList":
+		c.csdk.GetObserverList(op.respChanData)
+	case "getGroupList":
+		c.csdk.GetGroupList(op.respChanData)
+	case "getGroupInfo":
+		c.csdk.GetGroupInfo(op.respChanData)
+	case "getTransactionReceipt":
+		txHash := args[1].(string)
+		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
+	case "subscribeEventLogs":
+		param := args[0].(string)
+		c.csdk.SubscribeEvent(op.respChanData, param)
+	case "getSystemConfigByKey":
+		key := args[1].(string)
+		c.csdk.GetSystemConfigByKey(op.respChanData, key)
+	case "getTotalTransactionCount":
+		c.csdk.GetTotalTransactionCount(op.respChanData)
+	case "getGroupNodeInfo":
+		nodeId := args[1].(string)
+		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
+	case "getPendingTxSize":
+		c.csdk.GetPendingTxSize(op.respChanData)
+	case "getTransactionByHash":
+		txHash := args[0].(string)
+		c.csdk.GetTransaction(op.respChanData, txHash)
+	case "sendRawTransaction":
+		groupId := args[0].(int)
+		data := args[1].(string)
+		contractAddress := args[2].(string)
+		c.csdk.SendTransaction(op.respChanData, groupId, contractAddress, data)
+	default:
+		return ErrNoRpcMehtod
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
-	switch resp, err := op.wait(ctx, c); {
+	switch resp, _, err := op.wait1(ctx, c); {
 	case err != nil:
 		return err
-	case resp.Error != nil:
-		return resp.Error
 	case len(resp.Result) == 0:
-		// logrus.Printf("result is null, %+v, err:%+v \n", resp, err)
+		logrus.Errorf("result is null, %+v, err:%+v \n", resp, err)
 		return ErrNoResult
 	default:
 		return json.Unmarshal(resp.Result, &result)
 	}
+}
+
+func (c *Connection) CallHandlerContext(ctx context.Context, method string, topic string, data string, handler interface{}) error {
+	log.Println("CallEventContext method:", method)
+	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
+	switch method {
+	case "subscribeTopic":
+		c.csdk.SubscribeTopicWithCb(op.respChanData, topic)
+	case "SendAMOPMsg":
+		c.csdk.PublishTopicMsg(op.respChanData, topic, data)
+	case "broadcastAMOPMsg":
+		c.csdk.BroadcastAmopMsg(op.respChanData, topic, data)
+	case "subscribeEventLogs":
+		c.csdk.SubscribeEvent(op.respChanData, data)
+	case "subscribeBlockNumberNotify":
+		c.csdk.RegisterBlockNotifier(op.respChanData)
+	default:
+		return ErrNoResult
+	}
+
+	var err error
+	go func() {
+		err = op.waitEventLogMsg(ctx, method, handler)
+	}()
+	return err
 }
 
 func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {

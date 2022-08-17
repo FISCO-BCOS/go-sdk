@@ -376,9 +376,9 @@ func toReceipt(_r *types.Receipt) (*TxReceipt, error) {
 	rec.TransactionHash = _r.TransactionHash
 	rec.TransactionIndex = _r.TransactionIndex
 	rec.BlockHash = _r.BlockHash
-	rec.BlockNumber = _r.BlockNumber
+	rec.BlockNumber = strconv.Itoa(_r.BlockNumber)
 	rec.GasUsed = _r.GasUsed
-	rec.ContractAddress = _r.ContractAddress.Hex()
+	rec.ContractAddress = _r.ContractAddress
 	rec.Root = _r.Root
 	rec.Status = _r.Status
 	rec.From = _r.From

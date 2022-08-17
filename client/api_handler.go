@@ -21,18 +21,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/sirupsen/logrus"
+	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
+	"log"
+	"math/big"
+	"strconv"
+	"strings"
 )
 
 // APIHandler defines typed wrappers for the FISCO BCOS RPC API.
@@ -46,7 +44,7 @@ const (
 )
 
 // NewAPIHandler create a new API handler
-func NewAPIHandler(c *conn.Connection) *APIHandler {
+func NewAPIHandler(c *conn.Connection, sdk *csdk.CSDK) *APIHandler {
 	apiHandler := APIHandler{c}
 	return &apiHandler
 }
@@ -74,9 +72,9 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 }
 
 type callResult struct {
-	CurrentBlockNumber string `json:"currentBlockNumber"`
+	CurrentBlockNumber int `json:"currentBlockNumber"`
 	Output             string `json:"output"`
-	Status             string `json:"status"`
+	Status             int `json:"status"`
 }
 
 // Call invoke the call method of rpc api
@@ -87,16 +85,16 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 	if err != nil {
 		return nil, err
 	}
-	if cr.Status != "0x0" {
+	if cr.Status != 0 {
 		var errorMessage string
 		if len(cr.Output) >= 138 {
 			outputBytes, err := hex.DecodeString(cr.Output[2:])
 			if err != nil {
-				return nil, fmt.Errorf("call error of status %s, hex.DecodeString failed", cr.Status)
+				return nil, fmt.Errorf("call error of status %d, hex.DecodeString failed", cr.Status)
 			}
 			errorMessage = string(outputBytes[68:])
 		}
-		return nil, fmt.Errorf("call error of status %s, %v", cr.Status, errorMessage)
+		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
 	}
 	hexBytes = common.FromHex(cr.Output)
 	return hexBytes, nil
@@ -106,70 +104,90 @@ func (api *APIHandler) Call(ctx context.Context, groupID int, msg ethereum.CallM
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction) (*types.Receipt, error) {
-	data, err := rlp.EncodeToBytes(tx)
+func (api *APIHandler) SendRawTransaction(ctx context.Context, groupID int, contract *common.Address, input []byte) (*types.Receipt, error) {
+	//data, err := rlp.EncodeToBytes(tx)
+	//if err != nil {
+	//	fmt.Printf("rlp encode tx error!")
+	//	return nil, err
+	//}
+	var receipt *types.Receipt
+	var err error
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	if contract != nil {
+		err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(input), contract.String())
+	} else {
+		err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(input), "")
+	}
 	if err != nil {
-		logrus.Printf("rlp encode tx error, err: %v", err)
+		errorStr := fmt.Sprintf("%s", err)
+		if strings.Contains(errorStr, "connection refused") {
+			log.Println("connection refused err:", err)
+			return nil, err
+		}
 		return nil, err
 	}
-	var receipt *types.Receipt
-	if api.IsHTTP() {
-		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
-		if err != nil {
-			return nil, err
-		}
-		// timer to wait transaction on-chain
-		queryTicker := time.NewTicker(time.Second)
-		defer queryTicker.Stop()
-		for {
-			receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash())
-			if receipt != nil {
-				return receipt, nil
-			}
-			if err != nil {
-				errorStr := fmt.Sprintf("%s", err)
-				if strings.Contains(errorStr, "connection refused") {
-					return nil, err
-				}
-				//logrus.Printf("Receipt retrieval failed, err: %v\n", err)
-			} else {
-				fmt.Println("Transaction not yet mined")
-			}
-			// Wait for the next round.
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-queryTicker.C:
-			}
-		}
-	} else {
-		var anonymityReceipt = &struct {
-			types.Receipt
-			Status string `json:"status"`
-		}{}
-		err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(data))
-		if err != nil {
-			return nil, err
-		}
-		status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
-		if err != nil {
-			return nil, fmt.Errorf("SendRawTransaction failed, strconv.ParseInt err: " + fmt.Sprint(err))
-		}
-		receipt = &anonymityReceipt.Receipt
-		receipt.Status = int(status)
+	receipt = &anonymityReceipt.Receipt
+	if receipt != nil {
 		return receipt, nil
 	}
+
+	if api.IsHTTP() {
+		// timer to wait transaction on-chain
+		//queryTicker := time.NewTicker(time.Second)
+		//defer queryTicker.Stop()
+		//for {
+		//	receipt, err := api.GetTransactionReceipt(ctx, groupID, tx.Hash())
+		//	if receipt != nil {
+		//		return receipt, nil
+		//	}
+		//	if err != nil {
+		//		errorStr := fmt.Sprintf("%s", err)
+		//		if strings.Contains(errorStr, "connection refused") {
+		//			return nil, err
+		//		}
+		//		//fmt.Printf("Receipt retrieval failed, err: %v\n", err)
+		//	} else {
+		//		fmt.Println("Transaction not yet mined")
+		//	}
+		//	// Wait for the next round.
+		//	select {
+		//	case <-ctx.Done():
+		//		return nil, ctx.Err()
+		//	case <-queryTicker.C:
+		//	}
+		//}
+	} else {
+		//fmt.Printf("is not http call")
+		//var anonymityReceipt = &struct {
+		//	types.Receipt
+		//	Status string `json:"status"`
+		//}{}
+		//err = api.CallContext(ctx, anonymityReceipt, "sendRawTransaction", groupID, hexutil.Encode(data))
+		//if err != nil {
+		//	return nil, err
+		//}
+		//status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+		//if err != nil {
+		//	return nil, fmt.Errorf("SendRawTransaction failed, strconv.ParseInt err: " + fmt.Sprint(err))
+		//}
+		//receipt = &anonymityReceipt.Receipt
+		//receipt.Status = int(status)
+		//return receipt, nil
+	}
+	return receipt, nil
 }
 
 // AsyncSendRawTransaction send a transaction async
-func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, handler func(*types.Receipt, error)) error {
-	data, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		logrus.Printf("rlp encode tx error, err: %v", err)
-		return err
-	}
-	if api.IsHTTP() {
-		err = api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(data))
+func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
+	//data, err := rlp.EncodeToBytes(tx)
+	//if err != nil {
+	//	logrus.Printf("rlp encode tx error, err: %v", err)
+	//	return err
+	//}
+	//if api.IsHTTP() {
+		err := api.CallContext(ctx, nil, "sendRawTransaction", groupID, hexutil.Encode(input), contract.String())
 		if err != nil {
 			return nil
 		}
@@ -190,12 +208,12 @@ func (api *APIHandler) AsyncSendRawTransaction(ctx context.Context, groupID int,
 				}
 			}
 		}()
-	} else {
-		err = api.AsyncSendTransaction(ctx, handler, "sendRawTransaction", groupID, hexutil.Encode(data))
-		if err != nil {
-			return err
-		}
-	}
+	//} else {
+		//err = api.AsyncSendTransaction(ctx, handler, "sendRawTransaction", groupID, hexutil.Encode(data))
+		//if err != nil {
+		//	return err
+		//}
+	//}
 	return nil
 }
 
@@ -210,18 +228,49 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	return r, err
 }
 
-func (api *APIHandler) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
-	return api.Connection.SubscribeEventLogs(eventLogParams, handler)
+func (api *APIHandler) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, string)) error {
+	var addressArrayStr string
+	for _, address := range eventLogParams.Addresses {
+		if addressArrayStr == "" {
+			addressArrayStr = "\"" + address + "\""
+		} else {
+			addressArrayStr += ",\"" + address + "\""
+		}
+	}
+	var topicArrayStr string
+	for _, topic := range eventLogParams.Topics {
+		if topicArrayStr == "" {
+			topicArrayStr = "\"" + topic + "\""
+		} else {
+			topicArrayStr += ",\"" + topic + "\""
+		}
+	}
+	sendData := "{\"addresses\":[" + addressArrayStr + "],\"fromBlock\":" + eventLogParams.FromBlock +
+		",\"toBlock\":" + eventLogParams.ToBlock + ",\"topics\":[" + topicArrayStr + "]}"
+	log.Println("SubscribeEventLogs data:", sendData)
+	err := api.CallHandlerContext(ctx, "subscribeEventLogs", "", sendData, handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return api.Connection.SubscribeEventLogs(eventLogParams, handler)
 }
 
 func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
-	return api.Connection.SubscribeTopic(topic, handler)
+	err := api.CallHandlerContext(nil, "subscribeTopic", topic, "", handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return api.Connection.SubscribeTopic(topic, handler)
 }
 
+//todo
 func (api *APIHandler) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
 	return api.Connection.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
+// todo
 func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
 	return api.Connection.PublishPrivateTopic(topic, publicKey)
 }
@@ -229,31 +278,49 @@ func (api *APIHandler) PublishPrivateTopic(topic string, publicKey []*ecdsa.Publ
 func (api *APIHandler) UnsubscribeTopic(topic string) error {
 	return api.Connection.UnsubscribeTopic(topic)
 }
-
+//todo
 func (api *APIHandler) UnsubscribePrivateTopic(topic string) error {
 	return api.Connection.UnsubscribePrivateTopic(topic)
 }
 
-func (api *APIHandler) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
-	return api.Connection.SendAMOPMsg(topic, data)
+func (api *APIHandler) SendAMOPMsg(topic string, data []byte) error {
+	err := api.CallHandlerContext(nil, "SendAMOPMsg", topic, string(data), nil)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return api.Connection.SendAMOPMsg(topic, data)
 }
 
 func (api *APIHandler) BroadcastAMOPMsg(topic string, data []byte) error {
-	return api.Connection.BroadcastAMOPMsg(topic, data)
+	err := api.CallHandlerContext(nil, "broadcastAMOPMsg", topic, string(data), nil)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return api.Connection.BroadcastAMOPMsg(topic, data)
 }
 
+//todo
 func (api *APIHandler) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
 	return api.Connection.SendAMOPPrivateMsg(topic, data)
 }
 
+//todo
 func (api *APIHandler) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
 	return api.Connection.BroadcastAMOPPrivateMsg(topic, data)
 }
 
 func (api *APIHandler) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
-	return api.Connection.SubscribeBlockNumberNotify(groupID, handler)
+	err := api.CallHandlerContext(nil, "subscribeBlockNumberNotify", "", "", handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return api.Connection.SubscribeBlockNumberNotify(groupID, handler)
 }
 
+//todo
 func (api *APIHandler) UnsubscribeBlockNumberNotify(groupID uint64) error {
 	return api.Connection.UnsubscribeBlockNumberNotify(groupID)
 }
@@ -301,17 +368,13 @@ func (api *APIHandler) GetChainID(ctx context.Context) (*big.Int, error) {
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
 func (api *APIHandler) GetBlockNumber(ctx context.Context, groupID int) (int64, error) {
-	var raw string
+	var raw int64
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
 		return -1, err
 	}
-
-	blockNumber, err := strconv.ParseInt(raw, 0, 64)
-	if err != nil {
-		return -1, fmt.Errorf("parse block number failed, err: %v", err)
-	}
-	return blockNumber, err
+	log.Println("json unmarshal respmsg blockNum:", raw)
+	return raw, err
 }
 
 // GetBlockLimit returns the blocklimit for current blocknumber
@@ -325,12 +388,13 @@ func (api *APIHandler) GetBlockLimit(ctx context.Context, groupID int) (*big.Int
 		}
 	}
 	defaultNumber := big.NewInt(BlockLimit)
-	var raw hexutil.Big
+	var raw int
 	err := api.CallContext(ctx, &raw, "getBlockNumber", groupID)
 	if err != nil {
 		return nil, err
 	}
-	blockLimit = defaultNumber.Add(defaultNumber, (*big.Int)(&raw))
+
+	blockLimit = defaultNumber.Add(defaultNumber, big.NewInt(int64(raw)))
 	return blockLimit, nil
 }
 
@@ -413,6 +477,7 @@ func (api *APIHandler) GetGroupPeers(ctx context.Context, groupID int) ([]byte, 
 	return js, err
 }
 
+//todo mei
 // GetNodeIDList returns the ID information of the connected peers and itself
 func (api *APIHandler) GetNodeIDList(ctx context.Context, groupID int) ([]byte, error) {
 	var raw interface{}
@@ -512,21 +577,20 @@ func (api *APIHandler) GetTransactionReceipt(ctx context.Context, groupID int, t
 	var raw *types.Receipt
 	var anonymityReceipt = &struct {
 		types.Receipt
-		Status string `json:"status"`
 	}{}
 	err := api.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", groupID, txHash.Hex())
 	if err != nil {
 		return nil, err
 	}
-	if len(anonymityReceipt.Status) < 2 {
-		return nil, fmt.Errorf("transaction %v is not on-chain", txHash.Hex())
-	}
-	status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
-	if err != nil {
-		return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
-	}
+	//if len(anonymityReceipt.Status) < 2 {
+	//	return nil, fmt.Errorf("transaction %v is not on-chain", txHash.Hex())
+	//}
+	//status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+	//if err != nil {
+	//	return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
+	//}
 	raw = &anonymityReceipt.Receipt
-	raw.Status = int(status)
+	//raw.Status = int(status)
 	return raw, err
 }
 
@@ -587,6 +651,7 @@ func (api *APIHandler) GetCode(ctx context.Context, groupID int, address common.
 	return js, err
 }
 
+
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (api *APIHandler) GetTotalTransactionCount(ctx context.Context, groupID int) (*types.TransactionCount, error) {
 	var transactionCount types.TransactionCount
@@ -595,6 +660,26 @@ func (api *APIHandler) GetTotalTransactionCount(ctx context.Context, groupID int
 		return nil, err
 	}
 	return &transactionCount, err
+}
+
+func (api *APIHandler) GetGroupInfo(ctx context.Context, groupID int) ([]byte, error) {
+	var raw interface{}
+	err := api.CallContext(ctx, &raw, "getGroupInfo", groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+}
+
+func (api *APIHandler) GetGroupNodeInfo(ctx context.Context, groupID int, nodeId string) ([]byte, error) {
+	var raw interface{}
+	err := api.CallContext(ctx, &raw, "getGroupNodeInfo", groupID, nodeId)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
 }
 
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)

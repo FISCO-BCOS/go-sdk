@@ -99,13 +99,13 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
-	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address,  *types.Receipt,  *BoundContract, error) {
+	_, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
 	addr := common.Address{}
 	if receipt != nil {
-		addr = receipt.ContractAddress
+		addr = common.HexToAddress(receipt.ContractAddress)
 	}
-	return addr, tx, c, err
+	return addr,receipt, c, err
 }
 func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
@@ -114,7 +114,6 @@ func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, 
 
 func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
-
 	input, err := c.abi.Pack("", params...)
 	if err != nil {
 		return nil, nil, nil, err
@@ -126,7 +125,7 @@ func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBa
 	if receipt == nil {
 		return nil, nil, nil, errors.New("deploy failed, receipt is nil")
 	}
-	c.address = receipt.ContractAddress
+	c.address = common.HexToAddress(receipt.ContractAddress)
 	return tx, receipt, c, nil
 }
 
@@ -222,26 +221,28 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
-	signedTx, err := c.generateSignedTx(opts, contract, input)
-	if err != nil {
-		return nil, nil, err
-	}
+	//signedTx, err := c.generateSignedTx(opts, contract, input)
+	//if err != nil {
+	//	return nil, nil, err
+	//}
 	var receipt *types.Receipt
-	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
+	var err error
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil,contract, input); err != nil {
 		return nil, nil, err
 	}
-	return signedTx, receipt, nil
+
+	return nil, receipt, nil
 }
 
 func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
-	signedTx, err := c.generateSignedTx(opts, contract, input)
-	if err != nil {
+	//signedTx, err := c.generateSignedTx(opts, contract, input)
+	//if err != nil {
+	//	return nil, err
+	//}
+	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract,input, handler); err != nil {
 		return nil, err
 	}
-	if err = c.transactor.AsyncSendTransaction(ensureContext(opts.Context), signedTx, handler); err != nil {
-		return nil, err
-	}
-	return signedTx, nil
+	return nil, nil
 }
 
 func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
@@ -321,7 +322,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
+func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, string), name string, query ...interface{}) error {
 	from := string("latest")
 	// Don't crash on a lazy user
 	if fromBlock != nil {
@@ -341,7 +342,8 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 		Topics:    topics,
 		GroupID:   c.transactor.GetGroupID().Text(16),
 	}
-	return c.filterer.SubscribeEventLogs(eventLogParams, handler)
+	//todo  handler 不对 ****
+	return c.filterer.SubscribeEventLogs(nil,eventLogParams ,handler)
 }
 
 // UnpackLog unpacks a retrieved log into the provided output structure.

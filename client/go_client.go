@@ -19,7 +19,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"strconv"
 	"strings"
@@ -33,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
+	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
@@ -45,6 +45,7 @@ type Client struct {
 	callOpts          *bind.CallOpts
 	smCrypto          bool
 }
+
 
 const (
 	//V2_5_0 is node version v2.5.0
@@ -59,76 +60,92 @@ func Dial(config *conf.Config) (*Client, error) {
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	var c *conn.Connection
-	var err error
-	if config.IsHTTP {
-		c, err = conn.DialContextHTTP(config.NodeURL)
-	} else {
-		// try to parse use file
-		if config.TLSCAContext == nil {
-			config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
-			}
-		}
-		if config.TLSCertContext == nil {
-			config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
-			}
-		}
-		if config.TLSKeyContext == nil {
-			config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
-			}
-		}
-		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
-	}
-	if err != nil {
-		return nil, err
-	}
-	apiHandler := NewAPIHandler(c)
+	//if config.IsHTTP {
+	//	c, err = conn.DialContextHTTP(config.NodeURL)
+	//} else {
+	//	// try to parse use file
+	//	if config.TLSCAContext == nil {
+	//		config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
+	//		if err != nil {
+	//			return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
+	//		}
+	//	}
+	//	if config.TLSCertContext == nil {
+	//		config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
+	//		if err != nil {
+	//			return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
+	//		}
+	//	}
+	//	if config.TLSKeyContext == nil {
+	//		config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
+	//		if err != nil {
+	//			return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
+	//		}
+	//	}
+	//	c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
+	//}
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	cv, err := apiHandler.GetClientVersion(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("%v", err)
+	sdk := csdk.NewSDKByConfigFile("./config_sample.ini","group0")
+	if sdk == nil{
+		return nil,errors.New("new sdk by configFile error")
 	}
+	c,err := conn.NewClient1(nil, sdk)
+	if err != nil {
+		return nil, fmt.Errorf("new client errors failed: %v", err)
+	}
+	apiHandler := NewAPIHandler(c, sdk)
+	//var response []byte
+	//response, err = apiHandler.GetClientVersion(ctx)
+	//if err != nil {
+	//	return nil, fmt.Errorf("%v", err)
+	//}
+	//var raw interface{}
+	//err = json.Unmarshal(response, &raw)
+	//if err != nil {
+	//	return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
+	//}
+	//m, ok := raw.(map[string]interface{})
+	//if !ok {
+	//	return nil, errors.New("parse response json to map error")
+	//}
 
 	// get supported FISCO BCOS version
-	var compatibleVersionStr string
-	if cv.GetSupportedVersion() == "" {
-		return nil, errors.New("JSON response does not contains the key : Supported Version")
-	} else {
-		compatibleVersionStr = cv.GetSupportedVersion()
-	}
-	compatibleVersion, err := getVersionNumber(compatibleVersionStr)
-	if err != nil {
-		return nil, fmt.Errorf("DialContext failed, err: %v", err)
-	}
+	//var compatibleVersionStr string
+	//compatibleVersionStr, ok = m["Supported Version"].(string)
+	//if !ok {
+	//	return nil, errors.New("JSON response does not contains the key : Supported Version")
+	//}
+	//compatibleVersion, err := getVersionNumber(compatibleVersionStr)
+	//if err != nil {
+	//	return nil, fmt.Errorf("DialContext failed, err: %v", err)
+	//}
 
 	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
-	var fiscoBcosVersion string
-	if cv.SupportedVersion == "" {
-		return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
-	} else {
-		fiscoBcosVersion = cv.GetFiscoBcosVersion()
-	}
-	nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
-	if nodeIsSupportedSM != config.IsSMCrypto {
-		return nil, fmt.Errorf("the SDK set SMCrypt=%v, but the node is mismatched", config.IsSMCrypto)
-	}
+	//var fiscoBcosVersion string
+	//fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
+	//if !ok {
+	//	return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
+	//}
+	//nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
+	//if nodeIsSupportedSM != config.IsSMCrypto {
+	//	return nil, fmt.Errorf("the SDK set SMCrypt=%v, but the node is mismatched", config.IsSMCrypto)
+	//}
 
 	// get node chain ID
-	var nodeChainID int64
-	nodeChainID, err = strconv.ParseInt(cv.GetChainId(), 10, 64)
-	if err != nil {
-		return nil, errors.New("JSON response does not contains the key : Chain Id")
-	}
-	if config.ChainID != nodeChainID {
-		return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
-	}
+	//var nodeChainID int64
+	//nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
+	//if err != nil {
+	//	return nil, errors.New("JSON response does not contains the key : Chain Id")
+	//}
+	//if config.ChainID != nodeChainID {
+	//	return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
+	//}
+	//todo compatibleVersion
+	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: 1, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
 
-	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
 	} else {
@@ -145,7 +162,8 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 // Close disconnects the rpc
 func (c *Client) Close() {
-	c.apiHandler.Close()
+	//todo
+	//c.apiHandler.Close()
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
@@ -229,13 +247,13 @@ func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) 
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
-	return c.apiHandler.SendRawTransaction(ctx, c.groupID, tx)
+func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error) {
+	return c.apiHandler.SendRawTransaction(ctx, c.groupID, contract,input)
 }
 
 // AsyncSendTransaction send transaction async
-func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
-	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx, handler)
+func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
+	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx,contract, input, handler)
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
@@ -244,15 +262,15 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
-func (c *Client) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
-	return c.apiHandler.SubscribeEventLogs(eventLogParams, handler)
+func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, string)) error {
+	return c.apiHandler.SubscribeEventLogs(ctx,eventLogParams,handler)
 }
 
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
-func (c *Client) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
+func (c *Client) SendAMOPMsg(topic string, data []byte) (error) {
 	return c.apiHandler.SendAMOPMsg(topic, data)
 }
 
@@ -437,6 +455,14 @@ func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, e
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (c *Client) GetTotalTransactionCount(ctx context.Context) (*types.TransactionCount, error) {
 	return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
+}
+
+func (c *Client) GetGroupNodeInfo(ctx context.Context, nodeId string) ([]byte, error) {
+	return c.apiHandler.GetGroupNodeInfo(ctx, c.groupID, nodeId)
+}
+
+func (c *Client) GetGroupInfo(ctx context.Context) ([]byte, error) {
+	return c.apiHandler.GetGroupInfo(ctx, c.groupID)
 }
 
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)

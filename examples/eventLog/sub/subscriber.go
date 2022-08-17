@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,8 +12,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,30 +42,29 @@ func main() {
 	}
 	var eventLogParams types.EventLogParams
 	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "latest"
-	eventLogParams.GroupID = "1"
-	var topics = make([]string, 1)
-	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
-	eventLogParams.Topics = topics
+	eventLogParams.ToBlock = "10000"
+	//var topics = make([]string, 1)
+	//topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
+	//eventLogParams.Topics = topics
 	var addresses = make([]string, 1)
-	addresses[0] = "0xd2cf82e18f3d2c5cae0de87d29994be622f3fdd3"
+	addresses[0] = "0x610857669da60D63f4c9E30713Bb86A49251Fe2A"
 	eventLogParams.Addresses = addresses
 
-	timeout := 10 * time.Second
+	timeout := 100 * time.Second
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
+	err = c.SubscribeEventLogs(context.Background(), eventLogParams, func(status int, logs string) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
 		}
-
 		logrus.Printf("received: %s\n", logRes)
 		logrus.Printf("received status: %d\n", status)
-		queryTicker.Stop()
-		queryTicker = time.NewTicker(timeout)
-		done <- true
+		//queryTicker.Stop()
+		//queryTicker = time.NewTicker(timeout)
+		//done <- true
+		context.Background().Done()
 	})
 	if err != nil {
 		logrus.Printf("subscribe event failed, err: %v\n", err)
