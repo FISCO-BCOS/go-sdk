@@ -104,13 +104,16 @@ func TestGetTransactionReceipt(t *testing.T) {
 
 func TestGetTransactionByHash(t *testing.T) {
 	c := GetClient(t)
-	cv, err := c.GetTransactionByHash(context.Background(),common.BytesToHash([]byte("0xdbcbfd7d7d6dcdf9090ad261ef79358bbe272982e1c5a4c92d94dab854fb317f")))
+	cv, err := c.GetTransactionByHash(context.Background(),common.HexToHash("0xaab521723afd6ca0f2c5ed89727272f355ba218dbd18d13952f2c155c3088b03"))
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
 	}
 
-	t.Logf("transaction :\n%s", cv)
-	//t.Logf("transaction receipt contractAddress:\n%s", common.HexToAddress(cv.ContractAddress).String())
+	raw, err := json.MarshalIndent(cv, "", indent)
+	if err != nil {
+		t.Fatalf("trabscation marshalIndent error: %v", err)
+	}
+	t.Logf("transaction:\n%s", raw)
 }
 
 func TestClientVersion(t *testing.T) {
@@ -155,7 +158,7 @@ func TestBlockLimit(t *testing.T) {
 
 	t.Logf("latest blockLimit: \n%s", bl)
 }
-// todo 没有
+
 func TestGroupID(t *testing.T) {
 	c := GetClient(t)
 	// cannot use big.NewInt to construct json request
@@ -164,7 +167,6 @@ func TestGroupID(t *testing.T) {
 	t.Logf("current groupID: \n%s", groupid)
 }
 
-// todo 没有
 func TestChainID(t *testing.T) {
 	c := GetClient(t)
 	// cannot use big.NewInt to construct json request

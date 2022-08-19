@@ -353,15 +353,8 @@ func (c *Connection) Call(result interface{}, method string, args ...interface{}
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
 func (c *Connection) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	log.Println("CallContext method:", method)
-	//msg, err := c.newMessage(method, args...)
-	//if err != nil {
-	//	return err
-	//}
+	logrus.Infof("CallContext method:%s\n", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
-
-	//symbol := map[string]func(interface{},interface{})string{"test1":c.csdk.GetBlockHashByNumber, "test2":test2, "test":test3}
-
 	switch method {
 	case "call":
 		arg := args[1].(map[string]interface{})
@@ -397,9 +390,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
-	case "subscribeEventLogs":
-		param := args[0].(string)
-		c.csdk.SubscribeEvent(op.respChanData, param)
 	case "getSystemConfigByKey":
 		key := args[1].(string)
 		c.csdk.GetSystemConfigByKey(op.respChanData, key)
@@ -411,13 +401,12 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
 	case "getTransactionByHash":
-		txHash := args[0].(string)
+		txHash := args[1].(string)
 		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "sendRawTransaction":
-		groupId := args[0].(int)
 		data := args[1].(string)
 		contractAddress := args[2].(string)
-		c.csdk.SendTransaction(op.respChanData, groupId, contractAddress, data)
+		c.csdk.SendTransaction(op.respChanData, contractAddress, data)
 	default:
 		return ErrNoRpcMehtod
 	}
@@ -435,7 +424,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 }
 
 func (c *Connection) CallHandlerContext(ctx context.Context, method string, topic string, reqData string, handler interface{}) error {
-	log.Println("CallEventContext method:", method)
+	logrus.Infof("CallEventContext method:", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 	switch method {
 	case "subscribeTopic":
