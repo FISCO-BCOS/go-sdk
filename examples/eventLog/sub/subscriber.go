@@ -22,7 +22,7 @@ func main() {
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
+		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error
 	const (
@@ -54,11 +54,12 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEventLogs(context.Background(), eventLogParams, func(status int, logs string) {
+	err = c.SubscribeEventLogs(context.Background(), eventLogParams, func(status int,logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
 		}
+
 		logrus.Printf("received: %s\n", logRes)
 		logrus.Printf("received status: %d\n", status)
 		//queryTicker.Stop()

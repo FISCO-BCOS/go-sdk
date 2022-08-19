@@ -17,8 +17,11 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"strconv"
 	"strings"
@@ -38,7 +41,8 @@ import (
 // Client defines typed wrappers for the Ethereum RPC API.
 type Client struct {
 	apiHandler        *APIHandler
-	groupID           int
+	conn              *conn.Connection
+	groupID           string
 	chainID           int64
 	compatibleVersion int
 	auth              *bind.TransactOpts
@@ -46,10 +50,11 @@ type Client struct {
 	smCrypto          bool
 }
 
-
 const (
 	//V2_5_0 is node version v2.5.0
 	V2_5_0 int = 0x02050000
+	indent           = "  "
+	BlockLimit int64 = 600
 )
 
 // Dial connects a client to the given URL and groupID.
@@ -60,43 +65,32 @@ func Dial(config *conf.Config) (*Client, error) {
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	var c *conn.Connection
-	//if config.IsHTTP {
-	//	c, err = conn.DialContextHTTP(config.NodeURL)
-	//} else {
-	//	// try to parse use file
-	//	if config.TLSCAContext == nil {
-	//		config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
-	//		if err != nil {
-	//			return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
-	//		}
-	//	}
-	//	if config.TLSCertContext == nil {
-	//		config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
-	//		if err != nil {
-	//			return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
-	//		}
-	//	}
-	//	if config.TLSKeyContext == nil {
-	//		config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
-	//		if err != nil {
-	//			return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
-	//		}
-	//	}
-	//	c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
-	//}
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	sdk := csdk.NewSDKByConfigFile("./config_sample.ini","group0")
-	if sdk == nil{
-		return nil,errors.New("new sdk by configFile error")
+	var csdkStr = &csdk.CSDK{}
+	if config.ConfigFile != ""{
+		//配置文件
+		csdkStr = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID)
+	}else {
+		var isSmSsl int
+		if config.IsSMCrypto == true{
+			isSmSsl = 1
+		}else {
+			isSmSsl = 0
+		}
+		if config.NodeURL != ""{
+			nodeUrlSplit := strings.Split(config.NodeURL,":")
+			config.Host = nodeUrlSplit[0]
+			config.Port, _ = strconv.Atoi(nodeUrlSplit[1])
+		}
+		csdkStr = csdk.NewSDK(config.GroupID, config.Host, config.Port, isSmSsl)
 	}
-	c,err := conn.NewClient1(nil, sdk)
+	if csdkStr == nil {
+		return nil, errors.New("new sdk error")
+	}
+	c, err := conn.NewClient(nil, csdkStr)
 	if err != nil {
 		return nil, fmt.Errorf("new client errors failed: %v", err)
 	}
-	apiHandler := NewAPIHandler(c, sdk)
+	apiHandler := NewAPIHandler(c)
 	//var response []byte
 	//response, err = apiHandler.GetClientVersion(ctx)
 	//if err != nil {
@@ -144,7 +138,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	//	return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	//}
 	//todo compatibleVersion
-	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: 1, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
+	client := Client{conn: c,apiHandler: apiHandler, groupID: config.GroupID, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
 
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
@@ -168,6 +162,34 @@ func (c *Client) Close() {
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
 
+func toCallArg(msg ethereum.CallMsg) interface{} {
+	arg := map[string]interface{}{
+		"from": msg.From.String(),
+		"to":   msg.To.String(),
+	}
+	if len(msg.Data) > 0 {
+		arg["data"] = hexutil.Bytes(msg.Data).String()
+	}
+	if msg.Value != nil {
+		arg["value"] = (*hexutil.Big)(msg.Value).String()
+	}
+
+	if msg.Gas != 0 {
+		arg["gas"] = hexutil.Uint64(msg.Gas)
+	}
+	if msg.GasPrice != nil {
+		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)
+	}
+
+	return arg
+}
+
+type callResult struct {
+	CurrentBlockNumber int `json:"currentBlockNumber"`
+	Output             string `json:"output"`
+	Status             int `json:"status"`
+}
+
 // GetTransactOpts return *bind.TransactOpts
 func (c *Client) GetTransactOpts() *bind.TransactOpts {
 	return c.auth
@@ -190,8 +212,15 @@ func (c *Client) SMCrypto() bool {
 
 // CodeAt returns the contract code of the given account.
 // The block number can be nil, in which case the code is taken from the latest known block.
-func (c *Client) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, account)
+func (c *Client) CodeAt(ctx context.Context, address common.Address, blockNumber *big.Int) ([]byte, error) {
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetCode(ctx, c.groupID, address)
 }
 
 // Filters
@@ -226,21 +255,66 @@ func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 // Pending State
 
 // PendingCodeAt returns the contract code of the given account in the pending state.
-func (c *Client) PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, account)
+func (c *Client) PendingCodeAt(ctx context.Context, address common.Address) ([]byte, error) {
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetCode(ctx, c.groupID, account)
 }
 
 // Contract Calling
 
 // CallContract invoke the call method of rpc api
 func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return c.apiHandler.Call(ctx, c.groupID, msg)
+	var hexBytes hexutil.Bytes
+	var cr *callResult
+	err := c.conn.CallContext(ctx, &cr, "call", c.groupID, toCallArg(msg))
+	if err != nil {
+		return nil, err
+	}
+	if cr.Status != 0 {
+		var errorMessage string
+		if len(cr.Output) >= 138 {
+			outputBytes, err := hex.DecodeString(cr.Output[2:])
+			if err != nil {
+				return nil, fmt.Errorf("call error of status %d, hex.DecodeString failed", cr.Status)
+			}
+			errorMessage = string(outputBytes[68:])
+		}
+		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
+	}
+	hexBytes = common.FromHex(cr.Output)
+	return hexBytes, nil
+	//return c.apiHandler.Call(ctx, c.groupID, msg)
 }
 
 // PendingCallContract executes a message call transaction using the EVM.
 // The state seen by the contract call is the pending state.
 func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) ([]byte, error) {
-	return c.apiHandler.Call(ctx, c.groupID, msg)
+	var hexBytes hexutil.Bytes
+	var cr *callResult
+	err := c.conn.CallContext(ctx, &cr, "call", c.groupID, toCallArg(msg))
+	if err != nil {
+		return nil, err
+	}
+	if cr.Status != 0 {
+		var errorMessage string
+		if len(cr.Output) >= 138 {
+			outputBytes, err := hex.DecodeString(cr.Output[2:])
+			if err != nil {
+				return nil, fmt.Errorf("call error of status %d, hex.DecodeString failed", cr.Status)
+			}
+			errorMessage = string(outputBytes[68:])
+		}
+		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
+	}
+	hexBytes = common.FromHex(cr.Output)
+	return hexBytes, nil
+	//return c.apiHandler.Call(ctx, c.groupID, msg)
 }
 
 // SendTransaction injects a signed transaction into the pending pool for execution.
@@ -248,75 +322,190 @@ func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) 
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
 func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error) {
-	return c.apiHandler.SendRawTransaction(ctx, c.groupID, contract,input)
+	var receipt *types.Receipt
+	var err error
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	if contract != nil {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), contract.String())
+	} else {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
+	}
+	if err != nil {
+		errorStr := fmt.Sprintf("%s", err)
+		if strings.Contains(errorStr, "connection refused") {
+			log.Println("connection refused err:", err)
+			return nil, err
+		}
+		return nil, err
+	}
+	receipt = &anonymityReceipt.Receipt
+	if receipt != nil {
+		return receipt, nil
+	}
+	return receipt, nil
+	//return c.apiHandler.SendRawTransaction(ctx, c.groupID, contract, input)
 }
 
 // AsyncSendTransaction send transaction async
 func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
-	return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx,contract, input, handler)
+	err := c.conn.CallContext(ctx, nil, "sendRawTransaction", c.groupID, hexutil.Encode(input), contract.String())
+	if err != nil {
+		return nil
+	}
+	var receipt *types.Receipt
+	go func() {
+		for {
+			receipt, err = c.TransactionReceipt(ctx, tx.Hash())
+			if receipt != nil {
+				handler(receipt, nil)
+				return
+			}
+			if err != nil {
+				errorStr := fmt.Sprintf("%s", err)
+				if strings.Contains(errorStr, "connection refused") {
+					handler(nil, errors.New("connection refused"))
+					return
+				}
+			}
+		}
+	}()
+	return nil
+	//return c.apiHandler.AsyncSendRawTransaction(ctx, c.groupID, tx, contract, input, handler)
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
+	var raw *types.Receipt
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", c.groupID, txHash.Hex())
+	if err != nil {
+		return nil, err
+	}
+	//if len(anonymityReceipt.Status) < 2 {
+	//	return nil, fmt.Errorf("transaction %v is not on-chain", txHash.Hex())
+	//}
+	//status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+	//if err != nil {
+	//	return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
+	//}
+	raw = &anonymityReceipt.Receipt
+	//raw.Status = int(status)
+	return raw, err
+	//return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
-func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, string)) error {
-	return c.apiHandler.SubscribeEventLogs(ctx,eventLogParams,handler)
+func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+	var addressArrayStr string
+	for _, address := range eventLogParams.Addresses {
+		if addressArrayStr == "" {
+			addressArrayStr = "\"" + address + "\""
+		} else {
+			addressArrayStr += ",\"" + address + "\""
+		}
+	}
+	var topicArrayStr string
+	for _, topic := range eventLogParams.Topics {
+		if topicArrayStr == "" {
+			topicArrayStr = "\"" + topic + "\""
+		} else {
+			topicArrayStr += ",\"" + topic + "\""
+		}
+	}
+	sendData := "{\"addresses\":[" + addressArrayStr + "],\"fromBlock\":" + eventLogParams.FromBlock +
+		",\"toBlock\":" + eventLogParams.ToBlock + ",\"topics\":[" + topicArrayStr + "]}"
+	log.Println("SubscribeEventLogs data:", sendData)
+	err := c.conn.CallHandlerContext(ctx, "subscribeEventLogs", "", sendData, handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return c.apiHandler.SubscribeEventLogs(ctx, eventLogParams, handler)
 }
 
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
-	return c.apiHandler.SubscribeTopic(topic, handler)
+	err := c.conn.CallHandlerContext(nil, "subscribeTopic", topic, "", handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return c.apiHandler.SubscribeTopic(topic, handler)
 }
 
-func (c *Client) SendAMOPMsg(topic string, data []byte) (error) {
-	return c.apiHandler.SendAMOPMsg(topic, data)
+func (c *Client) SendAMOPMsg(topic string, data []byte) error {
+	err := c.conn.CallHandlerContext(nil, "SendAMOPMsg", topic, string(data), nil)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return c.apiHandler.SendAMOPMsg(topic, data)
 }
 
 func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
-	return c.apiHandler.BroadcastAMOPMsg(topic, data)
+	err := c.conn.CallHandlerContext(nil, "broadcastAMOPMsg", topic, string(data), nil)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return c.apiHandler.BroadcastAMOPMsg(topic, data)
 }
 
 func (c *Client) UnsubscribeTopic(topic string) error {
-	return c.apiHandler.UnsubscribeTopic(topic)
+	return nil
+	//return c.apiHandler.UnsubscribeTopic(topic)
 }
 
 func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
-	return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
+	return nil
+	//return c.apiHandler.SubscribePrivateTopic(topic, privateKey, handler)
 }
 
 func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
-	return c.apiHandler.PublishPrivateTopic(topic, publicKey)
+	return nil
+	//return c.apiHandler.PublishPrivateTopic(topic, publicKey)
 }
 
 func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
-	return c.apiHandler.SendAMOPPrivateMsg(topic, data)
+	return nil, nil
+	//return c.apiHandler.SendAMOPPrivateMsg(topic, data)
 }
 
 func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
-	return c.apiHandler.BroadcastAMOPPrivateMsg(topic, data)
+	return nil
+	//return c.apiHandler.BroadcastAMOPPrivateMsg(topic, data)
 }
 
 func (c *Client) UnsubscribePrivateTopic(topic string) error {
-	return c.apiHandler.UnsubscribePrivateTopic(topic)
+	return nil
+	//return c.apiHandler.UnsubscribePrivateTopic(topic)
 }
 
 func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {
-	return c.apiHandler.SubscribeBlockNumberNotify(uint64(c.groupID), handler)
+	err := c.conn.CallHandlerContext(nil, "subscribeBlockNumberNotify", "", "", handler)
+	if err != nil {
+		return err
+	}
+	return nil
+	//return c.apiHandler.SubscribeBlockNumberNotify(c.groupID, handler)
 }
 
 func (c *Client) UnsubscribeBlockNumberNotify() error {
-	return c.apiHandler.UnsubscribeBlockNumberNotify(uint64(c.groupID))
+	//return c.apiHandler.UnsubscribeBlockNumberNotify(c.groupID)
+	return nil
 }
 
 // GetGroupID returns the groupID of the client
-func (c *Client) GetGroupID() *big.Int {
-	return big.NewInt(int64(c.groupID))
+func (c *Client) GetGroupID() string {
+	return c.groupID
+	//return big.NewInt(int64())
 }
 
 // SetGroupID sets the groupID of the client
-func (c *Client) SetGroupID(newID int) {
+func (c *Client) SetGroupID(newID string) {
 	c.groupID = newID
 }
 
@@ -327,7 +516,13 @@ func (c *Client) GetCompatibleVersion() int {
 
 // GetClientVersion returns the version of FISCO BCOS running on the nodes.
 func (c *Client) GetClientVersion(ctx context.Context) (*types.ClientVersion, error) {
-	return c.apiHandler.GetClientVersion(ctx)
+	var clientVersion types.ClientVersion
+	err := c.conn.CallContext(ctx, &clientVersion, "getClientVersion")
+	if err != nil {
+		return nil, err
+	}
+	return &clientVersion, err
+	//return c.apiHandler.GetClientVersion(ctx)
 }
 
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
@@ -339,135 +534,352 @@ func (c *Client) GetChainID(ctx context.Context) (*big.Int, error) {
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
 func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
-	return c.apiHandler.GetBlockNumber(ctx, c.groupID)
+	var raw int64
+	err := c.conn.CallContext(ctx, &raw, "getBlockNumber", c.groupID)
+	if err != nil {
+		return -1, err
+	}
+	log.Println("json unmarshal respmsg blockNum:", raw)
+	return raw, err
+	//return c.apiHandler.GetBlockNumber(ctx, c.groupID)
 }
 
 // GetBlockLimit returns the blocklimit for current blocknumber
 func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
-	return c.apiHandler.GetBlockLimit(ctx, c.groupID)
+	var blockLimit *big.Int
+	//if !api.IsHTTP() {
+	//	blockNumber := api.Connection.GetBlockNumber()
+	//	if blockNumber != 0 {
+	//		blockLimit = big.NewInt(blockNumber + BlockLimit)
+	//		return blockLimit, nil
+	//	}
+	//}
+	defaultNumber := big.NewInt(BlockLimit)
+	var raw int
+	err := c.conn.CallContext(ctx, &raw, "getBlockNumber", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	blockLimit = defaultNumber.Add(defaultNumber, big.NewInt(int64(raw)))
+	return blockLimit, nil
+	//return c.apiHandler.GetBlockLimit(ctx, c.groupID)
 }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
 // if the consensus algorithm is not the PBFT.
 func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetPBFTView(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getPbftView", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetPBFTView(ctx, c.groupID)
 	// TODO
 	// Raft consensus
 }
 
 // GetSealerList returns the list of consensus nodes' ID according to the groupID
 func (c *Client) GetSealerList(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetSealerList(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getSealerList", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetSealerList(ctx, c.groupID)
 }
 
 // GetObserverList returns the list of observer nodes' ID according to the groupID
 func (c *Client) GetObserverList(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetObserverList(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getObserverList", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetObserverList(ctx, c.groupID)
 }
 
 // GetConsensusStatus returns the status information about the consensus algorithm on a specific groupID
 func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetConsensusStatus(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getConsensusStatus", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetConsensusStatus(ctx, c.groupID)
 }
 
 // GetSyncStatus returns the synchronization status of the group
 func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
-	return c.apiHandler.GetSyncStatus(ctx, c.groupID)
+	var syncStatus types.SyncStatus
+	err := c.conn.CallContext(ctx, &syncStatus, "getSyncStatus", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &syncStatus, err
+	//return c.apiHandler.GetSyncStatus(ctx, c.groupID)
 }
 
 // GetPeers returns the information of the connected peers
 func (c *Client) GetPeers(ctx context.Context) (*[]types.Node, error) {
-	return c.apiHandler.GetPeers(ctx, c.groupID)
+	var nodes []types.Node
+	err := c.conn.CallContext(ctx, &nodes, "getPeers", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &nodes, err
+	//return c.apiHandler.GetPeers(ctx, c.groupID)
 }
 
 // GetGroupPeers returns the nodes and the overser nodes list on a specific group
 func (c *Client) GetGroupPeers(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetGroupPeers(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getGroupPeers", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetGroupPeers(ctx, c.groupID)
 }
 
 // GetNodeIDList returns the ID information of the connected peers and itself
 func (c *Client) GetNodeIDList(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetNodeIDList(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getNodeIDList", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetNodeIDList(ctx, c.groupID)
 }
 
 // GetGroupList returns the groupID list that the node belongs to
 func (c *Client) GetGroupList(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetGroupList(ctx)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getGroupList")
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetGroupList(ctx)
 }
 
 // GetBlockByHash returns the block information according to the given block hash
 func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, includeTx bool) (*types.Block, error) {
-	return c.apiHandler.GetBlockByHash(ctx, c.groupID, blockHash, includeTx)
+	var block types.Block
+	err := c.conn.CallContext(ctx, &block, "getBlockByHash", c.groupID, blockHash.Hex(), includeTx)
+	if err != nil {
+		return nil, err
+	}
+	return &block, err
+	//return c.apiHandler.GetBlockByHash(ctx, c.groupID, blockHash, includeTx)
 }
 
 // GetBlockByNumber returns the block information according to the given block number(hex format)
 func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includeTx bool) (*types.Block, error) {
-	return c.apiHandler.GetBlockByNumber(ctx, c.groupID, blockNumber, includeTx)
+	var block types.Block
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
+	err := c.conn.CallContext(ctx, &block, "getBlockByNumber", c.groupID, strconv.FormatInt(blockNumber, 10), includeTx)
+	if err != nil {
+		return nil, err
+	}
+	return &block, err
+	//return c.apiHandler.GetBlockByNumber(ctx, c.groupID, blockNumber, includeTx)
 }
 
 // GetBlockHashByNumber returns the block hash according to the given block number
 func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*common.Hash, error) {
-	return c.apiHandler.GetBlockHashByNumber(ctx, c.groupID, blockNumber)
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
+	var raw string
+	err := c.conn.CallContext(ctx, &raw, "getBlockHashByNumber", c.groupID, strconv.FormatInt(blockNumber, 10))
+	if err != nil {
+		return nil, err
+	}
+	blockHash := common.HexToHash(raw)
+	return &blockHash, err
+	//return c.apiHandler.GetBlockHashByNumber(ctx, c.groupID, blockNumber)
 }
 
 // GetTransactionByHash returns the transaction information according to the given transaction hash
 func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) (*types.TransactionDetail, error) {
-	return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txHash)
+	var transactionDetail types.TransactionDetail
+	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByHash", c.groupID, txHash.Hex())
+	if err != nil {
+		return nil, err
+	}
+	return &transactionDetail, err
+	//return c.apiHandler.GetTransactionByHash(ctx, c.groupID, txHash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information according to
 // the given block hash and transaction index
 func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) (*types.TransactionDetail, error) {
-	return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, blockHash, txIndex)
+	var transactionDetail types.TransactionDetail
+	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByBlockHashAndIndex", c.groupID, blockHash.Hex(), strconv.Itoa(txIndex))
+	if err != nil {
+		return nil, err
+	}
+	return &transactionDetail, err
+	//return c.apiHandler.GetTransactionByBlockHashAndIndex(ctx, c.groupID, blockHash, txIndex)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information according to
 // the given block number and transaction index
 func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) (*types.TransactionDetail, error) {
-	return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, blockNumber, txIndex)
+	if blockNumber < 0 {
+		return nil, errors.New("Invalid negative block number")
+	}
+	var transactionDetail types.TransactionDetail
+	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByBlockNumberAndIndex", c.groupID, strconv.FormatInt(blockNumber, 10), strconv.Itoa(txIndex))
+	if err != nil {
+		return nil, err
+	}
+	return &transactionDetail, err
+	//return c.apiHandler.GetTransactionByBlockNumberAndIndex(ctx, c.groupID, blockNumber, txIndex)
 }
 
 // GetTransactionReceipt returns the transaction receipt according to the given transaction hash
 func (c *Client) GetTransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
+	var raw *types.Receipt
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", c.groupID, txHash.Hex())
+	if err != nil {
+		return nil, err
+	}
+	//if len(anonymityReceipt.Status) < 2 {
+	//	return nil, fmt.Errorf("transaction %v is not on-chain", txHash.Hex())
+	//}
+	//status, err := strconv.ParseInt(anonymityReceipt.Status[2:], 16, 32)
+	//if err != nil {
+	//	return nil, fmt.Errorf("GetTransactionReceipt failed, strconv.ParseInt err: " + fmt.Sprint(err))
+	//}
+	raw = &anonymityReceipt.Receipt
+	//raw.Status = int(status)
+	return raw, err
+	//return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
 // GetContractAddress returns a contract address according to the transaction hash
 func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (common.Address, error) {
-	return c.apiHandler.GetContractAddress(ctx, c.groupID, txHash)
+	var raw interface{}
+	var contractAddress common.Address
+	err := c.conn.CallContext(ctx, &raw, "getTransactionReceipt", c.groupID, txHash.Hex())
+	if err != nil {
+		return contractAddress, err
+	}
+	m, ok := raw.(map[string]interface{})
+	if !ok {
+		return contractAddress, fmt.Errorf("GetContractAddress Json respond does not satisfy the type assertion: map[string]interface{}, %+v", raw)
+	}
+	var temp interface{}
+	temp, ok = m["contractAddress"]
+	if !ok {
+		return contractAddress, errors.New("Json respond does not contains the key : contractAddress")
+	}
+	var strContractAddress string
+	strContractAddress, ok = temp.(string)
+	if !ok {
+		return contractAddress, errors.New("type assertion for Chain Id is wrong: not a string")
+	}
+	return common.HexToAddress(strContractAddress), nil
+	//return c.apiHandler.GetContractAddress(ctx, c.groupID, txHash)
 }
 
 // GetPendingTransactions returns information of the pending transactions
 func (c *Client) GetPendingTransactions(ctx context.Context) (*[]types.TransactionPending, error) {
-	return c.apiHandler.GetPendingTransactions(ctx, c.groupID)
+	var pendingTransactions []types.TransactionPending
+	err := c.conn.CallContext(ctx, &pendingTransactions, "getPendingTransactions", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &pendingTransactions, err
+	//return c.apiHandler.GetPendingTransactions(ctx, c.groupID)
 }
 
 // GetPendingTxSize returns amount of the pending transactions
 func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetPendingTxSize(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getPendingTxSize", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetPendingTxSize(ctx, c.groupID)
 }
 
 // GetCode returns the contract code according to the contract address
 func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, error) {
-	return c.apiHandler.GetCode(ctx, c.groupID, address)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetCode(ctx, c.groupID, address)
 }
 
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (c *Client) GetTotalTransactionCount(ctx context.Context) (*types.TransactionCount, error) {
-	return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
+	var transactionCount types.TransactionCount
+	err := c.conn.CallContext(ctx, &transactionCount, "getTotalTransactionCount", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &transactionCount, err
+	//return c.apiHandler.GetTotalTransactionCount(ctx, c.groupID)
 }
 
 func (c *Client) GetGroupNodeInfo(ctx context.Context, nodeId string) ([]byte, error) {
-	return c.apiHandler.GetGroupNodeInfo(ctx, c.groupID, nodeId)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getGroupNodeInfo", c.groupID, nodeId)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetGroupNodeInfo(ctx, c.groupID, nodeId)
 }
 
 func (c *Client) GetGroupInfo(ctx context.Context) ([]byte, error) {
-	return c.apiHandler.GetGroupInfo(ctx, c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getGroupInfo", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetGroupInfo(ctx, c.groupID)
 }
 
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
 func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) ([]byte, error) {
-	return c.apiHandler.GetSystemConfigByKey(ctx, c.groupID, configKey)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getSystemConfigByKey", c.groupID, configKey)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+	//return c.apiHandler.GetSystemConfigByKey(ctx, c.groupID, configKey)
 }
 
 func getVersionNumber(strVersion string) (int, error) {

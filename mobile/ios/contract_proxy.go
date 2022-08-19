@@ -23,7 +23,7 @@ const (
 )
 
 type ContractProxy struct {
-	groupID   int
+	groupID   string
 	chainID   *big.Int
 	smCrypto  bool
 	callback  PostCallback
@@ -110,8 +110,8 @@ func (c *ContractProxy) GetBlockLimit(ctx context.Context) (*big.Int, error) {
 }
 
 // GetGroupID returns the groupID of the client
-func (c *ContractProxy) GetGroupID() *big.Int {
-	return big.NewInt(int64(c.groupID))
+func (c *ContractProxy) GetGroupID() string {
+	return c.groupID
 }
 
 // GetChainID returns the chainID of the blockchain
@@ -129,7 +129,7 @@ func (c *ContractProxy) SMCrypto() bool {
 	return c.smCrypto
 }
 
-func (c *ContractProxy) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
+func (c *ContractProxy) Call(ctx context.Context, groupID string, msg ethereum.CallMsg) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
 	err := c.CallContext(ctx, &cr, "call", groupID, c.toCallArg(msg))

@@ -296,10 +296,10 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 	}
 
 	var groupID *big.Int
-	groupID = c.transactor.GetGroupID()
-	if groupID == nil {
-		return nil, fmt.Errorf("failed to get the group ID")
-	}
+	//groupID = c.transactor.GetGroupID()
+	//if groupID == nil {
+	//	return nil, fmt.Errorf("failed to get the group ID")
+	//}
 
 	// Create the transaction, sign it and schedule it for execution
 	var rawTx *types.Transaction
@@ -322,7 +322,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, string), name string, query ...interface{}) error {
+func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
 	from := string("latest")
 	// Don't crash on a lazy user
 	if fromBlock != nil {
@@ -340,7 +340,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, string), 
 		ToBlock:   "latest",
 		Addresses: []string{c.address.Hex()},
 		Topics:    topics,
-		GroupID:   c.transactor.GetGroupID().Text(16),
+		GroupID:   c.transactor.GetGroupID(),
 	}
 	//todo  handler 不对 ****
 	return c.filterer.SubscribeEventLogs(nil,eventLogParams ,handler)

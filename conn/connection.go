@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"log"
 	"strconv"
@@ -132,17 +133,69 @@ type requestOp struct {
 	respChanData *csdk.ChanData
 }
 
-func (op *requestOp) wait1(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
+type EventLogRespResult struct {
+	LogIndex         int   `json:"logIndex"`
+	TransactionIndex int   `json:"transactionIndex"`
+	TransactionHash  string   `json:"transactionHash"`
+	BlockHash        string   `json:"blockHash"`
+	BlockNumber      int   `json:"blockNumber"`
+	Address          string   `json:"address"`
+	Data             string   `json:"data"`
+	Topics           []string `json:"topics"`
+}
+
+type eventLogResp struct {
+	FilterID string               `json:"id"`
+	Result   []EventLogRespResult `json:"result"`
+	Status   int                  `json:"status"`
+}
+
+func (op *requestOp) waitRpcMessage(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
 	select {
 	case respBody := <-op.respChanData.Data:
 		var respData resRpcMessage
-		if err := json.Unmarshal([]byte(respBody[:len(respBody)-1]), &respData); err != nil {
+		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
 			log.Println("json unmarshal res body:", respBody)
 			log.Println("json unmarshal err:", err)
 			return nil, nil, err
 		}
 		return &respData, respData.Result, op.err
 	}
+}
+
+func processEventLogMsg(respBody []byte,handler interface{})  {
+	var eventLogResponse eventLogResp
+	err := json.Unmarshal(respBody, &eventLogResponse)
+	if err != nil {
+		logrus.Warnf("unmarshal eventLogResponse failed, err: %v\n", err)
+		return
+	}
+	logs := []types.Log{}
+	//var nextBlock uint64
+	for _, log := range eventLogResponse.Result {
+		number := log.BlockNumber
+		logIndex := log.LogIndex
+		txIndex := log.TransactionIndex
+		topics := []common.Hash{}
+		for _, topic := range log.Topics {
+			topics = append(topics, common.HexToHash(topic))
+		}
+		data := common.FromHex(log.Data)
+		logs = append(logs, types.Log{
+			Address:     common.HexToAddress(log.Address),
+			Topics:      topics,
+			Data:        data,
+			BlockNumber: uint64(number),
+			TxHash:      common.HexToHash(log.TransactionHash),
+			TxIndex:     uint(txIndex),
+			BlockHash:   common.HexToHash(log.BlockHash),
+			Index:       uint(logIndex),
+			Removed:     false,
+		})
+		//nextBlock = uint64(number) + 1
+	}
+	eventHander := handler.(func(int, []types.Log))
+	go eventHander(eventLogResponse.Status, logs)
 }
 
 func (op *requestOp) waitEventLogMsg(ctx context.Context, method string, handler interface{}) error {
@@ -155,8 +208,7 @@ func (op *requestOp) waitEventLogMsg(ctx context.Context, method string, handler
 		case respBody := <-op.respChanData.Data:
 			switch method {
 			case "subscribeEventLogs":
-				eventHander := handler.(func(int, string))
-				eventHander(1, respBody)
+				processEventLogMsg([]byte(respBody), handler)
 			case "subscribeTopic":
 				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
 			case "SendAMOPMsg":
@@ -191,7 +243,7 @@ func (op *requestOp) wait(ctx context.Context, c *Connection) (*resRpcMessage, i
 	// 	return nil, ctx.Err()
 	case respBody := <-op.respChanData.Data:
 		var respData resRpcMessage
-		if err := json.Unmarshal([]byte(respBody[:len(respBody)-1]), &respData); err != nil {
+		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
 			log.Println("json unmarshal res body:", respBody)
 			log.Println("json unmarshal err:", err)
 			return nil, nil, err
@@ -236,10 +288,10 @@ func ClientFromContext(ctx context.Context) (*Connection, bool) {
 	return client, ok
 }
 
-func NewClient1(connect reconnectFunc, sdk *csdk.CSDK) (*Connection, error) {
+func NewClient(connect reconnectFunc, csdk *csdk.CSDK) (*Connection, error) {
 	c := initClient(nil)
 	c.reconnectFunc = connect
-	c.csdk = sdk
+	c.csdk = csdk
 	return c, nil
 }
 
@@ -371,7 +423,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
-	switch resp, _, err := op.wait1(ctx, c); {
+	switch resp, _, err := op.waitRpcMessage(ctx, c); {
 	case err != nil:
 		return err
 	case len(resp.Result) == 0:
@@ -382,18 +434,18 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
-func (c *Connection) CallHandlerContext(ctx context.Context, method string, topic string, data string, handler interface{}) error {
+func (c *Connection) CallHandlerContext(ctx context.Context, method string, topic string, reqData string, handler interface{}) error {
 	log.Println("CallEventContext method:", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 	switch method {
 	case "subscribeTopic":
 		c.csdk.SubscribeTopicWithCb(op.respChanData, topic)
 	case "SendAMOPMsg":
-		c.csdk.PublishTopicMsg(op.respChanData, topic, data)
+		c.csdk.PublishTopicMsg(op.respChanData, topic, reqData)
 	case "broadcastAMOPMsg":
-		c.csdk.BroadcastAmopMsg(op.respChanData, topic, data)
+		c.csdk.BroadcastAmopMsg(op.respChanData, topic, reqData)
 	case "subscribeEventLogs":
-		c.csdk.SubscribeEvent(op.respChanData, data)
+		c.csdk.SubscribeEvent(op.respChanData, reqData)
 	case "subscribeBlockNumberNotify":
 		c.csdk.RegisterBlockNotifier(op.respChanData)
 	default:

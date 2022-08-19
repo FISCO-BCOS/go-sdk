@@ -26,8 +26,8 @@ func GetClient(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("decode hex failed of %v", err)
 	}
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200", Host: "127.0.0.1", Port: 20200}
 	c, err := Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)

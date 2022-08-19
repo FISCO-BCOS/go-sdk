@@ -44,11 +44,6 @@ const (
 
 var null = json.RawMessage("null")
 
-type subscriptionResult struct {
-	ID     string          `json:"subscription"`
-	Result json.RawMessage `json:"result,omitempty"`
-}
-
 // A value of this type can a JSON-RPC request, notification, successful response or
 // error response. Which one it is depends on the fields.
 type jsonrpcMessage struct {
@@ -60,7 +55,6 @@ type jsonrpcMessage struct {
 	Jsonrpc string          `json:"jsonrpc,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
 }
-
 
 // A value of this type can a JSON-RPC request, notification, successful response or
 // error response. Which one it is depends on the fields.

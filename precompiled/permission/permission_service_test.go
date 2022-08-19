@@ -27,7 +27,7 @@ var (
 
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
 	c, err := client.Dial(config)
 	if err != nil {
@@ -52,7 +52,7 @@ func deployHelloWorldContract(t *testing.T) {
 		t.Fatalf("deploy HelloWorld contract failed：%v", err)
 	}
 	t.Logf("the address of contract: %v", address.Hex())
-	t.Logf("the hash of transaction: %v", tx.Hash().Hex())
+	t.Logf("the hash of transaction: %v", tx.TransactionHash)
 	_ = instance
 	contractAddress = address.Hex()
 }

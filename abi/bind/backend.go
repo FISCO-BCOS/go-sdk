@@ -75,7 +75,7 @@ type ContractTransactor interface {
 	// GetBlockLimit returns the blocklimit for current blocknumber
 	GetBlockLimit(ctx context.Context) (*big.Int, error)
 	// GetGroupID returns the groupID of the client
-	GetGroupID() *big.Int
+	GetGroupID() string
 	// GetChainID returns the chainID of the blockchain
 	GetChainID(ctx context.Context) (*big.Int, error)
 	// GetContractAddress returns the contract address once it was deployed
@@ -89,7 +89,7 @@ type ContractTransactor interface {
 type ContractFilterer interface {
 	// SubscribeEventLogs creates a background log filtering operation, returning
 	// a subscription immediately, which can be used to stream the found events.
-	SubscribeEventLogs(ctx context.Context,eventLogParams types.EventLogParams,handler func(int, string)) error
+	SubscribeEventLogs(ctx context.Context,eventLogParams types.EventLogParams,handler func(int, []types.Log)) error
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
