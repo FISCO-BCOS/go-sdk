@@ -20,7 +20,7 @@ func main() {
 	var err error
 	host := os.Args[1]
 	port, err := strconv.Atoi(os.Args[2])
-	if err!= nil{
+	if err != nil {
 		logrus.Fatalf("port is illegal")
 	}
 	topic := os.Args[3]

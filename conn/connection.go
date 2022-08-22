@@ -198,7 +198,7 @@ func processEventLogMsg(respBody []byte,handler interface{})  {
 	go eventHander(eventLogResponse.Status, logs)
 }
 
-func (op *requestOp) waitEventLogMsg(ctx context.Context, method string, handler interface{}) error {
+func (op *requestOp) waitMessage(ctx context.Context, method string, handler interface{}) error {
 	for true {
 		select {
 		//case <-ctx.Done():
@@ -443,7 +443,7 @@ func (c *Connection) CallHandlerContext(ctx context.Context, method string, topi
 
 	var err error
 	go func() {
-		err = op.waitEventLogMsg(ctx, method, handler)
+		err = op.waitMessage(ctx, method, handler)
 	}()
 	return err
 }
