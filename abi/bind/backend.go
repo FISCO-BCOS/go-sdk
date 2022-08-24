@@ -89,7 +89,7 @@ type ContractTransactor interface {
 type ContractFilterer interface {
 	// SubscribeEventLogs creates a background log filtering operation, returning
 	// a subscription immediately, which can be used to stream the found events.
-	SubscribeEventLogs(ctx context.Context,eventLogParams types.EventLogParams,handler func(int, []types.Log)) error
+	SubscribeEventLogs(ctx context.Context,eventLogParams types.EventLogParams,handler func(int, []types.Log)) (string,error)
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.

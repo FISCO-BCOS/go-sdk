@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"os"
 	"os/signal"
@@ -38,7 +39,8 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err =  c.SubscribeBlockNumberNotify(func(blockNUmber int64) {
+	ctx,_ := context.WithCancel(context.Background())
+	err =  c.SubscribeBlockNumberNotify(ctx, func(blockNUmber int64) {
 		logrus.Printf("received: %d\n", blockNUmber)
 		//queryTicker.Stop()
 		//queryTicker = time.NewTicker(timeout)

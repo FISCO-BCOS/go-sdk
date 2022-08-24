@@ -16,6 +16,7 @@
 
 package conn
 
+import "C"
 import (
 	"context"
 	"crypto/ecdsa"
@@ -134,11 +135,11 @@ type requestOp struct {
 }
 
 type EventLogRespResult struct {
-	LogIndex         int   `json:"logIndex"`
-	TransactionIndex int   `json:"transactionIndex"`
+	LogIndex         int      `json:"logIndex"`
+	TransactionIndex int      `json:"transactionIndex"`
 	TransactionHash  string   `json:"transactionHash"`
 	BlockHash        string   `json:"blockHash"`
-	BlockNumber      int   `json:"blockNumber"`
+	BlockNumber      int      `json:"blockNumber"`
 	Address          string   `json:"address"`
 	Data             string   `json:"data"`
 	Topics           []string `json:"topics"`
@@ -150,7 +151,7 @@ type eventLogResp struct {
 	Status   int                  `json:"status"`
 }
 
-func (op *requestOp) waitRpcMessage(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
+func (op *requestOp) waitRpcMessage(ctx context.Context) (*resRpcMessage, interface{}, error) {
 	select {
 	case respBody := <-op.respChanData.Data:
 		var respData resRpcMessage
@@ -163,7 +164,7 @@ func (op *requestOp) waitRpcMessage(ctx context.Context, c *Connection) (*resRpc
 	}
 }
 
-func processEventLogMsg(respBody []byte,handler interface{})  {
+func processEventLogMsg(respBody []byte, handler interface{}) {
 	var eventLogResponse eventLogResp
 	err := json.Unmarshal(respBody, &eventLogResponse)
 	if err != nil {
@@ -172,23 +173,23 @@ func processEventLogMsg(respBody []byte,handler interface{})  {
 	}
 	logs := []types.Log{}
 	//var nextBlock uint64
-	for _, log := range eventLogResponse.Result {
-		number := log.BlockNumber
-		logIndex := log.LogIndex
-		txIndex := log.TransactionIndex
+	for _, eventLog := range eventLogResponse.Result {
+		number := eventLog.BlockNumber
+		logIndex := eventLog.LogIndex
+		txIndex := eventLog.TransactionIndex
 		topics := []common.Hash{}
-		for _, topic := range log.Topics {
+		for _, topic := range eventLog.Topics {
 			topics = append(topics, common.HexToHash(topic))
 		}
-		data := common.FromHex(log.Data)
+		data := common.FromHex(eventLog.Data)
 		logs = append(logs, types.Log{
-			Address:     common.HexToAddress(log.Address),
+			Address:     common.HexToAddress(eventLog.Address),
 			Topics:      topics,
 			Data:        data,
 			BlockNumber: uint64(number),
-			TxHash:      common.HexToHash(log.TransactionHash),
+			TxHash:      common.HexToHash(eventLog.TransactionHash),
 			TxIndex:     uint(txIndex),
-			BlockHash:   common.HexToHash(log.BlockHash),
+			BlockHash:   common.HexToHash(eventLog.BlockHash),
 			Index:       uint(logIndex),
 			Removed:     false,
 		})
@@ -198,13 +199,16 @@ func processEventLogMsg(respBody []byte,handler interface{})  {
 	go eventHander(eventLogResponse.Status, logs)
 }
 
-func (op *requestOp) waitMessage(ctx context.Context, method string, handler interface{}) error {
+func (op *requestOp) waitMessage(ctx context.Context,c *Connection, method string, handler interface{}) error {
 	for true {
 		select {
-		//case <-ctx.Done():
-		//	// Send the timeout to dispatch so it can remove the request IDs.
-		//	// FIXME: remove the code below
-		//	return ctx.Err()
+		case <-ctx.Done():
+			//switch method {
+			//	case "subscribeEventLogs":
+			//		taskId := ctx.Value("taskId").(string)
+			//		c.csdk.UnsubscribeEvent(op.respChanData, taskId)
+			//}
+			return ctx.Err()
 		case respBody := <-op.respChanData.Data:
 			switch method {
 			case "subscribeEventLogs":
@@ -412,7 +416,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
-	switch resp, _, err := op.waitRpcMessage(ctx, c); {
+	switch resp, _, err := op.waitRpcMessage(ctx); {
 	case err != nil:
 		return err
 	case len(resp.Result) == 0:
@@ -423,18 +427,23 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
-func (c *Connection) CallHandlerContext(ctx context.Context, method string, topic string, reqData string, handler interface{}) error {
-	logrus.Infof("CallEventContext method:", method)
+func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData string, handler interface{}) error {
+	logrus.Infof("CallEventContext method:%s", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 	switch method {
 	case "subscribeTopic":
 		c.csdk.SubscribeTopicWithCb(op.respChanData, topic)
+	case "unsubscribeTopic":
+		c.csdk.UnsubscribeTopicWithCb(op.respChanData, topic)
 	case "SendAMOPMsg":
 		c.csdk.PublishTopicMsg(op.respChanData, topic, reqData)
 	case "broadcastAMOPMsg":
 		c.csdk.BroadcastAmopMsg(op.respChanData, topic, reqData)
 	case "subscribeEventLogs":
-		c.csdk.SubscribeEvent(op.respChanData, reqData)
+		taskId := c.csdk.SubscribeEvent(op.respChanData, reqData)
+		*result.(*string) = taskId
+	case "unSubscribeEventLogs":
+		c.csdk.UnsubscribeEvent(op.respChanData,reqData)
 	case "subscribeBlockNumberNotify":
 		c.csdk.RegisterBlockNotifier(op.respChanData)
 	default:
@@ -443,7 +452,7 @@ func (c *Connection) CallHandlerContext(ctx context.Context, method string, topi
 
 	var err error
 	go func() {
-		err = op.waitMessage(ctx, method, handler)
+		err = op.waitMessage(ctx, c, method, handler)
 	}()
 	return err
 }

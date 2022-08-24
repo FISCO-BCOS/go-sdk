@@ -51,7 +51,7 @@ type Client struct {
 
 const (
 	//V2_5_0 is node version v2.5.0
-	V2_5_0 int = 0x02050000
+	V2_5_0     int   = 0x02050000
 	indent           = "  "
 	BlockLimit int64 = 600
 )
@@ -65,18 +65,18 @@ func Dial(config *conf.Config) (*Client, error) {
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	var c *conn.Connection
 	var csdkStr = &csdk.CSDK{}
-	if config.ConfigFile != ""{
+	if config.ConfigFile != "" {
 		//配置文件
 		csdkStr = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID)
-	}else {
+	} else {
 		var isSmSsl int
-		if config.IsSMCrypto == true{
+		if config.IsSMCrypto == true {
 			isSmSsl = 1
-		}else {
+		} else {
 			isSmSsl = 0
 		}
-		if config.NodeURL != ""{
-			nodeUrlSplit := strings.Split(config.NodeURL,":")
+		if config.NodeURL != "" {
+			nodeUrlSplit := strings.Split(config.NodeURL, ":")
 			config.Host = nodeUrlSplit[0]
 			config.Port, _ = strconv.Atoi(nodeUrlSplit[1])
 		}
@@ -183,9 +183,9 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 }
 
 type callResult struct {
-	CurrentBlockNumber int `json:"currentBlockNumber"`
+	CurrentBlockNumber int    `json:"currentBlockNumber"`
 	Output             string `json:"output"`
-	Status             int `json:"status"`
+	Status             int    `json:"status"`
 }
 
 // GetTransactOpts return *bind.TransactOpts
@@ -389,8 +389,9 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	//raw.Status = int(status)
 	return raw, err
 }
+
 // eventlog
-func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string,error) {
 	var addressArrayStr string
 	for _, address := range eventLogParams.Addresses {
 		if addressArrayStr == "" {
@@ -409,8 +410,19 @@ func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.Ev
 	}
 	sendData := "{\"addresses\":[" + addressArrayStr + "],\"fromBlock\":" + eventLogParams.FromBlock +
 		",\"toBlock\":" + eventLogParams.ToBlock + ",\"topics\":[" + topicArrayStr + "]}"
-	log.Println("SubscribeEventLogs data:", sendData)
-	err := c.conn.CallHandlerContext(ctx, "subscribeEventLogs", "", sendData, handler)
+	//log.Println("SubscribeEventLogs data:", sendData)
+	var raw string
+	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", sendData, handler)
+	if err != nil {
+		return "",err
+	}
+	logrus.Infof("client subscribeEventLogs:",raw)
+	return raw,nil
+}
+
+func (c *Client) UnSubscribeEventLogs(ctx context.Context, taskId string) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw, "unSubscribeEventLogs", "", taskId, nil)
 	if err != nil {
 		return err
 	}
@@ -418,31 +430,39 @@ func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.Ev
 }
 
 //amop
-func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
-	err := c.conn.CallHandlerContext(nil, "subscribeTopic", topic, "", handler)
+func (c *Client) SubscribeTopic(ctx context.Context, topic string, handler func([]byte, *[]byte)) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeTopic", topic, "", handler)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) SendAMOPMsg(topic string, data []byte) error {
-	err := c.conn.CallHandlerContext(nil, "SendAMOPMsg", topic, string(data), nil)
+func (c *Client) SendAMOPMsg(ctx context.Context, topic string, data []byte) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw, "SendAMOPMsg", topic, string(data), nil)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
-	err := c.conn.CallHandlerContext(nil, "broadcastAMOPMsg", topic, string(data), nil)
+func (c *Client) BroadcastAMOPMsg(ctx context.Context, topic string, data []byte) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw, "broadcastAMOPMsg", topic, string(data), nil)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) UnsubscribeTopic(topic string) error {
+func (c *Client) UnsubscribeTopic(ctx context.Context, topic string) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw, "unsubscribeTopic", topic, "", nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -467,8 +487,9 @@ func (c *Client) UnsubscribePrivateTopic(topic string) error {
 	return nil
 }
 
-func (c *Client) SubscribeBlockNumberNotify(handler func(int64)) error {
-	err := c.conn.CallHandlerContext(nil, "subscribeBlockNumberNotify", "", "", handler)
+func (c *Client) SubscribeBlockNumberNotify(ctx context.Context, handler func(int64)) error {
+	var raw interface{}
+	err := c.conn.CallHandlerContext(ctx, &raw,"subscribeBlockNumberNotify", "", "", handler)
 	if err != nil {
 		return err
 	}

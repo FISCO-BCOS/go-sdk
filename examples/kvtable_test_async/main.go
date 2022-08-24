@@ -26,8 +26,8 @@ func deployContractHandler(receipt *types.Receipt, err error) {
 		fmt.Printf("%v\n", err)
 		return
 	}
-	fmt.Println("contract address: ", receipt.ContractAddress.Hex()) // the address should be saved
-	contractAddress = receipt.ContractAddress
+	fmt.Println("contract address: ", receipt.ContractAddress) // the address should be saved
+	contractAddress = common.HexToAddress(receipt.ContractAddress)
 	channel <- 0
 }
 

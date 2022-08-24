@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"os"
 	"os/signal"
@@ -44,7 +45,8 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeTopic(topic, func(data []byte, response *[]byte) {
+	ctx,_ := context.WithCancel(context.Background())
+	err = c.SubscribeTopic(ctx,topic, func(data []byte, response *[]byte) {
 		logrus.Printf("received: %s\n", string(data))
 		queryTicker.Stop()
 		if strings.Contains(string(data), "Done") {

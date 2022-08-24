@@ -32,7 +32,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 	fmt.Println("contract address: ", address.Hex()) // the address should be saved
-	fmt.Println("transaction hash: ", tx.Hash().Hex())
+	fmt.Println("transaction hash: ", tx.TransactionHash)
 	_ = instance
 
 	// invoke Set to insert info
@@ -41,11 +41,11 @@ func main() {
 	id := "100010001001"
 	item_name := "Laptop"
 	item_price := big.NewInt(6000)
-	tx, receipt, err := kvtabletestSession.Set(id, item_price, item_name) // call set API
+	_, receipt, err := kvtabletestSession.Set(id, item_price, item_name) // call set API
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
+	fmt.Printf("tx sent: %s\n", receipt.TransactionHash)
 	setedLines, err := parseOutput(kvtable.KVTableTestABI, "set", receipt)
 	if err != nil {
 		logrus.Fatalf("error when transfer string to int: %v\n", err)

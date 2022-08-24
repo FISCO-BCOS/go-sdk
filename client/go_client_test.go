@@ -116,6 +116,7 @@ func TestGetTransactionByHash(t *testing.T) {
 	t.Logf("transaction:\n%s", raw)
 }
 
+//todo 没
 func TestClientVersion(t *testing.T) {
 	c := GetClient(t)
 	cv, err := c.GetClientVersion(context.Background())
