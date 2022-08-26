@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sirupsen/logrus"
 	"log"
 	"math/big"
 	"strconv"
@@ -33,8 +35,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/sirupsen/logrus"
 	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
 )
 
@@ -391,7 +391,7 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 }
 
 // eventlog
-func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string,error) {
+func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	var addressArrayStr string
 	for _, address := range eventLogParams.Addresses {
 		if addressArrayStr == "" {
@@ -414,10 +414,9 @@ func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.Ev
 	var raw string
 	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", sendData, handler)
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	logrus.Infof("client subscribeEventLogs:",raw)
-	return raw,nil
+	return raw, nil
 }
 
 func (c *Client) UnSubscribeEventLogs(ctx context.Context, taskId string) error {
@@ -489,7 +488,7 @@ func (c *Client) UnsubscribePrivateTopic(topic string) error {
 
 func (c *Client) SubscribeBlockNumberNotify(ctx context.Context, handler func(int64)) error {
 	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw,"subscribeBlockNumberNotify", "", "", handler)
+	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeBlockNumberNotify", "", "", handler)
 	if err != nil {
 		return err
 	}
@@ -615,21 +614,25 @@ func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
 // GetSyncStatus returns the synchronization status of the group
 func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
 	var syncStatus types.SyncStatus
-	err := c.conn.CallContext(ctx, &syncStatus, "getSyncStatus", c.groupID)
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getSyncStatus", c.groupID)
 	if err != nil {
 		return nil, err
 	}
+	js := strings.Replace(raw.(string), "\\", "", -1)
+	json.Unmarshal([]byte(js), &syncStatus)
 	return &syncStatus, err
 }
 
 // GetPeers returns the information of the connected peers
-func (c *Client) GetPeers(ctx context.Context) (*[]types.Node, error) {
-	var nodes []types.Node
-	err := c.conn.CallContext(ctx, &nodes, "getPeers", c.groupID)
+func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getPeers", c.groupID)
 	if err != nil {
 		return nil, err
 	}
-	return &nodes, err
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
 }
 
 // GetGroupPeers returns the nodes and the overser nodes list on a specific group
@@ -681,7 +684,7 @@ func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, includ
 	if blockNumber < 0 {
 		return nil, errors.New("Invalid negative block number")
 	}
-	err := c.conn.CallContext(ctx, &block, "getBlockByNumber", c.groupID, strconv.FormatInt(blockNumber, 10), includeTx)
+	err := c.conn.CallContext(ctx, &block, "getBlockByNumber", c.groupID, blockNumber, includeTx)
 	if err != nil {
 		return nil, err
 	}
@@ -694,7 +697,7 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 		return nil, errors.New("Invalid negative block number")
 	}
 	var raw string
-	err := c.conn.CallContext(ctx, &raw, "getBlockHashByNumber", c.groupID, strconv.FormatInt(blockNumber, 10))
+	err := c.conn.CallContext(ctx, &raw, "getBlockHashByNumber", c.groupID, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -743,7 +746,7 @@ func (c *Client) GetTransactionReceipt(ctx context.Context, txHash common.Hash) 
 	var anonymityReceipt = &struct {
 		types.Receipt
 	}{}
-	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", c.groupID, txHash.Hex())
+	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", c.groupID, txHash.String())
 	if err != nil {
 		return nil, err
 	}
@@ -808,7 +811,7 @@ func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
 // GetCode returns the contract code according to the contract address
 func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex()[2:])
 	if err != nil {
 		return nil, err
 	}

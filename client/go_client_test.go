@@ -63,10 +63,10 @@ func TestBlockHashByNumber(t *testing.T) {
 	}
 	peers, err := json.MarshalIndent(block, "", indent)
 	t.Logf("block by hash:\n%+v", peers)
-	_, err = c.GetTransactionByBlockHashAndIndex(context.Background(), *blockHash, 0)
-	if err != nil {
-		t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
-	}
+	//_, err = c.GetTransactionByBlockHashAndIndex(context.Background(), *blockHash, 0)
+	//if err != nil {
+	//	t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
+	//}
 	raw, err = c.GetTransactionReceipt(context.Background(), *txHash)
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
@@ -93,7 +93,7 @@ func TestDeployHelloWorld(t *testing.T) {
 
 func TestGetTransactionReceipt(t *testing.T) {
 	c := GetClient(t)
-	cv, err := c.GetTransactionReceipt(context.Background(),common.BytesToHash([]byte("0xdbcbfd7d7d6dcdf9090ad261ef79358bbe272982e1c5a4c92d94dab854fb317f")))
+	cv, err := c.GetTransactionReceipt(context.Background(),common.HexToHash("0x7653c1d7cd0f7bd30dcca89cfac1bc1ec89466c921487a7fe962f24f6d924625"))
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestGetTransactionByHash(t *testing.T) {
 	t.Logf("transaction:\n%s", raw)
 }
 
-//todo 没
+//todo 3.0 no this rpc mothod
 func TestClientVersion(t *testing.T) {
 	c := GetClient(t)
 	cv, err := c.GetClientVersion(context.Background())
@@ -211,7 +211,6 @@ func TestConsensusStatus(t *testing.T) {
 
 func TestSyncStatus(t *testing.T) {
 	c := GetClient(t)
-
 	syncStatus, err := c.GetSyncStatus(context.Background())
 	if err != nil {
 		t.Fatalf("synchronization status not found: %v", err)
@@ -220,7 +219,7 @@ func TestSyncStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("synchronization status marshalIndent error: %v", err)
 	}
-	t.Logf("synchronization Status:\n%s", raw)
+	t.Logf("synchronization Status:\n%s", string(raw))
 }
 
 func TestPeers(t *testing.T) {
@@ -230,11 +229,8 @@ func TestPeers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("peers not found: %v", err)
 	}
-	raw, err := json.MarshalIndent(nodes, "", indent)
-	if err != nil {
-		t.Fatalf("peers marshalIndent error: %v", err)
-	}
-	t.Logf("peers:\n%s", raw)
+
+	t.Logf("peers:\n%s", nodes)
 }
 
 func TestGroupPeers(t *testing.T) {
@@ -248,6 +244,7 @@ func TestGroupPeers(t *testing.T) {
 	t.Logf("group peers:\n%s", raw)
 }
 
+// todo 3.0 no this rpc mothod
 func TestNodeIDList(t *testing.T) {
 	c := GetClient(t)
 
@@ -285,7 +282,7 @@ func TestBlockByNumber(t *testing.T) {
 	t.Logf("block by number:\n%s", raw)
 }
 
-//todo 没
+//todo 3.0 no this rpc mothod
 func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 	c := GetClient(t)
 
@@ -302,7 +299,7 @@ func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 	t.Logf("transaction by block number and transaction index:\n%s", raw)
 }
 
-// todo 没
+//todo 3.0 no this rpc mothod
 func TestPendingTransactions(t *testing.T) {
 	c := GetClient(t)
 

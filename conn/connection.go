@@ -199,7 +199,7 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 	go eventHander(eventLogResponse.Status, logs)
 }
 
-func (op *requestOp) waitMessage(ctx context.Context,c *Connection, method string, handler interface{}) error {
+func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method string, handler interface{}) error {
 	for true {
 		select {
 		case <-ctx.Done():
@@ -370,7 +370,13 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getPeers":
 		c.csdk.GetGroupPeers(op.respChanData)
 	case "getBlockNumber":
-		c.csdk.GetCBlockNumber(op.respChanData)
+		c.csdk.GetBlockNumber(op.respChanData)
+	case "getBlockByNumber":
+		blockNumber := args[1].(int64)
+		c.csdk.GetBlockByNumber(op.respChanData, blockNumber, 0, 0)
+	case "getBlockByHash":
+		blockHash := args[1].(string)
+		c.csdk.GetBlockByhash(op.respChanData, blockHash, 0, 0)
 	case "getBlockHashByNumber":
 		blockNumber := args[1].(int64)
 		c.csdk.GetBlockHashByNumber(op.respChanData, blockNumber)
@@ -393,6 +399,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
+		logrus.Infof("getTransactionReceipt:", txHash)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
 	case "getSystemConfigByKey":
 		key := args[1].(string)
@@ -443,7 +450,7 @@ func (c *Connection) CallHandlerContext(ctx context.Context, result interface{},
 		taskId := c.csdk.SubscribeEvent(op.respChanData, reqData)
 		*result.(*string) = taskId
 	case "unSubscribeEventLogs":
-		c.csdk.UnsubscribeEvent(op.respChanData,reqData)
+		c.csdk.UnsubscribeEvent(op.respChanData, reqData)
 	case "subscribeBlockNumberNotify":
 		c.csdk.RegisterBlockNotifier(op.respChanData)
 	default:

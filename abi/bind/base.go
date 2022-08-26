@@ -342,8 +342,8 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 		Topics:    topics,
 		GroupID:   c.transactor.GetGroupID(),
 	}
-	//todo  handler 不对 ****
-	return c.filterer.SubscribeEventLogs(nil,eventLogParams ,handler)
+	_,err = c.filterer.SubscribeEventLogs(nil,eventLogParams ,handler)
+	return err
 }
 
 // UnpackLog unpacks a retrieved log into the provided output structure.
