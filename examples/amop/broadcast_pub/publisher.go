@@ -35,7 +35,7 @@ func main() {
 		logrus.Fatalf("init publisher failed, err: %v\n", err)
 	}
 	time.Sleep(waitToSend)
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	message := "hello, FISCO BCOS, I am broadcast publisher!"
 	for i := 0; i < 50; i++ {
 		logrus.Printf("publish message: %s ", message+" "+strconv.Itoa(i))
@@ -44,6 +44,7 @@ func main() {
 		if err != nil {
 			logrus.Printf("PushTopicDataRandom failed, err: %v\n", err)
 		}
+		cancel()
 	}
 	c.BroadcastAMOPMsg(ctx, topic, []byte("Done"))
 	c.Close()

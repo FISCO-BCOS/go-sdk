@@ -33,7 +33,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
-	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
+	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 )
 
 var (

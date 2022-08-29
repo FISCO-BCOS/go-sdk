@@ -14,6 +14,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/urfave/cli/v2 v2.10.2
-	github.com/yinghuochongfly/bcos-c-sdk v3.0.0-rc4.0.20220726074821-f1fbbc1c3aee+incompatible
+	github.com/FISCO-BCOS/bcos-c-sdk v3.0.0-rc4.0.20220829044708-0f021dd70763+incompatible
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )

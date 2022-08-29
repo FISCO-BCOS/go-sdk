@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/conn"
@@ -35,7 +36,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/yinghuochongfly/bcos-c-sdk/bindings/go/csdk"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
@@ -67,7 +67,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	var csdkStr = &csdk.CSDK{}
 	if config.ConfigFile != "" {
 		//配置文件
-		csdkStr = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID)
+		csdkStr = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID, string(config.PrivateKey))
 	} else {
 		var isSmSsl int
 		if config.IsSMCrypto == true {
@@ -80,7 +80,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 			config.Host = nodeUrlSplit[0]
 			config.Port, _ = strconv.Atoi(nodeUrlSplit[1])
 		}
-		csdkStr = csdk.NewSDK(config.GroupID, config.Host, config.Port, isSmSsl)
+		csdkStr = csdk.NewSDK(config.GroupID, config.Host, config.Port, isSmSsl, string(config.PrivateKey))
 	}
 	if csdkStr == nil {
 		return nil, errors.New("new sdk error")

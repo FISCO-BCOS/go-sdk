@@ -71,7 +71,7 @@ func TestBlockHashByNumber(t *testing.T) {
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
-	t.Logf("transaction receipt by transaction hash:\n%s", raw)
+	t.Logf("transaction receipt by transaction hash:\n%s", raw.TransactionHash)
 	transaction, err := c.GetTransactionByHash(context.Background(), *txHash)
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
@@ -81,7 +81,7 @@ func TestBlockHashByNumber(t *testing.T) {
 		fmt.Printf("transaction marshalIndent error: %v\n", err)
 		return
 	}
-	t.Logf("transaction by hash:\n%+v", tx)
+	t.Logf("transaction by hash:\n%s", tx)
 }
 
 func TestDeployHelloWorld(t *testing.T) {
