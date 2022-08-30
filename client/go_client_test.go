@@ -115,7 +115,7 @@ func TestGetTransactionByHash(t *testing.T) {
 	t.Logf("transaction:\n%s", raw)
 }
 
-//todo 3.0 no this rpc mothod
+// todo 3.0 no this rpc mothod
 func TestClientVersion(t *testing.T) {
 	c := GetClient(t)
 	cv, err := c.GetClientVersion(context.Background())
@@ -281,7 +281,7 @@ func TestBlockByNumber(t *testing.T) {
 	t.Logf("block by number:\n%s", raw)
 }
 
-//todo 3.0 no this rpc mothod
+// todo 3.0 no this rpc mothod
 func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 	c := GetClient(t)
 
@@ -298,7 +298,7 @@ func TestTransactionByBlockNumberAndIndex(t *testing.T) {
 	t.Logf("transaction by block number and transaction index:\n%s", raw)
 }
 
-//todo 3.0 no this rpc mothod
+// todo 3.0 no this rpc mothod
 func TestPendingTransactions(t *testing.T) {
 	c := GetClient(t)
 

@@ -428,7 +428,7 @@ func (c *Client) UnSubscribeEventLogs(ctx context.Context, taskId string) error 
 	return nil
 }
 
-//amop
+// amop
 func (c *Client) SubscribeTopic(ctx context.Context, topic string, handler func([]byte, *[]byte)) error {
 	var raw interface{}
 	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeTopic", topic, "", handler)
