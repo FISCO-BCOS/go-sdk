@@ -22,9 +22,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
 	"log"
 	"strconv"
 	"strings"
@@ -34,6 +31,9 @@ import (
 	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 )
 
 var (

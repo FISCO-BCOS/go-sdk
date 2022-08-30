@@ -19,13 +19,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	//"gopkg.in/urfave/cli.v1"
 	"io"
 	"os"
 	"regexp"
 	"strings"
 
-	//"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/abi/flags"
 	"github.com/ethereum/go-ethereum/cmd/utils"
