@@ -45,12 +45,13 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	ctx,_ := context.WithCancel(context.Background())
-	err = c.SubscribeTopic(ctx,topic, func(data []byte, response *[]byte) {
+	ctx, cancel := context.WithCancel(context.Background())
+	err = c.SubscribeTopic(ctx, topic, func(data []byte, response *[]byte) {
 		logrus.Printf("received: %s\n", string(data))
 		queryTicker.Stop()
 		if strings.Contains(string(data), "Done") {
 			done <- true
+			cancel()
 			return
 		}
 		queryTicker = time.NewTicker(timeout)

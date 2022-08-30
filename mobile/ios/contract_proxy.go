@@ -87,8 +87,8 @@ func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transacti
 }
 
 // AsyncSendTransaction injects the transaction into the pending pool for execution.
-func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction,contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
-	receipt, err := c.SendTransaction(ctx, tx,contract,nil)
+func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
+	receipt, err := c.SendTransaction(ctx, tx, contract, nil)
 	handler(receipt, err)
 	return err
 }
@@ -176,7 +176,7 @@ func (c *ContractProxy) CallContext(ctx context.Context, result interface{}, met
 }
 
 // SubscribeEventLogs
-func (c *ContractProxy) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string,error) {
+func (c *ContractProxy) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	panic("implement me")
 }
 

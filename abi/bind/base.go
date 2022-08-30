@@ -99,13 +99,13 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address,  *types.Receipt,  *BoundContract, error) {
+func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Receipt, *BoundContract, error) {
 	_, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
 	addr := common.Address{}
 	if receipt != nil {
 		addr = common.HexToAddress(receipt.ContractAddress)
 	}
-	return addr,receipt, c, err
+	return addr, receipt, c, err
 }
 func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
@@ -227,7 +227,7 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	//}
 	var receipt *types.Receipt
 	var err error
-	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil,contract, input); err != nil {
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
 		return nil, nil, err
 	}
 
@@ -239,7 +239,7 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 	//if err != nil {
 	//	return nil, err
 	//}
-	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract,input, handler); err != nil {
+	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract, input, handler); err != nil {
 		return nil, err
 	}
 	return nil, nil
@@ -342,7 +342,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 		Topics:    topics,
 		GroupID:   c.transactor.GetGroupID(),
 	}
-	_,err = c.filterer.SubscribeEventLogs(nil,eventLogParams ,handler)
+	_, err = c.filterer.SubscribeEventLogs(nil, eventLogParams, handler)
 	return err
 }
 

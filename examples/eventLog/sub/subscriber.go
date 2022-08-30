@@ -54,8 +54,8 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	ctx,cancel := context.WithCancel(context.Background())
-	taskId,err := c.SubscribeEventLogs(ctx, eventLogParams, func(status int,logs []types.Log) {
+	ctx, cancel := context.WithCancel(context.Background())
+	taskId, err := c.SubscribeEventLogs(ctx, eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
@@ -72,7 +72,7 @@ func main() {
 		logrus.Printf("subscribe event failed, err: %v\n", err)
 		return
 	}
-	logrus.Println("SubscribeEventLogs taskId:",taskId)
+	logrus.Println("SubscribeEventLogs taskId:", taskId)
 
 	killSignal := make(chan os.Signal, 1)
 	signal.Notify(killSignal, os.Interrupt)

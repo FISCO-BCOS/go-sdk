@@ -31,9 +31,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
-	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 )
 
 var (

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -93,7 +92,7 @@ func TestDeployHelloWorld(t *testing.T) {
 
 func TestGetTransactionReceipt(t *testing.T) {
 	c := GetClient(t)
-	cv, err := c.GetTransactionReceipt(context.Background(),common.HexToHash("0x7653c1d7cd0f7bd30dcca89cfac1bc1ec89466c921487a7fe962f24f6d924625"))
+	cv, err := c.GetTransactionReceipt(context.Background(), common.HexToHash("0x7653c1d7cd0f7bd30dcca89cfac1bc1ec89466c921487a7fe962f24f6d924625"))
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
@@ -104,7 +103,7 @@ func TestGetTransactionReceipt(t *testing.T) {
 
 func TestGetTransactionByHash(t *testing.T) {
 	c := GetClient(t)
-	cv, err := c.GetTransactionByHash(context.Background(),common.HexToHash("0xaab521723afd6ca0f2c5ed89727272f355ba218dbd18d13952f2c155c3088b03"))
+	cv, err := c.GetTransactionByHash(context.Background(), common.HexToHash("0xaab521723afd6ca0f2c5ed89727272f355ba218dbd18d13952f2c155c3088b03"))
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
 	}
@@ -356,7 +355,7 @@ func TestGetGroupInfo(t *testing.T) {
 		t.Fatalf("the value not found: %v", err)
 	}
 
-	t.Logf("get group info:\n%s",string(raw))
+	t.Logf("get group info:\n%s", string(raw))
 }
 
 func TestGetGroupNodeInfo(t *testing.T) {
@@ -367,7 +366,7 @@ func TestGetGroupNodeInfo(t *testing.T) {
 		t.Fatalf("the value not found: %v", err)
 	}
 
-	t.Logf("get group node info:\n%s",string(raw))
+	t.Logf("get group node info:\n%s", string(raw))
 }
 
 func TestTotalTransactionCount(t *testing.T) {

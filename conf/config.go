@@ -28,8 +28,8 @@ type Config struct {
 	PrivateKey     []byte
 	GroupID        string
 	NodeURL        string
-	Host        string
-	Port        int
+	Host           string
+	Port           int
 }
 
 // ParseConfigFile parses the configuration from toml config file

@@ -71,7 +71,7 @@ type ContractTransactor interface {
 	PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error)
 	// SendTransaction injects the transaction into the pending pool for execution.
 	SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error)
-	AsyncSendTransaction(ctx context.Context, tx *types.Transaction,contract *common.Address,input []byte, handler func(*types.Receipt, error)) error
+	AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error
 	// GetBlockLimit returns the blocklimit for current blocknumber
 	GetBlockLimit(ctx context.Context) (*big.Int, error)
 	// GetGroupID returns the groupID of the client
@@ -89,7 +89,7 @@ type ContractTransactor interface {
 type ContractFilterer interface {
 	// SubscribeEventLogs creates a background log filtering operation, returning
 	// a subscription immediately, which can be used to stream the found events.
-	SubscribeEventLogs(ctx context.Context,eventLogParams types.EventLogParams,handler func(int, []types.Log)) (string,error)
+	SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error)
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.

@@ -7,14 +7,14 @@ type Block struct {
 	GasUsed          string        `json:"gasUsed"`
 	Hash             string        `json:"hash"`
 	LogsBloom        string        `json:"logsBloom"`
-	Number           int        `json:"number"`
+	Number           int           `json:"number"`
 	ParentHash       string        `json:"parentHash"`
 	ReceiptsRoot     string        `json:"receiptsRoot"`
-	Sealer           int        `json:"sealer"`
+	Sealer           int           `json:"sealer"`
 	SealerList       []string      `json:"sealerList"`
 	SignatureList    []Signature   `json:"signatureList"`
 	StateRoot        string        `json:"stateRoot"`
-	Timestamp        int        `json:"timestamp"`
+	Timestamp        int           `json:"timestamp"`
 	Transactions     []interface{} `json:"transactions"`
 	TransactionsRoot string        `json:"transactionsRoot"`
 }
