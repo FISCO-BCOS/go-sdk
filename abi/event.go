@@ -59,7 +59,7 @@ func (e Event) String() string {
 
 // Sig returns the event string signature according to the ABI spec.
 //
-// Example
+// # Example
 //
 // event foo(uint32 a, int b) = "foo(uint32,int256)"
 //
