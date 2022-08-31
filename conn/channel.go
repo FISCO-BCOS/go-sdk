@@ -251,6 +251,7 @@ func decodeChannelMessage(raw []byte) (*channelMessage, error) {
 	err := binary.Read(buf, binary.BigEndian, &result.length)
 	if err != nil {
 		logrus.Println("binary.Read failed:", err)
+		return result, nil
 	}
 	if uint32(len(raw)) < result.length {
 		return nil, errors.New("uncomplete message")
