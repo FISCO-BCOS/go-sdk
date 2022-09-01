@@ -15,11 +15,9 @@ import (
 )
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	config := &configs[0]
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
+		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	client, err := client.Dial(config)
 	if err != nil {
 		logrus.Fatal(err)
@@ -40,28 +38,25 @@ func main() {
 	kvtabletestSession := &kvtable.KVTableTestSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 	id := "100010001001"
 	item_name := "Laptop"
-	item_price := big.NewInt(6000)
-	_, receipt, err := kvtabletestSession.Set(id, item_price, item_name) // call set API
+	item_age := "29"
+	_, receipt, err := kvtabletestSession.Insert(id, item_name, item_age) // call set API
 	if err != nil {
 		logrus.Fatal(err)
 	}
 	fmt.Printf("tx sent: %s\n", receipt.TransactionHash)
-	setedLines, err := parseOutput(kvtable.KVTableTestABI, "set", receipt)
-	if err != nil {
-		logrus.Fatalf("error when transfer string to int: %v\n", err)
-	}
-	fmt.Printf("seted lines: %v\n", setedLines.Int64())
+	//setedLines, err := parseOutput(kvtable.KVTableTestABI, "insert", receipt)
+	//if err != nil {
+	//	logrus.Fatalf("error when transfer string to int: %v\n", err)
+	//}
+	//fmt.Printf("seted lines: %v\n", setedLines.String())
 
 	// invoke Get to query info
 	fmt.Println("\n-------------------starting invoke Get to query info-----------------------")
-	bool, item_price, item_name, err := kvtabletestSession.Get(id) // call get API
+	item_name, item_age, err = kvtabletestSession.Select(id) // call get API
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	if !bool {
-		logrus.Fatalf("id：%v is not found \n", id)
-	}
-	fmt.Printf("id: %v, item_price: %v, item_name: %v \n", id, item_price, item_name)
+	fmt.Printf("id: %v, item_name: %v, item_age: %v \n", id, item_name, item_age)
 }
 
 func parseOutput(abiStr, name string, receipt *types.Receipt) (*big.Int, error) {
@@ -74,6 +69,7 @@ func parseOutput(abiStr, name string, receipt *types.Receipt) (*big.Int, error) 
 	if err != nil {
 		return nil, fmt.Errorf("decode receipt.Output[2:] failed, err: %v", err)
 	}
+	fmt.Println("output:%s", string(b))
 	err = parsed.Unpack(&ret, name, b)
 	if err != nil {
 		return nil, fmt.Errorf("unpack %v failed, err: %v", name, err)

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -143,7 +142,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 			}
 		}
 		var connections []struct {
-			GroupID int
+			GroupID string
 			NodeURL string
 		}
 		if viper.IsSet("Network.Connection") {
@@ -153,7 +152,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 			}
 			for i := range connections {
 				configs = append(configs, *config)
-				configs[i].GroupID = strconv.Itoa(connections[i].GroupID)
+				configs[i].GroupID = connections[i].GroupID
 				configs[i].NodeURL = connections[i].NodeURL
 			}
 		} else {

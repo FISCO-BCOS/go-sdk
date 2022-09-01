@@ -163,7 +163,7 @@ func (c *Client) Close() {
 func toCallArg(msg ethereum.CallMsg) interface{} {
 	arg := map[string]interface{}{
 		"from": msg.From.String(),
-		"to":   msg.To.String(),
+		"to":   strings.ToLower(msg.To.String()[2:]),
 	}
 	if len(msg.Data) > 0 {
 		arg["data"] = hexutil.Bytes(msg.Data).String()
@@ -322,7 +322,7 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 		types.Receipt
 	}{}
 	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), contract.String())
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
 	} else {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
 	}
@@ -343,14 +343,22 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 
 // AsyncSendTransaction send transaction async
 func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
-	err := c.conn.CallContext(ctx, nil, "sendRawTransaction", c.groupID, hexutil.Encode(input), contract.String())
+	var err error
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	if contract != nil {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
+	}else {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
+	}
 	if err != nil {
 		return nil
 	}
 	var receipt *types.Receipt
 	go func() {
 		for {
-			receipt, err = c.TransactionReceipt(ctx, tx.Hash())
+			receipt, err = c.TransactionReceipt(ctx, common.HexToHash(anonymityReceipt.TransactionHash))
 			if receipt != nil {
 				handler(receipt, nil)
 				return
@@ -811,7 +819,7 @@ func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
 // GetCode returns the contract code according to the contract address
 func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex()[2:])
+	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, strings.ToLower(address.String()[2:]))
 	if err != nil {
 		return nil, err
 	}
