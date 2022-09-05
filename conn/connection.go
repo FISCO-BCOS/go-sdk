@@ -357,7 +357,7 @@ func (c *Connection) Call(result interface{}, method string, args ...interface{}
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
 func (c *Connection) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	logrus.Infof("CallContext method:%s\n", method)
+	//logrus.Infof("CallContext method:%s\n", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 	switch method {
 	case "call":
@@ -435,7 +435,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 }
 
 func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData string, handler interface{}) error {
-	logrus.Infof("CallEventContext method:%s", method)
+	//logrus.Infof("CallEventContext method:%s", method)
 	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
 	switch method {
 	case "subscribeTopic":

@@ -349,7 +349,7 @@ func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction
 	}{}
 	if contract != nil {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
-	}else {
+	} else {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
 	}
 	if err != nil {

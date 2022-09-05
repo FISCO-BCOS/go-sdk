@@ -55,6 +55,7 @@ func main() {
 	defer queryTicker.Stop()
 	done := make(chan bool)
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	taskId, err := c.SubscribeEventLogs(ctx, eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
@@ -66,7 +67,6 @@ func main() {
 		//queryTicker.Stop()
 		//queryTicker = time.NewTicker(timeout)
 		//done <- true
-		cancel()
 	})
 	if err != nil {
 		logrus.Printf("subscribe event failed, err: %v\n", err)

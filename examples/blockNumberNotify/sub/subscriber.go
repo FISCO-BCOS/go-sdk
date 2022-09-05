@@ -39,7 +39,8 @@ func main() {
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	err = c.SubscribeBlockNumberNotify(ctx, func(blockNUmber int64) {
 		logrus.Printf("received: %d\n", blockNUmber)
 		//queryTicker.Stop()
