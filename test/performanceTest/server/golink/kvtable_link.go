@@ -4,13 +4,13 @@ package golink
 import (
 	"context"
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/kvTableTest"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/helper"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/kvTableTest"
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/helper"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
+	"github.com/sirupsen/logrus"
 )
 
 func Intsert(ctx context.Context, chanID uint64, ch chan<- *model.RequestResults, totalNumber uint64, wg *sync.WaitGroup,

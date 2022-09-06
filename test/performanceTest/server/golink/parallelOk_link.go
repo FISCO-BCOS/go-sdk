@@ -4,14 +4,14 @@ package golink
 import (
 	"context"
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/parallelOk"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/helper"
-	"github.com/sirupsen/logrus"
 	"math/big"
 	"sync"
 	"time"
 
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/parallelOk"
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/helper"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
+	"github.com/sirupsen/logrus"
 )
 
 // HTTP 请求

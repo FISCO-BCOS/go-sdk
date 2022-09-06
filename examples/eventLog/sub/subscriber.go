@@ -12,6 +12,8 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,9 +45,9 @@ func main() {
 	var eventLogParams types.EventLogParams
 	eventLogParams.FromBlock = "1"
 	eventLogParams.ToBlock = "10000"
-	//var topics = make([]string, 1)
-	//topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
-	//eventLogParams.Topics = topics
+	var topics = make([]string, 1)
+	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
+	eventLogParams.Topics = topics
 	var addresses = make([]string, 1)
 	addresses[0] = "0x610857669da60D63f4c9E30713Bb86A49251Fe2A"
 	eventLogParams.Addresses = addresses

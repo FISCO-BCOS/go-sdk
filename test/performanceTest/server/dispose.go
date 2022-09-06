@@ -3,18 +3,18 @@ package server
 
 import (
 	"context"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/kvTableTest"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/parallelOk"
 	"sync"
 	"time"
 
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/kvTableTest"
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/parallelOk"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/server/golink"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/server/statistics"
 )
 
 // Dispose 处理函数
-func Dispose(ctx context.Context, concurrency, totalNumber uint64, request *model.Request,session interface{}) {
+func Dispose(ctx context.Context, concurrency, totalNumber uint64, request *model.Request, session interface{}) {
 	// 设置接收数据缓存
 	ch := make(chan *model.RequestResults, 1000)
 	var (

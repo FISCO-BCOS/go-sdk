@@ -6,6 +6,9 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"runtime"
+	"time"
+
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/contract/kvTableTest"
@@ -13,8 +16,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/server"
 	"github.com/sirupsen/logrus"
-	"runtime"
-	"time"
 )
 
 // array 自定义数组参数
