@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -323,7 +324,8 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
-	from := string("latest")
+	from := "1"
+	to := "100000"
 	// Don't crash on a lazy user
 	if fromBlock != nil {
 		from = strconv.FormatUint(*fromBlock, 10)
@@ -331,18 +333,19 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 	// Append the event selector to the query parameters and construct the topic set
 	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
 
-	topics, err := makeTopics(query...)
-	if err != nil {
-		return err
-	}
+	//topics, err := makeTopics(query...)
+	//if err != nil {
+	//	return err
+	//}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,
-		ToBlock:   "latest",
-		Addresses: []string{c.address.Hex()},
-		Topics:    topics,
-		GroupID:   c.transactor.GetGroupID(),
+		ToBlock:   to,
+		Addresses: []string{strings.ToLower(c.address.Hex())},
+		//Topics:    topics,
+		GroupID: c.transactor.GetGroupID(),
 	}
-	_, err = c.filterer.SubscribeEventLogs(nil, eventLogParams, handler)
+	ctx, _ := context.WithCancel(context.Background())
+	_, err := c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
 	return err
 }
 
