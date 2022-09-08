@@ -90,40 +90,15 @@ func TestDeployHelloWorld(t *testing.T) {
 	t.Logf("transaction hash:%s \n", txHash.String())
 }
 
-func TestGetTransactionReceipt(t *testing.T) {
-	c := GetClient(t)
-	cv, err := c.GetTransactionReceipt(context.Background(), common.HexToHash("0x7653c1d7cd0f7bd30dcca89cfac1bc1ec89466c921487a7fe962f24f6d924625"))
-	if err != nil {
-		t.Fatalf("transaction receipt not found: %v", err)
-	}
-
-	t.Logf("transaction receipt:\n%s", cv)
-	//t.Logf("transaction receipt contractAddress:\n%s", common.HexToAddress(cv.ContractAddress).String())
-}
-
-func TestGetTransactionByHash(t *testing.T) {
-	c := GetClient(t)
-	cv, err := c.GetTransactionByHash(context.Background(), common.HexToHash("0xaab521723afd6ca0f2c5ed89727272f355ba218dbd18d13952f2c155c3088b03"))
-	if err != nil {
-		t.Fatalf("transaction not found: %v", err)
-	}
-
-	raw, err := json.MarshalIndent(cv, "", indent)
-	if err != nil {
-		t.Fatalf("trabscation marshalIndent error: %v", err)
-	}
-	t.Logf("transaction:\n%s", raw)
-}
-
-// todo 3.0 no this rpc mothod
-func TestClientVersion(t *testing.T) {
-	c := GetClient(t)
-	cv, err := c.GetClientVersion(context.Background())
-	if err != nil {
-		t.Fatalf("client version not found: %v", err)
-	}
-	t.Logf("client version:\n%s", cv)
-}
+//// todo 3.0 no this rpc mothod
+//func TestClientVersion(t *testing.T) {
+//	c := GetClient(t)
+//	cv, err := c.GetClientVersion(context.Background())
+//	if err != nil {
+//		t.Fatalf("client version not found: %v", err)
+//	}
+//	t.Logf("client version:\n%s", cv)
+//}
 
 func TestBlockNumber(t *testing.T) {
 	c := GetClient(t)
@@ -244,16 +219,16 @@ func TestGroupPeers(t *testing.T) {
 }
 
 // todo 3.0 no this rpc mothod
-func TestNodeIDList(t *testing.T) {
-	c := GetClient(t)
-
-	raw, err := c.GetNodeIDList(context.Background())
-	if err != nil {
-		t.Fatalf("nodeID list not found: %v", err)
-	}
-
-	t.Logf("nodeID list:\n %s", raw)
-}
+//func TestNodeIDList(t *testing.T) {
+//	c := GetClient(t)
+//
+//	raw, err := c.GetNodeIDList(context.Background())
+//	if err != nil {
+//		t.Fatalf("nodeID list not found: %v", err)
+//	}
+//
+//	t.Logf("nodeID list:\n %s", raw)
+//}
 
 func TestGroupList(t *testing.T) {
 	c := GetClient(t)
@@ -282,36 +257,36 @@ func TestBlockByNumber(t *testing.T) {
 }
 
 // todo 3.0 no this rpc mothod
-func TestTransactionByBlockNumberAndIndex(t *testing.T) {
-	c := GetClient(t)
-
-	var blockNumber int64 = 1
-	txIndex := 0
-	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
-	if err != nil {
-		t.Fatalf("transaction not found: %v", err)
-	}
-	raw, err := json.MarshalIndent(transcation, "", indent)
-	if err != nil {
-		t.Fatalf("transaction marshalIndent error: %v", err)
-	}
-	t.Logf("transaction by block number and transaction index:\n%s", raw)
-}
+//func TestTransactionByBlockNumberAndIndex(t *testing.T) {
+//	c := GetClient(t)
+//
+//	var blockNumber int64 = 1
+//	txIndex := 0
+//	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
+//	if err != nil {
+//		t.Fatalf("transaction not found: %v", err)
+//	}
+//	raw, err := json.MarshalIndent(transcation, "", indent)
+//	if err != nil {
+//		t.Fatalf("transaction marshalIndent error: %v", err)
+//	}
+//	t.Logf("transaction by block number and transaction index:\n%s", raw)
+//}
 
 // todo 3.0 no this rpc mothod
-func TestPendingTransactions(t *testing.T) {
-	c := GetClient(t)
-
-	pendingTransactions, err := c.GetPendingTransactions(context.Background())
-	if err != nil {
-		t.Fatalf("pending transactions not found: %v", err)
-	}
-	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
-	if err != nil {
-		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
-	}
-	t.Logf("pending transactions:\n%s", raw)
-}
+//func TestPendingTransactions(t *testing.T) {
+//	c := GetClient(t)
+//
+//	pendingTransactions, err := c.GetPendingTransactions(context.Background())
+//	if err != nil {
+//		t.Fatalf("pending transactions not found: %v", err)
+//	}
+//	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
+//	if err != nil {
+//		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
+//	}
+//	t.Logf("pending transactions:\n%s", raw)
+//}
 
 func TestPendingTxSize(t *testing.T) {
 	c := GetClient(t)
@@ -358,16 +333,16 @@ func TestGetGroupInfo(t *testing.T) {
 	t.Logf("get group info:\n%s", string(raw))
 }
 
-func TestGetGroupNodeInfo(t *testing.T) {
-	c := GetClient(t)
-	nodeId := "7c9e8d63a5451ef71e567216f1e2db1478147b9e3eca1c2889f864dc6711d291d3cf458606e39cad5a5dd876ab8cdc3a7dc8f227e9aff1ff1f309329a64f87a7"
-	raw, err := c.GetGroupNodeInfo(context.Background(), nodeId)
-	if err != nil {
-		t.Fatalf("the value not found: %v", err)
-	}
-
-	t.Logf("get group node info:\n%s", string(raw))
-}
+//func TestGetGroupNodeInfo(t *testing.T) {
+//	c := GetClient(t)
+//	nodeId := "7c9e8d63a5451ef71e567216f1e2db1478147b9e3eca1c2889f864dc6711d291d3cf458606e39cad5a5dd876ab8cdc3a7dc8f227e9aff1ff1f309329a64f87a7"
+//	raw, err := c.GetGroupNodeInfo(context.Background(), nodeId)
+//	if err != nil {
+//		t.Fatalf("the value not found: %v", err)
+//	}
+//
+//	t.Logf("get group node info:\n%s", string(raw))
+//}
 
 func TestTotalTransactionCount(t *testing.T) {
 	c := GetClient(t)
@@ -392,5 +367,5 @@ func TestSystemConfigByKey(t *testing.T) {
 		t.Fatalf("the value not found: %v", err)
 	}
 
-	t.Logf("the value got by the key:\n%s", raw)
+	t.Logf("the value got by the key:\n%s", raw.GetValue())
 }

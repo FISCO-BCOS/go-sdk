@@ -322,7 +322,8 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 		types.Receipt
 	}{}
 	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
+		//err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()))
 	} else {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
 	}
@@ -418,7 +419,7 @@ func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.Ev
 	}
 	sendData := "{\"addresses\":[" + addressArrayStr + "],\"fromBlock\":" + eventLogParams.FromBlock +
 		",\"toBlock\":" + eventLogParams.ToBlock + ",\"topics\":[" + topicArrayStr + "]}"
-	//log.Println("SubscribeEventLogs data:", sendData)
+	log.Println("SubscribeEventLogs data:", sendData)
 	var raw string
 	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", sendData, handler)
 	if err != nil {
@@ -858,14 +859,14 @@ func (c *Client) GetGroupInfo(ctx context.Context) ([]byte, error) {
 }
 
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
-func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) ([]byte, error) {
-	var raw interface{}
+func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) (*types.SystemConfig, error) {
+	var raw types.SystemConfig
 	err := c.conn.CallContext(ctx, &raw, "getSystemConfigByKey", c.groupID, configKey)
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+	//js, err := json.MarshalIndent(raw, "", indent)
+	return &raw, err
 }
 
 func getVersionNumber(strVersion string) (int, error) {

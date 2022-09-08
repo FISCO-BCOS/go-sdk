@@ -171,8 +171,10 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 		logrus.Warnf("unmarshal eventLogResponse failed, err: %v\n", err)
 		return
 	}
+	if len(eventLogResponse.Result) == 0 {
+		return
+	}
 	logs := []types.Log{}
-	//var nextBlock uint64
 	for _, eventLog := range eventLogResponse.Result {
 		number := eventLog.BlockNumber
 		logIndex := eventLog.LogIndex
@@ -193,7 +195,6 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 			Index:       uint(logIndex),
 			Removed:     false,
 		})
-		//nextBlock = uint64(number) + 1
 	}
 	eventHander := handler.(func(int, []types.Log))
 	go eventHander(eventLogResponse.Status, logs)

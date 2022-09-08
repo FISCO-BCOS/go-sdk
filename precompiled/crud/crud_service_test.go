@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"math/big"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -15,12 +14,15 @@ import (
 )
 
 const (
-	tableName         = "t_test"
-	tableNameForAsync = "t_test_async"
+	tableName         = "t_test9"
+	tableNameForAsync = "t_test_async9"
 	key               = "name"
-	valueFields       = "item_id, item_name"
+	keyAsync          = "name_async"
 	timeout           = 1 * time.Second
 )
+
+var valueFields = []string{"item_name"}
+var valueFields_update = []string{"item_name_update"}
 
 var (
 	service *Service
@@ -30,7 +32,7 @@ var (
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
@@ -98,18 +100,19 @@ func TestAsyncCreateTable(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	var insertResults int64
-	insertEntry := NewEntry()
+	var insertResults int
+	entry := Entry{
+		Key:    key,
+		Fields: valueFields,
+	}
 	for i := 1; i <= 5; i++ {
-		insertEntry.Put("item_id", "1")
-		insertEntry.Put("item_name", "apple"+strconv.Itoa(i))
-		insertResult, err := service.Insert(tableName, "fruit", insertEntry)
+		_, receipt, err := service.crud.Insert(service.crudAuth, entry)
 		if err != nil {
 			t.Fatalf("insert table failed: %v", err)
 		}
-		insertResults += insertResult
+		insertResults += receipt.Status
 	}
-	if insertResults != 5 {
+	if insertResults != 0 {
 		t.Fatalf("TestInsert failed, the insertResults \"%v\" is inconsistent with \"5\"", insertResults)
 	}
 	t.Logf("insertResults: %d\n", insertResults)
@@ -136,10 +139,11 @@ func TestAsyncInsert(t *testing.T) {
 		channel <- 0
 	}
 
-	insertEntry := NewEntry()
-	insertEntry.Put("item_id", "1")
-	insertEntry.Put("item_name", "apple")
-	_, err := service.AsyncInsert(handler, tableNameForAsync, "fruit", insertEntry)
+	entry := Entry{
+		Key:    keyAsync,
+		Fields: valueFields,
+	}
+	_, err := service.crud.AsyncInsert(handler, service.crudAuth, entry)
 	if err != nil {
 		t.Fatalf("insert table failed: %v", err)
 	}
@@ -152,40 +156,43 @@ func TestAsyncInsert(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
-	condition := NewCondition()
-	condition.EQ("item_id", "1")
-	condition.Limit(5)
 
-	resultSelect, err := service.Select(tableName, "fruit", condition)
+	resultSelect, err := service.crud.Select0(service.CallOpts, key)
 	if err != nil {
 		t.Fatalf("select table failed: %v", err)
 	}
-	if len(resultSelect) != 5 {
-		t.Fatalf("TestSelect failed, the length of resultSelect \"%v\" is not inconsistent with \"5\"", len(resultSelect))
+	if resultSelect.Fields[0] != valueFields[0] {
+		t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", resultSelect.Fields[0])
 	}
 	t.Logf("resultSelect :\n")
-	t.Logf("%d", len(resultSelect))
-	for i := 0; i < len(resultSelect); i++ {
-		t.Logf("resultSelect[%d]'s name is：%s\n", i, resultSelect[i]["name"])
-		t.Logf("resultSelect[%d]'s item_id is：%s\n", i, resultSelect[i]["item_id"])
-		t.Logf("resultSelect[%d]'s item_name is：%s\n", i, resultSelect[i]["item_name"])
+
+	for i := 0; i < len(resultSelect.Fields); i++ {
+		t.Logf("resultSelect[%d]'s item_name is：%s\n", i, resultSelect.Fields[i])
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	updateEntry := NewEntry()
-	updateEntry.Put("item_id", "1")
-	updateEntry.Put("item_name", "orange")
-	updateCondition := NewCondition()
-	updateCondition.EQ("item_id", "1")
-	updateResult, err := service.Update(tableName, "fruit", updateEntry, updateCondition)
+	updateField := UpdateField{
+		ColumnName: valueFields[0],
+		Value:      valueFields_update[0],
+	}
+	var updateFieldList []UpdateField
+	updateFieldList = append(updateFieldList, updateField)
+	_, receipt, err := service.crud.Update(service.crudAuth, key, updateFieldList)
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
-	if updateResult != 5 {
-		t.Fatalf("TestUpdate failed, the updateResult \"%v\" is not inconsistent with \"5\"", updateResult)
+	if receipt.Status != 0 {
+		t.Fatalf("TestUpdate failed, the updateResult ")
 	}
-	t.Logf("updateResult: %d", updateResult)
+	resultSelect, err := service.crud.Select0(service.CallOpts, key)
+	if err != nil {
+		t.Fatalf("select table failed: %v", err)
+	}
+	if resultSelect.Fields[0] != valueFields_update[0] {
+		t.Fatalf("TestUpdate failed, the result of resultUpdate \"%v\" is not inconsistent", resultSelect.Fields[0])
+	}
+	t.Logf("updateResult: %s", resultSelect.Fields[0])
 }
 
 func TestAsyncUpdate(t *testing.T) {
@@ -209,12 +216,13 @@ func TestAsyncUpdate(t *testing.T) {
 		channel <- 0
 	}
 
-	updateEntry := NewEntry()
-	updateEntry.Put("item_id", "1")
-	updateEntry.Put("item_name", "orange")
-	updateCondition := NewCondition()
-	updateCondition.EQ("item_id", "1")
-	_, err := service.AsyncUpdate(handler, tableNameForAsync, "fruit", updateEntry, updateCondition)
+	updateField := UpdateField{
+		ColumnName: valueFields[0],
+		Value:      valueFields_update[0],
+	}
+	var updateFieldList []UpdateField
+	updateFieldList = append(updateFieldList, updateField)
+	_, err := service.crud.AsyncUpdate(handler, service.crudAuth, keyAsync, updateFieldList)
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
@@ -227,16 +235,14 @@ func TestAsyncUpdate(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	removeCondition := NewCondition()
-	removeCondition.EQ("item_id", "1")
-	removeResult, err := service.Remove(tableName, "fruit", removeCondition)
+	_, receipt, err := service.crud.Remove0(service.crudAuth, key)
 	if err != nil {
 		t.Fatalf("remove table failed: %v", err)
 	}
-	if removeResult != 5 {
-		t.Fatalf("TestRemove failed, the removeResult \"%v\" is not inconsistent with \"5\"", removeResult)
+	if receipt.Status != 0 {
+		t.Fatalf("TestRemove failed, the removeResult \"%v\" is not inconsistent with \"0\"", receipt.Status)
 	}
-	t.Logf("removeResult: %d\n", removeResult)
+	t.Logf("removeResult: %d\n", receipt.Status)
 }
 
 func TestAsyncRemove(t *testing.T) {
@@ -260,9 +266,7 @@ func TestAsyncRemove(t *testing.T) {
 		channel <- 0
 	}
 
-	removeCondition := NewCondition()
-	removeCondition.EQ("item_id", "1")
-	_, err := service.AsyncRemove(handler, tableNameForAsync, "fruit", removeCondition)
+	_, err := service.crud.AsyncRemove0(handler, service.crudAuth, keyAsync)
 	if err != nil {
 		t.Fatalf("remove data failed: %v", err)
 	}
@@ -275,16 +279,16 @@ func TestAsyncRemove(t *testing.T) {
 }
 
 func TestDesc(t *testing.T) {
-	keyField, valueField, err := service.Desc(tableName)
+	tableInfo, err := service.tableFactory.Desc(service.CallOpts, tableName)
 	if err != nil {
 		t.Fatalf("query table info by tableName failed: %v", err)
 	}
-	if keyField != "name" {
-		t.Fatalf("TestDesc failed, the keyField \"%v\" is not inconsistent with \"name\"", keyField)
+	if tableInfo.KeyColumn != key {
+		t.Fatalf("TestDesc failed, the keyField \"%v\" is not inconsistent with \"name\"", tableInfo.KeyColumn)
 	}
-	if valueField != "item_id,item_name" {
-		t.Fatalf("TestDesc failed, the valueField \"%v\" is not inconsistent with \"item_id,item_name\"", valueField)
+	if tableInfo.ValueColumns[0] != valueFields[0] {
+		t.Fatalf("TestDesc failed, the valueField \"%v\" is not inconsistent with \"item_id,item_name\"", tableInfo.ValueColumns[0])
 	}
-	t.Logf("keyFiled is：%s\n", keyField)
-	t.Logf("valueField is：%s\n", valueField)
+	t.Logf("keyFiled is：%s\n", tableInfo.KeyColumn)
+	t.Logf("valueField is：%s\n", tableInfo.ValueColumns[0])
 }

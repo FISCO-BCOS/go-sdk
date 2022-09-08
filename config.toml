@@ -19,7 +19,7 @@ GroupID="group0"
 
 [Account]
 # only support PEM format for now
-KeyFile="../../.ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
+KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
 
 [Chain]
 ChainID=1

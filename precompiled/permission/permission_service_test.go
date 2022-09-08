@@ -13,12 +13,13 @@ import (
 )
 
 const (
-	tableName      = "t_test1"
+	tableName      = "t_test5"
 	key            = "name"
-	valueFields    = "item_id, item_name"
 	permissionAdd  = "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 	standardOutput = 1
 )
+
+var valueFields = []string{"item_name"}
 
 var (
 	service         *Service
@@ -28,7 +29,7 @@ var (
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
