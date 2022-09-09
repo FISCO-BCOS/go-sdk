@@ -400,7 +400,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
-		logrus.Infof("getTransactionReceipt:", txHash)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
 	case "getSystemConfigByKey":
 		key := args[1].(string)

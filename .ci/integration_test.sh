@@ -197,6 +197,18 @@ get_build_chain()
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
+get_csdk_lib()
+{
+    #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
+    mkdir ./libs
+    mkdir ./libs/linux/
+    mkdir ./libs/darwin/
+    mkdir ./libs/win/
+    cp libbcos-c-sdk.so ./libs/linux/
+}
+
 precompiled_test(){
     # TODO: consensus test use getSealer first
     # TODO: cns
@@ -308,9 +320,9 @@ main()
 {
     check_env
     compile_and_ut
-    #todo
     get_build_chain
-
+    get_csdk_lib
+    
     if [ -z "${macOS}" ];then # linux
         #integration_std
         integration_gm
