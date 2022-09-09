@@ -3,12 +3,13 @@ package statistics
 
 import (
 	"fmt"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
-	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/tools"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
+	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/tools"
 )
 
 var (

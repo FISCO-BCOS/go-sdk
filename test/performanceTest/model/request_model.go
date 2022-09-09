@@ -21,13 +21,8 @@ const (
 
 // 支持协议
 const (
-	FormTypeHTTP = "http"
-	FormTypeWebSocket = "webSocket"
-	// FormTypeGRPC grpc 协议
-	FormTypeGRPC    = "grpc"
 	FormTypeKvTable = "kvTable"
 	FormParallelOk  = "parallelOk"
-	FormTypeamop    = "amop"
 )
 
 // Verify 验证器
@@ -35,7 +30,6 @@ type Verify interface {
 	GetCode() int    // 有一个方法，返回code为200为成功
 	GetResult() bool // 返回是否成功
 }
-
 
 // Request 请求数据
 type Request struct {
@@ -63,7 +57,6 @@ func (r *Request) getVerifyKey() (key string) {
 	return fmt.Sprintf("%s.%s", r.Form, r.Verify)
 }
 
-
 func NewRequestByContractType(contractType string, contractMothod string) (request *Request, err error) {
 	form := ""
 	switch contractType {
@@ -80,25 +73,6 @@ func NewRequestByContractType(contractType string, contractMothod string) (reque
 	}
 	return
 }
-
-
-// getHeaderValue 获取 header
-func getHeaderValue(v string, headers map[string]string) {
-	index := strings.Index(v, ":")
-	if index < 0 {
-		return
-	}
-	vIndex := index + 1
-	if len(v) >= vIndex {
-		value := strings.TrimPrefix(v[vIndex:], " ")
-		if _, ok := headers[v[:index]]; ok {
-			headers[v[:index]] = fmt.Sprintf("%s; %s", headers[v[:index]], value)
-		} else {
-			headers[v[:index]] = value
-		}
-	}
-}
-
 
 // RequestResults 请求结果
 type RequestResults struct {
