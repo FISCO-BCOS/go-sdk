@@ -202,11 +202,12 @@ get_csdk_lib()
     #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
-    mkdir ./libs
-    mkdir ./libs/linux/
-    mkdir ./libs/darwin/
-    mkdir ./libs/win/
-    cp libbcos-c-sdk.so ./libs/linux/
+    mkdir /usr/local/lib/bcos-c-sdk
+    mkdir /usr/local/lib/bcos-c-sdk/libs
+    mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
+    mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
+    mkdir /usr/local/lib/bcos-c-sdk/libs/win/
+    cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
 }
 
 precompiled_test(){
@@ -214,9 +215,9 @@ precompiled_test(){
     # TODO: cns
     # TODO: permission
     # TODO: crud
-    precompileds=(config )
+    precompileds=(config crud)
     for pkg in ${precompileds[*]}; do
-        go test -ldflags="-r ../libs/linux" -v ./precompiled/${pkg}
+        go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -v ./precompiled/${pkg}
     done
 }
 
@@ -236,12 +237,12 @@ integration_std()
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
-    execute_cmd "go build -ldflags=\"-r ./libs/linux\" -o hello hello.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o hello hello.go"
     execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
     precompiled_test
-    go test -ldflags="-r ../libs/linux" -v ./client
+    go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -v ./client
 
     ./hello > hello.out
     if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
@@ -251,7 +252,7 @@ integration_std()
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
-    execute_cmd "go build -ldflags=\"-r ./libs/linux\" -o counter counter.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o counter counter.go"
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./counter | grep failed)" ];then LOG_ERROR "call counter failed." && exit 1;fi
     if [[ "${check_amop}" == "true" ]];then
@@ -266,18 +267,18 @@ integration_gm()
     LOG_INFO "integration_gm testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.6.10 -g"
 
-    #bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
-    sed -i "s#KeyFile=\"./.ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\"./.ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
+    sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
 
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
-    execute_cmd "go build -ldflags=\"-r ./libs/linux\" -o hello_gm hello_gm.go"
-    execute_cmd "go build -ldflags=\"-r ./libs/linux\" -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o hello_gm hello_gm.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
@@ -322,9 +323,9 @@ main()
     compile_and_ut
     get_build_chain
     get_csdk_lib
-    
+
     if [ -z "${macOS}" ];then # linux
-        #integration_std
+        integration_std
         integration_gm
     else
         integration_std
