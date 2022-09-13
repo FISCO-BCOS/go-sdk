@@ -3,7 +3,7 @@ module github.com/FISCO-BCOS/go-sdk
 go 1.16
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v3.0.0-rc4.0.20220830044231-d889d6cc59a3+incompatible
+	github.com/FISCO-BCOS/bcos-c-sdk v3.0.0-rc4.0.20220913063728-ad029bfc6e66+incompatible
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ethereum/go-ethereum v1.10.21
