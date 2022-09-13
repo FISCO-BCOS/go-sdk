@@ -214,7 +214,6 @@ precompiled_test(){
     # TODO: consensus test use getSealer first
     # TODO: cns
     # TODO: permission
-    # TODO: crud
     precompileds=(config crud)
     for pkg in ${precompileds[*]}; do
         go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -v ./precompiled/${pkg}
