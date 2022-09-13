@@ -293,8 +293,8 @@ integration_gm()
 integration_amop() {
     # nodes should be started
     LOG_INFO "amop unicast testing..."
-    execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
-    execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o subscriber examples/amop/sub/subscriber.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o unicast_publisher examples/amop/unicast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello &
     sleep 2
     ./unicast_publisher 127.0.0.1:20200 hello
