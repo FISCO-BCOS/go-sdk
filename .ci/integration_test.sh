@@ -38,6 +38,7 @@ check_env(){
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
         macOS="macOS"
     fi
+    export GODEBUG=cgocheck=0
     go install golang.org/x/tools/cmd/goimports@latest || true
     go get golang.org/x/tools/cmd/goimports || true
 }
