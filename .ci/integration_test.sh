@@ -319,9 +319,9 @@ parse_params()
 main()
 {
     check_env
+    get_csdk_lib
     compile_and_ut
     get_build_chain
-    get_csdk_lib
 
     if [ -z "${macOS}" ];then # linux
         integration_std
