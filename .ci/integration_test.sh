@@ -300,7 +300,7 @@ integration_amop() {
     ./unicast_publisher 127.0.0.1:20200 hello
 
     LOG_INFO "amop broadcast testing..."
-    execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello1 &
     sleep 2
     ./broadcast_publisher 127.0.0.1:20200 hello1
