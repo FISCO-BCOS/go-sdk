@@ -49,6 +49,3 @@ jobs:
       - name: test without amop
         if: ${{ runner.os == 'macOS' }}
         run: bash .ci/integration_test.sh
-      - name: install macOS dependencies
-          if: ${{ runner.os == 'macOS' }}
-          run: brew install openssl@1.1 openjdk
