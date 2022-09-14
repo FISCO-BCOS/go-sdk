@@ -241,8 +241,8 @@ integration_std()
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
-    execute_cmd "go build "${ldflags}" -o hello hello.go"
-    execute_cmd "go build "${ldflags}" -o bn256 .ci/ethPrecompiled/bn256.go"
+    execute_cmd "go build \"${ldflags}\" -o hello hello.go"
+    execute_cmd "go build \"${ldflags}\" -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
     precompiled_test
@@ -256,7 +256,7 @@ integration_std()
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
-    execute_cmd "go build "${ldflags}" -o counter counter.go"
+    execute_cmd "go build \"${ldflags}\" -o counter counter.go"
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./counter | grep failed)" ];then LOG_ERROR "call counter failed." && exit 1;fi
     if [[ "${check_amop}" == "true" ]];then
