@@ -221,7 +221,7 @@ precompiled_test(){
     # TODO: permission
     precompileds=(config crud)
     for pkg in ${precompileds[*]}; do
-        go test ${ldflags} -v ./precompiled/${pkg}
+        execute_cmd "go test ${ldflags} -v ./precompiled/${pkg}"
     done
 }
 
@@ -246,7 +246,7 @@ integration_std()
     LOG_INFO "generate hello.go and build hello done."
 
     precompiled_test
-    go test ${ldflags} -v ./client
+    execute_cmd "go test ${ldflags} -v ./client"
 
     ./hello > hello.out
     if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
