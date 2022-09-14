@@ -25,8 +25,8 @@ func GetClient(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("decode hex failed of %v", err)
 	}
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200", Host: "127.0.0.1", Port: 20200}
 	c, err := Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
@@ -62,15 +62,15 @@ func TestBlockHashByNumber(t *testing.T) {
 	}
 	peers, err := json.MarshalIndent(block, "", indent)
 	t.Logf("block by hash:\n%+v", peers)
-	_, err = c.GetTransactionByBlockHashAndIndex(context.Background(), *blockHash, 0)
-	if err != nil {
-		t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
-	}
+	//_, err = c.GetTransactionByBlockHashAndIndex(context.Background(), *blockHash, 0)
+	//if err != nil {
+	//	t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
+	//}
 	raw, err = c.GetTransactionReceipt(context.Background(), *txHash)
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
-	t.Logf("transaction receipt by transaction hash:\n%s", raw)
+	t.Logf("transaction receipt by transaction hash:\n%s", raw.TransactionHash)
 	transaction, err := c.GetTransactionByHash(context.Background(), *txHash)
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
@@ -80,22 +80,25 @@ func TestBlockHashByNumber(t *testing.T) {
 		fmt.Printf("transaction marshalIndent error: %v\n", err)
 		return
 	}
-	t.Logf("transaction by hash:\n%+v", tx)
+	t.Logf("transaction by hash:\n%s", tx)
 }
 
-func TestClientVersion(t *testing.T) {
-	c := GetClient(t)
-
-	clientVersion, err := c.GetClientVersion(context.Background())
-	if err != nil {
-		t.Fatalf("client version not found: %v", err)
-	}
-	cv, err := json.MarshalIndent(clientVersion, "", indent)
-	if err != nil {
-		t.Fatalf("client version marshalIndent error: %v", err)
-	}
-	t.Logf("client version:\n%s", cv)
+func TestDeployHelloWorld(t *testing.T) {
+	t.Logf("TestDeployHelloWorld")
+	deployedAddress, txHash := deployHelloWorld(t)
+	t.Logf("deployedAddress:%s \n", deployedAddress.String())
+	t.Logf("transaction hash:%s \n", txHash.String())
 }
+
+//// todo 3.0 no this rpc mothod
+//func TestClientVersion(t *testing.T) {
+//	c := GetClient(t)
+//	cv, err := c.GetClientVersion(context.Background())
+//	if err != nil {
+//		t.Fatalf("client version not found: %v", err)
+//	}
+//	t.Logf("client version:\n%s", cv)
+//}
 
 func TestBlockNumber(t *testing.T) {
 	c := GetClient(t)
@@ -182,7 +185,6 @@ func TestConsensusStatus(t *testing.T) {
 
 func TestSyncStatus(t *testing.T) {
 	c := GetClient(t)
-
 	syncStatus, err := c.GetSyncStatus(context.Background())
 	if err != nil {
 		t.Fatalf("synchronization status not found: %v", err)
@@ -191,7 +193,7 @@ func TestSyncStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("synchronization status marshalIndent error: %v", err)
 	}
-	t.Logf("synchronization Status:\n%s", raw)
+	t.Logf("synchronization Status:\n%s", string(raw))
 }
 
 func TestPeers(t *testing.T) {
@@ -201,11 +203,8 @@ func TestPeers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("peers not found: %v", err)
 	}
-	raw, err := json.MarshalIndent(nodes, "", indent)
-	if err != nil {
-		t.Fatalf("peers marshalIndent error: %v", err)
-	}
-	t.Logf("peers:\n%s", raw)
+
+	t.Logf("peers:\n%s", nodes)
 }
 
 func TestGroupPeers(t *testing.T) {
@@ -219,16 +218,17 @@ func TestGroupPeers(t *testing.T) {
 	t.Logf("group peers:\n%s", raw)
 }
 
-func TestNodeIDList(t *testing.T) {
-	c := GetClient(t)
-
-	raw, err := c.GetNodeIDList(context.Background())
-	if err != nil {
-		t.Fatalf("nodeID list not found: %v", err)
-	}
-
-	t.Logf("nodeID list:\n %s", raw)
-}
+// todo 3.0 no this rpc mothod
+//func TestNodeIDList(t *testing.T) {
+//	c := GetClient(t)
+//
+//	raw, err := c.GetNodeIDList(context.Background())
+//	if err != nil {
+//		t.Fatalf("nodeID list not found: %v", err)
+//	}
+//
+//	t.Logf("nodeID list:\n %s", raw)
+//}
 
 func TestGroupList(t *testing.T) {
 	c := GetClient(t)
@@ -256,35 +256,37 @@ func TestBlockByNumber(t *testing.T) {
 	t.Logf("block by number:\n%s", raw)
 }
 
-func TestTransactionByBlockNumberAndIndex(t *testing.T) {
-	c := GetClient(t)
+// todo 3.0 no this rpc mothod
+//func TestTransactionByBlockNumberAndIndex(t *testing.T) {
+//	c := GetClient(t)
+//
+//	var blockNumber int64 = 1
+//	txIndex := 0
+//	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
+//	if err != nil {
+//		t.Fatalf("transaction not found: %v", err)
+//	}
+//	raw, err := json.MarshalIndent(transcation, "", indent)
+//	if err != nil {
+//		t.Fatalf("transaction marshalIndent error: %v", err)
+//	}
+//	t.Logf("transaction by block number and transaction index:\n%s", raw)
+//}
 
-	var blockNumber int64 = 1
-	txIndex := 0
-	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
-	if err != nil {
-		t.Fatalf("transaction not found: %v", err)
-	}
-	raw, err := json.MarshalIndent(transcation, "", indent)
-	if err != nil {
-		t.Fatalf("transaction marshalIndent error: %v", err)
-	}
-	t.Logf("transaction by block number and transaction index:\n%s", raw)
-}
-
-func TestPendingTransactions(t *testing.T) {
-	c := GetClient(t)
-
-	pendingTransactions, err := c.GetPendingTransactions(context.Background())
-	if err != nil {
-		t.Fatalf("pending transactions not found: %v", err)
-	}
-	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
-	if err != nil {
-		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
-	}
-	t.Logf("pending transactions:\n%s", raw)
-}
+// todo 3.0 no this rpc mothod
+//func TestPendingTransactions(t *testing.T) {
+//	c := GetClient(t)
+//
+//	pendingTransactions, err := c.GetPendingTransactions(context.Background())
+//	if err != nil {
+//		t.Fatalf("pending transactions not found: %v", err)
+//	}
+//	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
+//	if err != nil {
+//		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
+//	}
+//	t.Logf("pending transactions:\n%s", raw)
+//}
 
 func TestPendingTxSize(t *testing.T) {
 	c := GetClient(t)
@@ -305,7 +307,7 @@ func deployHelloWorld(t *testing.T) (*common.Address, *common.Hash) {
 		t.Errorf("DeployHelloWorld failed 11: %v", err)
 		return nil, nil
 	}
-	txHash := tx.Hash()
+	txHash := common.HexToHash(tx.TransactionHash)
 	return &address, &txHash
 }
 
@@ -319,6 +321,28 @@ func TestGetCode(t *testing.T) {
 
 	t.Logf("the contract code:\n%s", raw)
 }
+
+func TestGetGroupInfo(t *testing.T) {
+	c := GetClient(t)
+
+	raw, err := c.GetGroupInfo(context.Background())
+	if err != nil {
+		t.Fatalf("the value not found: %v", err)
+	}
+
+	t.Logf("get group info:\n%s", string(raw))
+}
+
+//func TestGetGroupNodeInfo(t *testing.T) {
+//	c := GetClient(t)
+//	nodeId := "7c9e8d63a5451ef71e567216f1e2db1478147b9e3eca1c2889f864dc6711d291d3cf458606e39cad5a5dd876ab8cdc3a7dc8f227e9aff1ff1f309329a64f87a7"
+//	raw, err := c.GetGroupNodeInfo(context.Background(), nodeId)
+//	if err != nil {
+//		t.Fatalf("the value not found: %v", err)
+//	}
+//
+//	t.Logf("get group node info:\n%s", string(raw))
+//}
 
 func TestTotalTransactionCount(t *testing.T) {
 	c := GetClient(t)
@@ -343,5 +367,5 @@ func TestSystemConfigByKey(t *testing.T) {
 		t.Fatalf("the value not found: %v", err)
 	}
 
-	t.Logf("the value got by the key:\n%s", raw)
+	t.Logf("the value got by the key:\n%s", raw.GetValue())
 }

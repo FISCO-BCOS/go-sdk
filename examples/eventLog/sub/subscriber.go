@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -22,8 +23,8 @@ func main() {
 	}
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
+	config := &conf.Config{ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
+		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error
 	const (
@@ -43,20 +44,21 @@ func main() {
 	}
 	var eventLogParams types.EventLogParams
 	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "latest"
-	eventLogParams.GroupID = "1"
+	eventLogParams.ToBlock = "10000"
 	var topics = make([]string, 1)
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics
 	var addresses = make([]string, 1)
-	addresses[0] = "0xd2cf82e18f3d2c5cae0de87d29994be622f3fdd3"
+	addresses[0] = "0x610857669da60D63f4c9E30713Bb86A49251Fe2A"
 	eventLogParams.Addresses = addresses
 
-	timeout := 10 * time.Second
+	timeout := 100 * time.Second
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	taskId, err := c.SubscribeEventLogs(ctx, eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
@@ -64,14 +66,15 @@ func main() {
 
 		logrus.Printf("received: %s\n", logRes)
 		logrus.Printf("received status: %d\n", status)
-		queryTicker.Stop()
-		queryTicker = time.NewTicker(timeout)
-		done <- true
+		//queryTicker.Stop()
+		//queryTicker = time.NewTicker(timeout)
+		//done <- true
 	})
 	if err != nil {
 		logrus.Printf("subscribe event failed, err: %v\n", err)
 		return
 	}
+	logrus.Println("SubscribeEventLogs taskId:", taskId)
 
 	killSignal := make(chan os.Signal, 1)
 	signal.Notify(killSignal, os.Interrupt)
