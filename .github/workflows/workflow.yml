@@ -46,3 +46,6 @@ jobs:
       - name: test all
         if: ${{ runner.os == 'Linux' }}
         run: bash .ci/integration_test.sh -a
+      - name: test without amop
+        if: ${{ runner.os == 'macOS' }}
+        run: bash .ci/integration_test.sh

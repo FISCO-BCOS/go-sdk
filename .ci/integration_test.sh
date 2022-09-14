@@ -203,12 +203,14 @@ get_csdk_lib()
     #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk-x86_64.dylib
     sudo mkdir /usr/local/lib/bcos-c-sdk
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
     sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
+    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/
 }
 
 precompiled_test(){
