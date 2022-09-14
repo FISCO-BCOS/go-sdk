@@ -213,6 +213,7 @@ get_csdk_lib()
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
     sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
     sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/
+    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
 }
 
 precompiled_test(){
