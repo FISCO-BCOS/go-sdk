@@ -2,6 +2,11 @@ module github.com/FISCO-BCOS/go-sdk
 
 go 1.16
 
+replace (
+	golang.org/x/net => github.com/golang/net v0.0.0-20190415214537-1da14a5a36f2
+	golang.org/x/sync => github.com/golang/sync v0.0.0-20190412183630-56d357773e84
+)
+
 require (
 	github.com/FISCO-BCOS/bcos-c-sdk v3.0.0-rc4.0.20220913063728-ad029bfc6e66+incompatible
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
