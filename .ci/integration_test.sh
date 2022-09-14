@@ -230,9 +230,9 @@ integration_std()
 
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -o nodes
     cp nodes/127.0.0.1/sdk/* ./conf/
-    cp nodes/127.0.0.1/sdk/ ./client/conf/ -r
-    cp nodes/127.0.0.1/sdk/ ./precompiled/config/conf/ -r
-    cp nodes/127.0.0.1/sdk/ ./precompiled/crud/conf/ -r
+    cp nodes/127.0.0.1/sdk/ ./client/conf/ -R
+    cp nodes/127.0.0.1/sdk/ ./precompiled/config/conf/ -R
+    cp nodes/127.0.0.1/sdk/ ./precompiled/crud/conf/ -R
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
 
     # abigen std
