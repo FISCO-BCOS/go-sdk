@@ -69,7 +69,6 @@ func parseOutput(abiStr, name string, receipt *types.Receipt) (*big.Int, error) 
 	if err != nil {
 		return nil, fmt.Errorf("decode receipt.Output[2:] failed, err: %v", err)
 	}
-	fmt.Println("output:%s", string(b))
 	err = parsed.Unpack(&ret, name, b)
 	if err != nil {
 		return nil, fmt.Errorf("unpack %v failed, err: %v", name, err)
