@@ -44,11 +44,6 @@ const (
 
 var null = json.RawMessage("null")
 
-type subscriptionResult struct {
-	ID     string          `json:"subscription"`
-	Result json.RawMessage `json:"result,omitempty"`
-}
-
 // A value of this type can a JSON-RPC request, notification, successful response or
 // error response. Which one it is depends on the fields.
 type jsonrpcMessage struct {
@@ -57,6 +52,15 @@ type jsonrpcMessage struct {
 	Method  string          `json:"method,omitempty"`
 	Params  json.RawMessage `json:"params,omitempty"`
 	Error   *jsonError      `json:"error,omitempty"`
+	Jsonrpc string          `json:"jsonrpc,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+}
+
+// A value of this type can a JSON-RPC request, notification, successful response or
+// error response. Which one it is depends on the fields.
+type resRpcMessage struct {
+	ID      int             `json:"id,omitempty"`
+	Jsonrpc string          `json:"jsonrpc,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
 }
 
@@ -73,7 +77,8 @@ func (msg *jsonrpcMessage) isResponse() bool {
 }
 
 func (msg *jsonrpcMessage) hasValidID() bool {
-	return len(msg.ID) > 0 && msg.ID[0] != '{' && msg.ID[0] != '['
+	///return len(msg.ID) > 0 && msg.ID[0] != '{' && msg.ID[0] != '['
+	return true
 }
 
 func (msg *jsonrpcMessage) isSubscribe() bool {
@@ -101,16 +106,16 @@ func (msg *jsonrpcMessage) errorResponse(err error) *jsonrpcMessage {
 }
 
 func (msg *jsonrpcMessage) response(result interface{}) *jsonrpcMessage {
-	enc, err := json.Marshal(result)
-	if err != nil {
-		// TODO: wrap with 'internal server error'
-		return msg.errorResponse(err)
-	}
-	return &jsonrpcMessage{Version: vsn, ID: msg.ID, Result: enc}
+	//enc, err := json.Marshal(result)
+	//if err != nil {
+	//	// TODO: wrap with 'internal server error'
+	//	return msg.errorResponse(err)
+	//}
+	return &jsonrpcMessage{Version: vsn, ID: msg.ID, Result: nil}
 }
 
 func errorMessage(err error) *jsonrpcMessage {
-	msg := &jsonrpcMessage{Version: vsn, ID: null, Error: &jsonError{
+	msg := &jsonrpcMessage{Version: vsn, ID: nil, Error: &jsonError{
 		Code:    defaultErrorCode,
 		Message: err.Error(),
 	}}

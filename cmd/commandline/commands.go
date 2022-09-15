@@ -691,7 +691,7 @@ For more information please refer:
 			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Result: \n%s\n", value)
+		fmt.Printf("Result: \n%s\n", []byte(value.GetValue()))
 	},
 }
 
