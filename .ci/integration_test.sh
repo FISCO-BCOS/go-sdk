@@ -4,6 +4,7 @@ set -e
 
 start_time=15
 macOS=
+ldflags="-ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\""
 check_amop=
 GOPATH_BIN=$(go env GOPATH)/bin
 SHELL_FOLDER=$(
@@ -36,9 +37,11 @@ execute_cmd() {
 check_env(){
     if [ "$(uname)" == "Darwin" ];then
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
+        ldflags="-ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/darwin\""
         macOS="macOS"
     fi
     openssl version
+    export GODEBUG=cgocheck=0
     go install golang.org/x/tools/cmd/goimports@latest || true
     go get golang.org/x/tools/cmd/goimports || true
 }
@@ -68,13 +71,13 @@ func main() {
 		fmt.Printf("Dial Client failed, err:%v", err)
 		return
 	}
-	address, tx, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
+	address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
 	if err != nil {
 		fmt.Printf("Deploy failed, err:%v", err)
 		return
 	}
 	fmt.Println("contract address: ", address.Hex()) // the address should be saved
-	fmt.Println("transaction hash: ", tx.Hash().Hex())
+	//fmt.Println("transaction hash: ", tx.Hash().Hex())
 EOF
 }
 
@@ -196,13 +199,32 @@ get_build_chain()
 {
     latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | grep -v 3. | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
+    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
+}
+
+get_csdk_lib()
+{
+    #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
+    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk-x86_64.dylib
+    sudo mkdir /usr/local/lib/bcos-c-sdk
+    sudo mkdir /usr/local/lib/bcos-c-sdk/libs
+    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
+    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
+    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
+    sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
+    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/
+    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
 }
 
 precompiled_test(){
     # TODO: consensus test use getSealer first
-    precompileds=(config cns crud permission)
+    # TODO: cns
+    # TODO: permission
+    precompileds=(config crud)
     for pkg in ${precompileds[*]}; do
-        go test -v ./precompiled/${pkg}
+        execute_cmd "go test ${ldflags} -v ./precompiled/${pkg}"
     done
 }
 
@@ -212,19 +234,22 @@ integration_std()
     execute_cmd "bash tools/download_solc.sh -v 0.6.10"
 
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -o nodes
-    cp nodes/127.0.0.1/sdk/* ./
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
+    cp nodes/127.0.0.1/sdk/* ./conf/
+    cp -R nodes/127.0.0.1/sdk/ ./client/conf/
+    cp -R nodes/127.0.0.1/sdk/ ./precompiled/config/conf/
+    cp -R nodes/127.0.0.1/sdk/ ./precompiled/crud/conf/
 
     # abigen std
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
-    execute_cmd "go build -o hello hello.go"
-    execute_cmd "go build -o bn256 .ci/ethPrecompiled/bn256.go"
+    execute_cmd "go build ${ldflags} -o hello hello.go"
+    execute_cmd "go build ${ldflags} -o bn256 .ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
     precompiled_test
-    go test -v ./client
+    execute_cmd "go test ${ldflags} -v ./client"
 
     ./hello > hello.out
     if [ -z "$(grep address hello.out)" ];then LOG_ERROR "std deploy hello contract failed." && cat hello.out && exit 1;fi
@@ -234,7 +259,7 @@ integration_std()
     execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
-    execute_cmd "go build -o counter counter.go"
+    execute_cmd "go build ${ldflags} -o counter counter.go"
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
     if [ ! -z "$(./counter | grep failed)" ];then LOG_ERROR "call counter failed." && exit 1;fi
     if [[ "${check_amop}" == "true" ]];then
@@ -249,8 +274,8 @@ integration_gm()
     LOG_INFO "integration_gm testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.6.10 -g"
 
-    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -g -o nodes_gm
-    cp -r nodes_gm/127.0.0.1/sdk/* ./
+    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
+    cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
@@ -259,8 +284,8 @@ integration_gm()
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
-    execute_cmd "go build -o hello_gm hello_gm.go"
-    execute_cmd "go build -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
+    execute_cmd "go build ${ldflags} -o hello_gm hello_gm.go"
+    execute_cmd "go build ${ldflags} -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
@@ -275,14 +300,15 @@ integration_gm()
 integration_amop() {
     # nodes should be started
     LOG_INFO "amop unicast testing..."
-    execute_cmd "go build -o subscriber examples/amop/sub/subscriber.go"
-    execute_cmd "go build -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o subscriber examples/amop/sub/subscriber.go"
+    execute_cmd "go build ${ldflags} -o unicast_publisher examples/amop/unicast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello &
     sleep 2
     ./unicast_publisher 127.0.0.1:20200 hello
 
     LOG_INFO "amop broadcast testing..."
-    execute_cmd "go build -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello1 &
     sleep 2
     ./broadcast_publisher 127.0.0.1:20200 hello1
@@ -302,6 +328,7 @@ parse_params()
 main()
 {
     check_env
+    get_csdk_lib
     compile_and_ut
     get_build_chain
 

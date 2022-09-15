@@ -16,6 +16,7 @@ import (
 type Config struct {
 	IsHTTP         bool
 	ChainID        int64
+	ConfigFile     string
 	CAFile         string
 	TLSCAContext   []byte
 	Key            string
@@ -25,8 +26,10 @@ type Config struct {
 	IsSMCrypto     bool
 	DynamicKey     bool
 	PrivateKey     []byte
-	GroupID        int
+	GroupID        string
 	NodeURL        string
+	Host           string
+	Port           int
 }
 
 // ParseConfigFile parses the configuration from toml config file
@@ -146,7 +149,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 			}
 		}
 		var connections []struct {
-			GroupID int
+			GroupID string
 			NodeURL string
 		}
 		if viper.IsSet("Network.Connection") {
@@ -169,7 +172,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 }
 
 // ParseConfigOptions parses from arguments
-func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId int, ipPort string, isHttp bool, chainId int64, isSMCrypto bool) (*Config, error) {
+func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, isHttp bool, chainId int64, isSMCrypto bool) (*Config, error) {
 	config := Config{
 		IsHTTP:     isHttp,
 		ChainID:    chainId,

@@ -1,10 +1,9 @@
-
 [Network]
 #type rpc or channel
 Type="channel"
-CAFile="ca.crt"
-Cert="sdk.crt"
-Key="sdk.key"
+CAFile="./conf/ca.crt"
+Cert="./conf/sdk.crt"
+Key="./conf/sdk.key"
 # if the certificate context is not empty, use it, otherwise read from the certificate file
 # multi lines use triple quotes
 CAContext=''''''
@@ -13,7 +12,7 @@ CertContext=''''''
 
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
-GroupID=1
+GroupID="group0"
 # [[Network.Connection]]
 # NodeURL="127.0.0.1:20200"
 # GroupID=2

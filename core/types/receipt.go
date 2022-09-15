@@ -5,26 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // Receipt represents the results of a transaction.
 type Receipt struct {
-	TransactionHash  string         `json:"transactionHash"`
-	TransactionIndex string         `json:"transactionIndex"`
-	BlockHash        string         `json:"blockHash"`
-	BlockNumber      string         `json:"blockNumber"`
-	GasUsed          string         `json:"gasUsed"`
-	ContractAddress  common.Address `json:"contractAddress"`
-	Root             string         `json:"root"`
-	Status           int            `json:"status"`
-	From             string         `json:"from"`
-	To               string         `json:"to"`
-	Input            string         `json:"input"`
-	Output           string         `json:"output"`
-	Logs             []*NewLog      `json:"logs"`
-	LogsBloom        string         `json:"logsBloom"`
+	TransactionHash  string    `json:"transactionHash"`
+	TransactionIndex string    `json:"transactionIndex"`
+	BlockHash        string    `json:"blockHash"`
+	BlockNumber      int       `json:"blockNumber"`
+	GasUsed          string    `json:"gasUsed"`
+	ContractAddress  string    `json:"contractAddress"`
+	Root             string    `json:"root"`
+	Status           int       `json:"status"`
+	From             string    `json:"from"`
+	To               string    `json:"to"`
+	Input            string    `json:"input"`
+	Output           string    `json:"output"`
+	Logs             []*NewLog `json:"logs"`
+	LogsBloom        string    `json:"logsBloom"`
 }
 
 const (
@@ -138,7 +136,7 @@ func (r *Receipt) GetBlockHash() string {
 }
 
 // GetBlockNumber returns the block number string
-func (r *Receipt) GetBlockNumber() string {
+func (r *Receipt) GetBlockNumber() int {
 	return r.BlockNumber
 }
 
@@ -148,7 +146,7 @@ func (r *Receipt) GetGasUsed() string {
 }
 
 // GetContractAddress returns the contract address
-func (r *Receipt) GetContractAddress() common.Address {
+func (r *Receipt) GetContractAddress() string {
 	return r.ContractAddress
 }
 

@@ -12,8 +12,8 @@ import (
 
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
