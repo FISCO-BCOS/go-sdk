@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"os"
 	"strconv"
@@ -26,7 +27,7 @@ func main() {
 	endpoint := os.Args[1]
 	topic := os.Args[2]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: 1,
+	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt", IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey,
 		NodeURL:    endpoint}
 	c, err := client.Dial(config)
@@ -34,16 +35,17 @@ func main() {
 		logrus.Fatalf("init publisher failed, err: %v\n", err)
 	}
 	time.Sleep(waitToSend)
-
+	ctx, cancel := context.WithCancel(context.Background())
 	message := "hello, FISCO BCOS, I am broadcast publisher!"
 	for i := 0; i < 50; i++ {
 		logrus.Printf("publish message: %s ", message+" "+strconv.Itoa(i))
-		err = c.BroadcastAMOPMsg(topic, []byte(message+" "+strconv.Itoa(i)))
+		err = c.BroadcastAMOPMsg(ctx, topic, []byte(message+" "+strconv.Itoa(i)))
 		time.Sleep(200 * time.Millisecond)
 		if err != nil {
 			logrus.Printf("PushTopicDataRandom failed, err: %v\n", err)
 		}
+		cancel()
 	}
-	c.BroadcastAMOPMsg(topic, []byte("Done"))
+	c.BroadcastAMOPMsg(ctx, topic, []byte("Done"))
 	c.Close()
 }
