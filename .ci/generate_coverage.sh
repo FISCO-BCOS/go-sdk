@@ -16,14 +16,12 @@ get_csdk_lib()
 {
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
     curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
-    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk-x86_64.dylib
     sudo mkdir /usr/local/lib/bcos-c-sdk
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
     sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
     sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
     export GODEBUG=cgocheck=0
 }
 
@@ -35,12 +33,10 @@ calculate_coverage() {
     get_csdk_lib
     cp nodes/127.0.0.1/sdk/* ./
     cp -R nodes/127.0.0.1/sdk/ ./client/conf/
-    cp -R nodes/127.0.0.1/sdk/ ./precompiled/config/conf/
-    cp -R nodes/127.0.0.1/sdk/ ./precompiled/crud/conf/
     bash nodes/127.0.0.1/start_all.sh
 
     # generate code coverage report
-    go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" ./... -race -coverprofile=coverage.txt -covermode=atomic
+    go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" ./client -race -coverprofile=coverage.txt -covermode=atomic
 }
 
 calculate_coverage
