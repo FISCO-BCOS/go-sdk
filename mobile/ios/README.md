@@ -6,7 +6,7 @@
 
 #### 第一步. 准备环境
 
-1. [安装golang 1.13.6及以上版本](https://golang.org/doc/install)
+1. [安装golang 1.17及以上版本](https://golang.org/doc/install)
 
 2. 安装gomobile
 

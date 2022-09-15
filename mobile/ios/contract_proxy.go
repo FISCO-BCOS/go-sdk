@@ -23,7 +23,7 @@ const (
 )
 
 type ContractProxy struct {
-	groupID   int
+	groupID   string
 	chainID   *big.Int
 	smCrypto  bool
 	callback  PostCallback
@@ -48,7 +48,8 @@ func (c *ContractProxy) PendingCodeAt(ctx context.Context, account common.Addres
 }
 
 // SendTransaction injects the transaction into the pending pool for execution.
-func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+// todo ios 怎么处理？
+func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error) {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
@@ -86,8 +87,8 @@ func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transacti
 }
 
 // AsyncSendTransaction injects the transaction into the pending pool for execution.
-func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
-	receipt, err := c.SendTransaction(ctx, tx)
+func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
+	receipt, err := c.SendTransaction(ctx, tx, contract, nil)
 	handler(receipt, err)
 	return err
 }
@@ -109,8 +110,8 @@ func (c *ContractProxy) GetBlockLimit(ctx context.Context) (*big.Int, error) {
 }
 
 // GetGroupID returns the groupID of the client
-func (c *ContractProxy) GetGroupID() *big.Int {
-	return big.NewInt(int64(c.groupID))
+func (c *ContractProxy) GetGroupID() string {
+	return c.groupID
 }
 
 // GetChainID returns the chainID of the blockchain
@@ -128,7 +129,7 @@ func (c *ContractProxy) SMCrypto() bool {
 	return c.smCrypto
 }
 
-func (c *ContractProxy) Call(ctx context.Context, groupID int, msg ethereum.CallMsg) ([]byte, error) {
+func (c *ContractProxy) Call(ctx context.Context, groupID string, msg ethereum.CallMsg) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
 	err := c.CallContext(ctx, &cr, "call", groupID, c.toCallArg(msg))
@@ -175,12 +176,7 @@ func (c *ContractProxy) CallContext(ctx context.Context, result interface{}, met
 }
 
 // SubscribeEventLogs
-func (c *ContractProxy) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-	panic("implement me")
-}
-
-// UnSubscribeEventLogs
-func (c *ContractProxy) UnSubscribeEventLogs(filterID string) error {
+func (c *ContractProxy) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	panic("implement me")
 }
 
