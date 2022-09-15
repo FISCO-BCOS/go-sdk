@@ -78,7 +78,7 @@ func selectById(chanID uint64, request *model.Request, kvtabletestSession *kvTab
 		contentLength = int64(0)
 		requestTime   uint64
 	)
-	id := "100010001001"
+	id := "3cb5896a-da72-4723-98d0-de7ead800fb4"
 	//select
 	_, _, err := kvtabletestSession.Select(id) // call get API
 	if err != nil {
@@ -99,7 +99,7 @@ func insert(chanID uint64, request *model.Request, kvtabletestSession *kvTableTe
 		requestTime   uint64
 	)
 
-	id := "100010001001"
+	id := "3cb5896a-da72-4723-98d0-de7ead800fb4"
 	item_name := "Laptop"
 	item_age := "29"
 	_, receipt, err := kvtabletestSession.Insert(id, item_name, item_age) // call set API

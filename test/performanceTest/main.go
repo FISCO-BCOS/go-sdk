@@ -1,4 +1,3 @@
-// Package main go 实现的压测工具
 package main
 
 import (
@@ -18,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// array 自定义数组参数
 type array []string
 
 // String string

@@ -282,8 +282,8 @@ integration_gm()
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello Hello hello_gm.go
-    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o hello_gm hello_gm.go"
-    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
+    execute_cmd "go build ${ldflags} -o hello_gm hello_gm.go"
+    execute_cmd "go build ${ldflags} -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
@@ -298,14 +298,15 @@ integration_gm()
 integration_amop() {
     # nodes should be started
     LOG_INFO "amop unicast testing..."
-    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o subscriber examples/amop/sub/subscriber.go"
-    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o subscriber examples/amop/sub/subscriber.go"
+    execute_cmd "go build ${ldflags} -o unicast_publisher examples/amop/unicast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello &
     sleep 2
     ./unicast_publisher 127.0.0.1:20200 hello
 
     LOG_INFO "amop broadcast testing..."
-    execute_cmd "go build -ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\" -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello1 &
     sleep 2
     ./broadcast_publisher 127.0.0.1:20200 hello1
