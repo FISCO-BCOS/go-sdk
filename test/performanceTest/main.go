@@ -32,25 +32,25 @@ func (a *array) Set(s string) error {
 }
 
 var (
-	concurrency    uint64 = 1       // 并发数
-	totalNumber    uint64 = 1       // 请求数(单个并发/协程)
-	debugStr              = "false" // 是否是debug
-	requestURL            = ""      // 压测的url 目前支持，http/https ws/wss
-	path                  = ""      // curl文件路径 http接口压测，自定义参数设置
-	contractType          = ""      // curl文件路径 http接口压测，自定义参数设置
-	contractMothod        = ""      // curl文件路径 http接口压测，自定义参数设置
-	cpuNumber             = 1       // CUP 核数，默认为一核，一般场景下单核已经够用了
-	timeout        int64  = 0       // 超时时间，默认不设置
+	concurrency    uint64 = 1       // concurrency
+	totalNumber    uint64 = 1       // Number of Requests
+	debugStr              = "false" // debug or not
+	requestURL            = ""      //
+	path                  = ""
+	contractType          = ""
+	contractMothod        = ""
+	cpuNumber             = 1 // CPU number
+	timeout        int64  = 0 // Timeout unit s,Not set by default
 )
 
 func init() {
-	flag.Uint64Var(&concurrency, "c", concurrency, "并发数")
-	flag.Uint64Var(&totalNumber, "n", totalNumber, "请求数(单个并发/协程)")
-	flag.StringVar(&debugStr, "d", debugStr, "调试模式")
-	flag.StringVar(&contractType, "t", requestURL, "合约类型")
-	flag.StringVar(&contractMothod, "m", requestURL, "合约方法")
-	flag.IntVar(&cpuNumber, "cpuNumber", cpuNumber, "CUP 核数，默认为一核")
-	flag.Int64Var(&timeout, "timeout", timeout, "超时时间 单位 秒,默认不设置")
+	flag.Uint64Var(&concurrency, "c", concurrency, "concurrency")
+	flag.Uint64Var(&totalNumber, "n", totalNumber, "Number of Requests")
+	flag.StringVar(&debugStr, "d", debugStr, "debug mode")
+	flag.StringVar(&contractType, "t", requestURL, "contract type")
+	flag.StringVar(&contractMothod, "m", requestURL, "contract method")
+	flag.IntVar(&cpuNumber, "cpuNumber", cpuNumber, "CUP number")
+	flag.Int64Var(&timeout, "timeout", timeout, "Timeout unit s,Not set by default")
 	flag.Parse()
 }
 
@@ -58,18 +58,17 @@ func init() {
 func main() {
 	runtime.GOMAXPROCS(cpuNumber)
 	if concurrency == 0 || totalNumber == 0 || (contractMothod == "" && contractType == "") {
-		fmt.Printf("示例: go run main.go -c 1 -n 1 -u https://www.baidu.com/ \n")
-		fmt.Printf("压测地址或curl路径必填 \n")
-		fmt.Printf("当前请求参数: -c %d -n %d -d %v -u %s \n", concurrency, totalNumber, debugStr, requestURL)
+		fmt.Printf("example: go run -ldflags=\"-r ./libs/linux\" main.go -c 1000 -n 100 -t kvTableTest -m select -cpuNumber 8 \n")
+		fmt.Printf("Current request parameters: -c %d -n %d -d %v -u %s \n", concurrency, totalNumber, debugStr, requestURL)
 		flag.Usage()
 		return
 	}
 	request, err := model.NewRequestByContractType(contractType, contractMothod)
 	if err != nil {
-		fmt.Printf("参数不合法 %v \n", err)
+		fmt.Printf("parameter invalid %v \n", err)
 		return
 	}
-	fmt.Printf("\n 开始启动  并发数:%d 请求数:%d 请求参数: \n", concurrency, totalNumber)
+	fmt.Printf("\n start...  concurrency:%d Number of Requests:%d Requests param: \n", concurrency, totalNumber)
 
 	ctx := context.Background()
 	if timeout > 0 {

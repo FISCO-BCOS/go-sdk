@@ -154,8 +154,8 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 // Close disconnects the rpc
 func (c *Client) Close() {
-	//todo
-	//c.apiHandler.Close()
+	c.conn.Close()
+
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
@@ -322,7 +322,6 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 		types.Receipt
 	}{}
 	if contract != nil {
-		//err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()))
 	} else {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")

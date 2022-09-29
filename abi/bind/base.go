@@ -325,7 +325,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
 	from := "1"
-	to := "100000"
+	to := "-1"
 	// Don't crash on a lazy user
 	if fromBlock != nil {
 		from = strconv.FormatUint(*fromBlock, 10)
@@ -333,19 +333,19 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 	// Append the event selector to the query parameters and construct the topic set
 	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
 
-	//topics, err := makeTopics(query...)
-	//if err != nil {
-	//	return err
-	//}
+	topics, err := makeTopics(query...)
+	if err != nil {
+		return err
+	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,
 		ToBlock:   to,
 		Addresses: []string{strings.ToLower(c.address.Hex())},
-		//Topics:    topics,
-		GroupID: c.transactor.GetGroupID(),
+		Topics:    topics,
+		GroupID:   c.transactor.GetGroupID(),
 	}
 	ctx, _ := context.WithCancel(context.Background())
-	_, err := c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
+	_, err = c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
 	return err
 }
 

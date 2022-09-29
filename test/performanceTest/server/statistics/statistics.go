@@ -13,37 +13,37 @@ import (
 )
 
 var (
-	// 输出统计数据的时间
+	// Time to output statistics
 	exportStatisticsTime = 1 * time.Second
 	//p  = message.NewPrinter(language.English)
 	requestTimeList []uint64 // 所有请求响应时间
 )
 
-// ReceivingResults 接收结果并处理
-// 统计的时间都是纳秒，显示的时间 都是毫秒
-// concurrent 并发数
+// ReceivingResults Receive the result and process it
+// statistics time is nanosecond，printf time is millisecond
+// concurrent
 func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 	}()
 	var stopChan = make(chan bool)
-	// 时间
+	// time
 	var (
-		processingTime uint64 // 处理总时间
-		requestTime    uint64 // 请求总时间
-		maxTime        uint64 // 最大时长
-		minTime        uint64 // 最小时长
-		successNum     uint64 // 成功处理数，code为0
-		failureNum     uint64 // 处理失败数，code不为0
-		chanIDLen      int    // 并发数
+		processingTime uint64
+		requestTime    uint64
+		maxTime        uint64
+		minTime        uint64
+		successNum     uint64
+		failureNum     uint64
+		chanIDLen      int
 		chanIDs        = make(map[uint64]bool)
 		receivedBytes  int64
 		mutex          = sync.RWMutex{}
 	)
 	statTime := uint64(time.Now().UnixNano())
-	// 错误码/错误个数
+	// error code
 	var errCode = &sync.Map{}
-	// 定时输出一次计算结果
+	// Periodically output a calculation result
 	ticker := time.NewTicker(exportStatisticsTime)
 	go func() {
 		for {
@@ -55,7 +55,6 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 					chanIDLen, errCode, receivedBytes)
 				mutex.Unlock()
 			case <-stopChan:
-				// 处理完成
 				return
 			}
 		}
@@ -63,7 +62,6 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 	header()
 	for data := range ch {
 		mutex.Lock()
-		// fmt.Println("处理一条数据", data.ID, data.Time, data.IsSucceed, data.ErrCode)
 		processingTime = processingTime + data.Time
 		if maxTime <= data.Time {
 			maxTime = data.Time
@@ -73,13 +71,13 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 		} else if minTime > data.Time {
 			minTime = data.Time
 		}
-		// 是否请求成功
+		// request success or not
 		if data.IsSucceed == true {
 			successNum = successNum + 1
 		} else {
 			failureNum = failureNum + 1
 		}
-		// 统计错误码
+		// Statistical error code
 		if value, ok := errCode.Load(data.ErrCode); ok {
 			valueInt, _ := value.(int)
 			errCode.Store(data.ErrCode, valueInt+1)
@@ -94,7 +92,7 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 		requestTimeList = append(requestTimeList, data.Time)
 		mutex.Unlock()
 	}
-	// 数据全部接受完成，停止定时输出统计数据
+	// All data is accepted. Stop the periodic output of statistics
 	stopChan <- true
 	endTime := uint64(time.Now().UnixNano())
 	requestTime = endTime - statTime
@@ -102,7 +100,7 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 		receivedBytes)
 
 	fmt.Printf("\n\n")
-	fmt.Println("*************************  结果 stat  ****************************")
+	fmt.Println("*************************  end stat  ****************************")
 	fmt.Println("处理协程数量:", concurrent)
 	// fmt.Println("处理协程数量:", concurrent, "程序处理总时长:", fmt.Sprintf("%.3f", float64(processingTime/concurrent)/1e9), "秒")
 	fmt.Println("请求总数（并发数*请求数 -c * -n）:", successNum+failureNum, "总请求时间:",
@@ -126,7 +124,7 @@ func printTop(requestTimeList []uint64) {
 	fmt.Println("tp99:", fmt.Sprintf("%.3f", float64(all[int(float64(len(all))*0.99)]/1e6)))
 }
 
-// calculateData 计算数据
+// calculateData
 func calculateData(concurrent, processingTime, requestTime, maxTime, minTime, successNum, failureNum uint64,
 	chanIDLen int, errCode *sync.Map, receivedBytes int64) {
 	if processingTime == 0 {
@@ -147,11 +145,11 @@ func calculateData(concurrent, processingTime, requestTime, maxTime, minTime, su
 	if successNum != 0 && concurrent != 0 {
 		averageTime = float64(processingTime) / float64(successNum*1e6)
 	}
-	// 纳秒=>毫秒
+	// nanosecond=>millisecond
 	maxTimeFloat = float64(maxTime) / 1e6
 	minTimeFloat = float64(minTime) / 1e6
 	requestTimeFloat = float64(requestTime) / 1e9
-	// 打印的时长都为毫秒
+	// All print in milliseconds
 	table(successNum, failureNum, errCode, qps, averageTime, maxTimeFloat, minTimeFloat, requestTimeFloat, chanIDLen,
 		receivedBytes)
 }
@@ -166,7 +164,7 @@ func header() {
 	return
 }
 
-// table 打印表格
+// table
 func table(successNum, failureNum uint64, errCode *sync.Map,
 	qps, averageTime, maxTimeFloat, minTimeFloat, requestTimeFloat float64, chanIDLen int, receivedBytes int64) {
 	var (
@@ -181,7 +179,7 @@ func table(successNum, failureNum uint64, errCode *sync.Map,
 		receivedBytesStr string
 		speedStr         string
 	)
-	// 判断获取下载字节长度是否是未知
+	// Determine whether the download length is unknown
 	if receivedBytes <= 0 {
 		receivedBytesStr = ""
 		speedStr = ""
@@ -189,7 +187,7 @@ func table(successNum, failureNum uint64, errCode *sync.Map,
 		receivedBytesStr = fmt.Sprintf("%d", receivedBytes)
 		speedStr = fmt.Sprintf("%d", speed)
 	}
-	// 打印的时长都为毫秒
+	// All print in milliseconds
 	result := fmt.Sprintf("%4.0fs│%7d│%7d│%7d│%8.2f│%8.2f│%8.2f│%8.2f│%8s│%8s│%v",
 		requestTimeFloat, chanIDLen, successNum, failureNum, qps, maxTimeFloat, minTimeFloat, averageTime,
 		receivedBytesStr, speedStr,
@@ -198,7 +196,7 @@ func table(successNum, failureNum uint64, errCode *sync.Map,
 	return
 }
 
-// printMap 输出错误码、次数 节约字符(终端一行字符大小有限)
+// printMap
 func printMap(errCode *sync.Map) (mapStr string) {
 	var (
 		mapArr []string

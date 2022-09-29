@@ -1,6 +1,6 @@
 # go-sdk
 
-Golang SDK For FISCO BCOS 2.2.0+
+Golang SDK For FISCO BCOS 3.0.0+
 
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
@@ -16,7 +16,7 @@ ____
 
 FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
-- [FISCO BCOS 2.0 JSON-RPC服务](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html)
+- [FISCO BCOS 3.0 JSON-RPC服务](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html)
 - `Solidity`合约编译为Go文件
 - 部署、查询、写入智能合约
 - 控制台
@@ -26,7 +26,7 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 # 环境准备
 
 - [Golang](https://golang.org/), 版本需不低于`1.7`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
-- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
@@ -36,15 +36,18 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 [Network]
 #type rpc or channel
 Type="channel"
-CAFile="ca.crt"
-Cert="sdk.crt"
-Key="sdk.key"
+CAFile="./conf/ca.crt"
+Cert="./conf/sdk.crt"
+Key="./conf/sdk.key"
+# if the certificate context is not empty, use it, otherwise read from the certificate file
+# multi lines use triple quotes
+CAContext=''''''
+KeyContext=''''''
+CertContext=''''''
+
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
-GroupID=1
-# [[Network.Connection]]
-# NodeURL="127.0.0.1:20200"
-# GroupID=2
+GroupID="group0"
 
 [Account]
 # only support PEM format for now
@@ -53,6 +56,9 @@ KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
 [Chain]
 ChainID=1
 SMCrypto=false
+
+[log]
+Path="./"
 ```
 
 ## Network
@@ -90,7 +96,7 @@ cd go-sdk
 go build cmd/console.go
 ```
 
-2. 搭建FISCO BCOS 2.2以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
+2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
 3. config.toml默认使用channel模式，请拷贝对应的SDK证书。
 

@@ -7,14 +7,14 @@ type Block struct {
 	GasUsed          string        `json:"gasUsed"`
 	Hash             string        `json:"hash"`
 	LogsBloom        string        `json:"logsBloom"`
-	Number           int           `json:"number"`
+	Number           uint64        `json:"number"`
 	ParentHash       string        `json:"parentHash"`
 	ReceiptsRoot     string        `json:"receiptsRoot"`
-	Sealer           int           `json:"sealer"`
+	Sealer           uint64        `json:"sealer"`
 	SealerList       []string      `json:"sealerList"`
 	SignatureList    []Signature   `json:"signatureList"`
 	StateRoot        string        `json:"stateRoot"`
-	Timestamp        int           `json:"timestamp"`
+	Timestamp        uint64        `json:"timestamp"`
 	Transactions     []interface{} `json:"transactions"`
 	TransactionsRoot string        `json:"transactionsRoot"`
 }
@@ -59,8 +59,8 @@ func (B *Block) GetLogsBloom() string {
 	return B.LogsBloom
 }
 
-// GetNumber returns the block number string
-func (B *Block) GetNumber() int {
+// GetNumber returns the block number uint64
+func (B *Block) GetNumber() uint64 {
 	return B.Number
 }
 
@@ -75,7 +75,7 @@ func (B *Block) GetReceiptsRoot() string {
 }
 
 // GetSealer returns the sealer node sequence number string
-func (B *Block) GetSealer() int {
+func (B *Block) GetSealer() uint64 {
 	return B.Sealer
 }
 
@@ -89,8 +89,8 @@ func (B *Block) GetSignatureList() []Signature {
 	return B.SignatureList
 }
 
-// GetTimestamp returns the block timestamp string
-func (B *Block) GetTimestamp() int {
+// GetTimestamp returns the block timestamp uint64
+func (B *Block) GetTimestamp() uint64 {
 	return B.Timestamp
 }
 

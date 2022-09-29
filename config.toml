@@ -13,9 +13,6 @@ CertContext=''''''
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
 GroupID="group0"
-# [[Network.Connection]]
-# NodeURL="127.0.0.1:20200"
-# GroupID=2
 
 [Account]
 # only support PEM format for now

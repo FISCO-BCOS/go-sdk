@@ -335,11 +335,12 @@ func (c *Connection) nextID() json.RawMessage {
 
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) Close() {
-	if c.isHTTP {
-		return
-	}
-	hc := c.writeConn.(*channelSession)
-	hc.Close()
+	//if c.isHTTP {
+	//	return
+	//}
+	//hc := c.writeConn.(*channelSession)
+	//hc.Close()
+	c.csdk.Close()
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
