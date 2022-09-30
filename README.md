@@ -54,7 +54,7 @@ GroupID="group0"
 KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
 
 [Chain]
-ChainID=1
+ChainID="chain0"
 SMCrypto=false
 
 [log]
@@ -65,7 +65,7 @@ Path="./"
 
 **注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
 
-- Type：支持channel和rpc两种模式，其中`channel`使用ssl链接，需要提供证书。`rpc`使用http访问节点。
+- Type：支持channel模式，其中`channel`使用ssl链接，需要提供证书。
 - CAFile：链根证书
 - Cert：SDK建立SSL链接时使用的证书
 - Key：SDK建立SSL链接时使用的证书对应的私钥
@@ -98,9 +98,13 @@ go build cmd/console.go
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
-3. config.toml默认使用channel模式，请拷贝对应的SDK证书。
+3. config.toml默认使用channel模式，新建conf文件夹,请拷贝对应的SDK证书。
+   
+4. go-sdk需要依赖csdk的动态库，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
 
-4. 最后，运行控制台查看可用指令:
+5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。
+
+6. 最后，运行控制台查看可用指令:
 
 ```bash
 ./console help
@@ -123,6 +127,7 @@ import "github.com/FISCO-BCOS/go-sdk/client"
 - 构建go-sdk的合约编译工具`abigen`
 - 编译生成go文件
 - 使用生成的go文件进行合约调用
+
 
 下面的内容作为一个示例进行使用介绍。
 
@@ -208,15 +213,15 @@ touch store_main.go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/conf"
-    "github.com/FISCO-BCOS/go-sdk/store" // import store
+	"github.com/FISCO-BCOS/go-sdk/client"
+	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/store"
 )
 
-func main(){
+func main() {
 	configs, err := conf.ParseConfigFile("config.toml")
 	if err != nil {
 		log.Fatalf("ParseConfigFile failed, err: %v", err)
@@ -226,12 +231,12 @@ func main(){
 		log.Fatal(err)
 	}
 	input := "Store deployment 1.0"
-	address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
+	address, receipt, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
-	fmt.Println("transaction hash: ", tx.Hash().Hex())
+	fmt.Println("transaction hash: ", receipt.TransactionHash)
 
 	// load the contract
 	// contractAddress := common.HexToAddress("contract address in hex String")
@@ -257,12 +262,11 @@ func main(){
 	copy(key[:], []byte("foo"))
 	copy(value[:], []byte("bar"))
 
-	tx, receipt, err := storeSession.SetItem(key, value)
+	_, receipt, err = storeSession.SetItem(key, value)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
 	fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
 	// read the result

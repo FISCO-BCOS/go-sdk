@@ -24,7 +24,7 @@ const (
 
 type ContractProxy struct {
 	groupID   string
-	chainID   *big.Int
+	chainID   string
 	smCrypto  bool
 	callback  PostCallback
 	idCounter uint32
@@ -115,7 +115,7 @@ func (c *ContractProxy) GetGroupID() string {
 }
 
 // GetChainID returns the chainID of the blockchain
-func (c *ContractProxy) GetChainID(ctx context.Context) (*big.Int, error) {
+func (c *ContractProxy) GetChainID(ctx context.Context) (string, error) {
 	return c.chainID, nil
 }
 

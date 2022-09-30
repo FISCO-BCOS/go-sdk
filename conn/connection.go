@@ -395,10 +395,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetSealerList(op.respChanData)
 	case "getObserverList":
 		c.csdk.GetObserverList(op.respChanData)
-	case "getGroupList":
-		c.csdk.GetGroupList(op.respChanData)
-	case "getGroupInfo":
-		c.csdk.GetGroupInfo(op.respChanData)
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
@@ -410,6 +406,12 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getGroupNodeInfo":
 		nodeId := args[1].(string)
 		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
+	case "getGroupList":
+		c.csdk.GetGroupList(op.respChanData)
+	case "getGroupInfo":
+		c.csdk.GetGroupInfo(op.respChanData)
+	case "getGroupInfoList":
+		c.csdk.GetGroupnodeInfoList(op.respChanData)
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
 	case "getTransactionByHash":

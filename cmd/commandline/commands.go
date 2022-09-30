@@ -272,6 +272,52 @@ var getGroupListCmd = &cobra.Command{
 	},
 }
 
+var getGroupInfoListCmd = &cobra.Command{
+	Use:   "getGroupInfoList",
+	Short: "                                   Get ID list of nodes",
+	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		peers, err := RPC.GetGroupInfoList(context.Background())
+		if err != nil {
+			fmt.Printf("node ID list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Node ID list: \n%s\n", peers)
+	},
+}
+
+var getGroupInfoCmd = &cobra.Command{
+	Use:   "getGroupInfo",
+	Short: "                                   Get ID list of nodes",
+	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		peers, err := RPC.GetGroupInfo(context.Background())
+		if err != nil {
+			fmt.Printf("node ID list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Node ID list: \n%s\n", peers)
+	},
+}
+
+var getGroupNodeInfoCmd = &cobra.Command{
+	Use:   "getGroupNodeInfo",
+	Short: "[nodeID] Get ID list of groups that the node belongs",
+	Long:  `Returns an ID list of groups that the node belongs.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		nodeId := args[0]
+		peers, err := RPC.GetGroupNodeInfo(context.Background(), nodeId)
+		if err != nil {
+			fmt.Printf("group IDs list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Group List: \n%s\n", peers)
+	},
+}
+
 // ========= block access ==========
 
 var getBlockByHashCmd = &cobra.Command{
@@ -757,7 +803,7 @@ func init() {
 	// add node command
 	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
-	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd)
+	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getGroupNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
 	// add transaction command

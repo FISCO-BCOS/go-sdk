@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -17,6 +18,11 @@ const (
 	lastSealer    int64 = -51101
 	invalidNodeID int64 = -51100
 )
+
+type nodeIdList struct {
+	nodeID string `json:"nodeID"`
+	weight uint   `json:"weight"`
+}
 
 // getErrorMessage returns the message of error code
 func getErrorMessage(errorCode int64) string {
@@ -68,13 +74,13 @@ func NewConsensusService(client *client.Client) (*Service, error) {
 
 // AddObserver add a new observe node according to the node ID
 func (service *Service) AddObserver(nodeID string) (int64, error) {
-	flag, err := service.isValidNodeID(nodeID)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("AddObserver failed, err: %v", err)
-	}
-	if !flag {
-		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
-	}
+	//flag, err := service.isValidNodeID(nodeID)
+	//if err != nil {
+	//	return precompiled.DefaultErrorCode, fmt.Errorf("AddObserver failed, err: %v", err)
+	//}
+	//if !flag {
+	//	return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
+	//}
 
 	observerRaw, err := service.client.GetObserverList(context.Background())
 	if err != nil {
@@ -101,32 +107,32 @@ func (service *Service) AddObserver(nodeID string) (int64, error) {
 
 // AddSealer add a new sealer node according to the node ID
 func (service *Service) AddSealer(nodeID string) (int64, error) {
-	flag, err := service.isValidNodeID(nodeID)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("AddSealer failed, err: %v", err)
-	}
-	if !flag {
-		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
-	}
+	//flag, err := service.isValidNodeID(nodeID)
+	//if err != nil {
+	//	return precompiled.DefaultErrorCode, fmt.Errorf("AddSealer failed, err: %v", err)
+	//}
+	//if !flag {
+	//	return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
+	//}
 
 	sealerRaw, err := service.client.GetSealerList(context.Background())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("get the sealer list failed: %v", err)
 	}
 
-	var nodeIDs []string
+	var nodeIDs []nodeIdList
 	err = json.Unmarshal(sealerRaw, &nodeIDs)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the sealer list failed: %v", err)
 	}
 
 	for _, nID := range nodeIDs {
-		if nID == nodeID {
+		if nID.nodeID == nodeID {
 			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the sealer list")
 		}
 	}
 
-	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID)
+	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID, big.NewInt(1))
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
 	}
