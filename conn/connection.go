@@ -405,7 +405,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetTotalTransactionCount(op.respChanData)
 	case "getGroupNodeInfo":
 		nodeId := args[1].(string)
-		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
+		c.csdk.GetGroupNodeInfo(op.respChanData, nodeId)
 	case "getGroupList":
 		c.csdk.GetGroupList(op.respChanData)
 	case "getGroupInfo":
