@@ -93,7 +93,7 @@ Path="./"
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
-go build cmd/console.go
+go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" cmd/console.go
 ```
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
