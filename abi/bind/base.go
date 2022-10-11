@@ -18,9 +18,7 @@ package bind
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -231,7 +229,6 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
 		return nil, nil, err
 	}
-
 	return nil, receipt, nil
 }
 
@@ -246,86 +243,11 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 	return nil, nil
 }
 
-func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
-	var err error
-	// Ensure a valid value field and resolve the account nonce
-	value := opts.Value
-	if value == nil {
-		value = new(big.Int)
-	}
-	// generate random Nonce between 0 - 2^250 - 1
-	max := new(big.Int)
-	max.Exp(big.NewInt(2), big.NewInt(250), nil).Sub(max, big.NewInt(1))
-	//Generate cryptographically strong pseudo-random between 0 - max
-	nonce, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		//error handling
-		return nil, fmt.Errorf("failed to generate nonce: %v", err)
-	}
-
-	// Figure out the gas allowance and gas price values
-	gasPrice := opts.GasPrice
-	if gasPrice == nil {
-		// default value
-		gasPrice = big.NewInt(30000000)
-	}
-
-	gasLimit := opts.GasLimit
-	if gasLimit == nil {
-		// Gas estimation cannot succeed without code for method invocations
-		if contract != nil {
-			if code, err := c.transactor.PendingCodeAt(ensureContext(opts.Context), c.address); err != nil {
-				return nil, err
-			} else if len(code) == 0 {
-				return nil, ErrNoCode
-			}
-		}
-		// If the contract surely has code (or code is not needed), we set a default value to the transaction
-		gasLimit = big.NewInt(30000000)
-	}
-
-	var blockLimit *big.Int
-	blockLimit, err = c.transactor.GetBlockLimit(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var chainID *big.Int
-	chainID, err = c.transactor.GetChainID(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var groupID *big.Int
-	//groupID = c.transactor.GetGroupID()
-	//if groupID == nil {
-	//	return nil, fmt.Errorf("failed to get the group ID")
-	//}
-
-	// Create the transaction, sign it and schedule it for execution
-	var rawTx *types.Transaction
-	str := ""
-	extraData := []byte(str)
-	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	}
-	if opts.Signer == nil {
-		return nil, errors.New("no signer to authorize the transaction with")
-	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
-	if err != nil {
-		return nil, err
-	}
-	return signedTx, nil
-}
-
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
 	from := "1"
-	to := "100000"
+	to := "-1"
 	// Don't crash on a lazy user
 	if fromBlock != nil {
 		from = strconv.FormatUint(*fromBlock, 10)
@@ -333,19 +255,19 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 	// Append the event selector to the query parameters and construct the topic set
 	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
 
-	//topics, err := makeTopics(query...)
-	//if err != nil {
-	//	return err
-	//}
+	topics, err := makeTopics(query...)
+	if err != nil {
+		return err
+	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,
 		ToBlock:   to,
 		Addresses: []string{strings.ToLower(c.address.Hex())},
-		//Topics:    topics,
-		GroupID: c.transactor.GetGroupID(),
+		Topics:    topics,
+		GroupID:   c.transactor.GetGroupID(),
 	}
 	ctx, _ := context.WithCancel(context.Background())
-	_, err := c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
+	_, err = c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
 	return err
 }
 

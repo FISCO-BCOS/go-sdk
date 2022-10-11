@@ -13,16 +13,13 @@ CertContext=''''''
 [[Network.Connection]]
 NodeURL="127.0.0.1:20200"
 GroupID="group0"
-# [[Network.Connection]]
-# NodeURL="127.0.0.1:20200"
-# GroupID=2
 
 [Account]
 # only support PEM format for now
 KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
 
 [Chain]
-ChainID=1
+ChainID="chain0"
 SMCrypto=false
 
 [log]

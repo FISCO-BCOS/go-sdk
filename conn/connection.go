@@ -335,11 +335,12 @@ func (c *Connection) nextID() json.RawMessage {
 
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) Close() {
-	if c.isHTTP {
-		return
-	}
-	hc := c.writeConn.(*channelSession)
-	hc.Close()
+	//if c.isHTTP {
+	//	return
+	//}
+	//hc := c.writeConn.(*channelSession)
+	//hc.Close()
+	c.csdk.Close()
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
@@ -394,10 +395,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetSealerList(op.respChanData)
 	case "getObserverList":
 		c.csdk.GetObserverList(op.respChanData)
-	case "getGroupList":
-		c.csdk.GetGroupList(op.respChanData)
-	case "getGroupInfo":
-		c.csdk.GetGroupInfo(op.respChanData)
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
@@ -408,10 +405,13 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetTotalTransactionCount(op.respChanData)
 	case "getGroupNodeInfo":
 		nodeId := args[1].(string)
-		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
-	case "getPendingTxSize":
-		c.csdk.GetPendingTxSize(op.respChanData)
-	case "getTransactionByHash":
+		c.csdk.GetGroupNodeInfo(op.respChanData, nodeId)
+	case "getGroupList":
+		c.csdk.GetGroupList(op.respChanData)
+	case "getGroupInfo":
+		c.csdk.GetGroupInfo(op.respChanData)
+	case "getGroupInfoList":
+		c.csdk.GetGroupnodeInfoList(op.respChanData)
 		txHash := args[1].(string)
 		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "sendRawTransaction":
@@ -419,7 +419,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		contractAddress := args[2].(string)
 		c.csdk.SendTransaction(op.respChanData, contractAddress, data)
 	default:
-		return ErrNoRpcMehtod
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.

@@ -6,7 +6,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/model"
 )
 
-// ReqListMany 接口分步压测
+// ReqListMany Step pressure test for the interface
 type ReqListMany struct {
 	list []*model.Request
 }

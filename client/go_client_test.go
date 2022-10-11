@@ -25,7 +25,7 @@ func GetClient(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("decode hex failed of %v", err)
 	}
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: "group0",
+	config := &conf.Config{IsHTTP: true, ChainID: "chain0", IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200", Host: "127.0.0.1", Port: 20200}
 	c, err := Dial(config)
 	if err != nil {
@@ -304,7 +304,7 @@ func deployHelloWorld(t *testing.T) (*common.Address, *common.Hash) {
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
 	address, tx, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
 	if err != nil {
-		t.Errorf("DeployHelloWorld failed 11: %v", err)
+		t.Errorf("DeployHelloWorld failed: %v", err)
 		return nil, nil
 	}
 	txHash := common.HexToHash(tx.TransactionHash)

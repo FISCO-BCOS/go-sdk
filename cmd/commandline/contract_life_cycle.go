@@ -40,7 +40,7 @@ For more information please refer:
 			fmt.Printf("freezeContract failed, contractLifeCycleService.Freeze err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Printf("freezeContract failed, the result is: %v", result)
 			return
 		}
