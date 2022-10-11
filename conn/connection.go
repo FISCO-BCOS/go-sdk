@@ -405,13 +405,13 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetTotalTransactionCount(op.respChanData)
 	case "getGroupNodeInfo":
 		nodeId := args[1].(string)
-		c.csdk.GetGroupNodeInfo(op.respChanData, nodeId)
+		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
 	case "getGroupList":
 		c.csdk.GetGroupList(op.respChanData)
 	case "getGroupInfo":
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getGroupInfoList":
-		c.csdk.GetGroupnodeInfoList(op.respChanData)
+		c.csdk.GetGroupNodeInfoList(op.respChanData)
 		txHash := args[1].(string)
 		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "sendRawTransaction":
