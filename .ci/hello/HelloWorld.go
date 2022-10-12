@@ -298,11 +298,11 @@ type HelloWorldSetValue struct {
 //
 // Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
 func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) error {
-	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue", from, to)
+	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "set", from, to)
 }
 
 func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) error {
-	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue")
+	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "set")
 }
 
 // ParseSetValue is a log parse operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
@@ -310,7 +310,7 @@ func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *uint64, handl
 // Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
 func (_HelloWorld *HelloWorldFilterer) ParseSetValue(log types.Log) (*HelloWorldSetValue, error) {
 	event := new(HelloWorldSetValue)
-	if err := _HelloWorld.contract.UnpackLog(event, "setValue", log); err != nil {
+	if err := _HelloWorld.contract.UnpackLog(event, "set", log); err != nil {
 		return nil, err
 	}
 	return event, nil
