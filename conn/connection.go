@@ -398,6 +398,9 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
+	case "getTransactionByHash":
+		txHash := args[1].(string)
+		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "getSystemConfigByKey":
 		key := args[1].(string)
 		c.csdk.GetSystemConfigByKey(op.respChanData, key)
@@ -414,11 +417,14 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupNodeInfoList(op.respChanData)
 		txHash := args[1].(string)
 		c.csdk.GetTransaction(op.respChanData, txHash)
+	case "getPendingTxSize":
+		c.csdk.GetPendingTxSize(op.respChanData)
 	case "sendRawTransaction":
 		data := args[1].(string)
 		contractAddress := args[2].(string)
 		c.csdk.SendTransaction(op.respChanData, contractAddress, data)
 	default:
+		return ErrNoRpcMehtod
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
