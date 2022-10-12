@@ -76,7 +76,7 @@ func (e Event) Sig() string {
 // abi definition to identify event names and types.
 func (e Event) ID() common.Hash {
 	if e.SMCrypto {
-		return common.BytesToHash(sm3.Hash([]byte(e.Sig()))[:4])
+		return common.BytesToHash(sm3.Hash([]byte(e.Sig())))
 	}
 	return common.BytesToHash(crypto.Keccak256([]byte(e.Sig())))
 }
