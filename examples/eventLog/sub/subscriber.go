@@ -19,11 +19,11 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200 hello", os.Args[0])
+		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200", os.Args[0])
 	}
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
+	config := &conf.Config{ChainID: "chain0", CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
 		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error
@@ -37,6 +37,7 @@ func main() {
 			logrus.Printf("init subscriber failed, err: %v, retrying\n", err)
 			continue
 		}
+		defer c.Close()
 		break
 	}
 	if err != nil {
@@ -44,7 +45,7 @@ func main() {
 	}
 	var eventLogParams types.EventLogParams
 	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "10000"
+	eventLogParams.ToBlock = "-1"
 	var topics = make([]string, 1)
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics

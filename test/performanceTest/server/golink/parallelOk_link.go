@@ -1,4 +1,3 @@
-// Package golink 连接
 package golink
 
 import (
@@ -14,7 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// HTTP 请求
 func Transfer(ctx context.Context, chanID uint64, ch chan<- *model.RequestResults, totalNumber uint64, wg *sync.WaitGroup,
 	request *model.Request, parallelOkSession *parallelOk.ParallelOkSession) {
 	defer func() {

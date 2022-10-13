@@ -95,7 +95,7 @@ func (service *Service) CreateTable(tableName string, key string, valueFields []
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService OpenTable failed: %v", err)
 	}
-
+	fmt.Println("CreateTable address:", address)
 	crudInstance, err := NewTable(address, service.client)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("construct TableFactor failed: %+v", err)
@@ -112,22 +112,33 @@ func (service *Service) AsyncCreateTable(handler func(*types.Receipt, error), ta
 	return service.tableFactory.AsyncCreateTable(handler, service.crudAuth, tableName, tableInfo)
 }
 
-//// Insert entry
-//func (service *Service) Insert(tableName string, key string, entry *Entry) (int64, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	// change to string
-//	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
-//	if err != nil {
-//		return -1, fmt.Errorf("change entry to json struct failed: %v", err)
-//	}
-//	_, receipt, err := service.crud.Insert(service.crudAuth, tableName, key, string(entryJSON[:]), "")
-//	if err != nil {
-//		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
-//	}
-//	return parseReturnValue(receipt, "insert")
-//}
+func (service *Service) OpenTable(tableName string) (int64, error) {
+	address, err := service.tableFactory.OpenTable(service.CallOpts, tableName)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService OpenTable failed: %v", err)
+	}
+	fmt.Println("OpenTable address:", address)
+	crudInstance, err := NewTable(address, service.client)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("construct TableFactor failed: %+v", err)
+	}
+	service.crud = crudInstance
+	return 0, nil
+}
+
+// Insert entry
+func (service *Service) Insert(entry *Entry) (int64, error) {
+	if len(entry.Key) > TableKeyMaxLength {
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+
+	_, receipt, err := service.crud.Insert(service.crudAuth, *entry)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
+	}
+	return parseReturnValue(receipt, "insert")
+}
+
 //
 //func (service *Service) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry *Entry) (*types.Transaction, error) {
 //	if len(key) > TableKeyMaxLength {
@@ -208,33 +219,23 @@ func (service *Service) AsyncCreateTable(handler func(*types.Receipt, error), ta
 //
 //	return service.crud.AsyncRemove(handler, service.crudAuth, tableName, key, string(conditionJSON[:]), "")
 //}
-//
-//// Select entry
-//func (service *Service) Select(tableName string, key string, condition *Condition) ([]map[string]string, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
-//	if err != nil {
-//		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
-//	}
-//	opts := &bind.CallOpts{From: service.crudAuth.From}
-//	result, err := service.crud.Select(opts, tableName, key, string(conditionJSON[:]), "")
-//	if err != nil {
-//		return nil, fmt.Errorf("CRUDService Select failed: %v", err)
-//	}
-//	// unmarshal result
-//	var results []map[string]string
-//	if err := json.Unmarshal([]byte(result), &results); err != nil {
-//		return nil, fmt.Errorf("CRUDService: Unmarshal the Select result failed: %v", err)
-//	}
-//	return results, nil
-//}
+
+// Select entry
+func (service *Service) Select(key string) (*Entry, error) {
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	entry, err := service.crud.Select0(service.CallOpts, key)
+	if err != nil {
+		return nil, fmt.Errorf("CRUDService Select failed: %v", err)
+	}
+	return &entry, nil
+}
 
 //// Desc is used for Table
 //func (service *Service) Desc(userTableName string) (string, string, error) {
 //	opts := &bind.CallOpts{From: service.crudAuth.From}
-//	keyField, valueField, err := service.crud.Desc(opts, userTableName)
+//	keyField, valueField, err := service.crud.desc(opts, userTableName)
 //	if err != nil {
 //		return "", "", fmt.Errorf("desc failed, select table error: %v", err)
 //	}

@@ -42,7 +42,7 @@ import (
 type Client struct {
 	conn              *conn.Connection
 	groupID           string
-	chainID           int64
+	chainID           string
 	compatibleVersion int
 	auth              *bind.TransactOpts
 	callOpts          *bind.CallOpts
@@ -154,8 +154,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 
 // Close disconnects the rpc
 func (c *Client) Close() {
-	//todo
-	//c.apiHandler.Close()
+	c.conn.Close()
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
@@ -322,7 +321,6 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 		types.Receipt
 	}{}
 	if contract != nil {
-		//err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()))
 	} else {
 		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
@@ -535,10 +533,10 @@ func (c *Client) GetClientVersion(ctx context.Context) (*types.ClientVersion, er
 }
 
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
-func (c *Client) GetChainID(ctx context.Context) (*big.Int, error) {
-	convertor := new(big.Int)
-	var chainid = convertor.SetInt64(c.chainID)
-	return chainid, nil
+func (c *Client) GetChainID(ctx context.Context) (string, error) {
+	//convertor := new(big.Int)
+	chainId := c.chainID
+	return chainId, nil
 }
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
@@ -659,6 +657,18 @@ func (c *Client) GetGroupPeers(ctx context.Context) ([]byte, error) {
 func (c *Client) GetNodeIDList(ctx context.Context) ([]byte, error) {
 	var raw interface{}
 	err := c.conn.CallContext(ctx, &raw, "getNodeIDList", c.groupID)
+	if err != nil {
+		return nil, err
+	}
+	js, err := json.MarshalIndent(raw, "", indent)
+	return js, err
+
+}
+
+// GetGroupInfoList returns the ID information of the connected peers and itself
+func (c *Client) GetGroupInfoList(ctx context.Context) ([]byte, error) {
+	var raw interface{}
+	err := c.conn.CallContext(ctx, &raw, "getGroupInfoList", c.groupID)
 	if err != nil {
 		return nil, err
 	}
