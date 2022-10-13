@@ -138,6 +138,63 @@ EOF
     "${GOPATH_BIN}"/goimports -w  "${output}"
 }
 
+generate_hello_gm() {
+    local struct="${1}"
+    local output="${2}"
+    generate_main "${1}" "${2}"
+cat << EOF >> "${output}"
+
+	hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+	ret, err := hello.Get()
+	if err != nil {
+		fmt.Printf("hello.Get() failed: %v", err)
+		return
+	}
+    done := make(chan bool)
+	err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+        setValue, err := hello.ParseSetValue(logs[0])
+		if err != nil {
+			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+			panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+		}
+		fmt.Printf("receive setValue: %+v\n", *setValue)
+		done <- true
+	})
+	if err != nil {
+		fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+		return
+	}
+	fmt.Printf("Get: %s\n", ret)
+	_, _, err = hello.Set("fisco")
+	if err != nil {
+		fmt.Printf("hello.Set failed: %v", err)
+		return
+	}
+	ret, err = hello.Get()
+	if err != nil {
+		fmt.Printf("hello.Get() failed: %v", err)
+		return
+	}
+	fmt.Printf("Get: %s\n", ret)
+    <-done
+    from := common.HexToAddress("0x000000000000000000000000791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b")
+	hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
+		fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
+		setValue, err := hello.ParseSetValue(logs[0])
+		if err != nil {
+			fmt.Printf("hello.WatchSetValue() failed: %v", err)
+			panic("hello.WatchSetValue() failed")
+		}
+		fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
+		done <- true
+	}, from, from)
+	<-done
+}
+EOF
+    "${GOPATH_BIN}"/goimports -w  "${output}"
+}
+
 generate_counter() {
     local struct="${1}"
     local output="${2}"
@@ -197,8 +254,7 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | grep -v 3. | cut -d \" -f 4 | sort -V | tail -n 1)
-    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | grep -v 3. | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
@@ -283,7 +339,7 @@ integration_gm()
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
-    generate_hello Hello hello_gm.go
+    generate_hello_gm Hello hello_gm.go
     execute_cmd "go build ${ldflags} -o hello_gm hello_gm.go"
     execute_cmd "go build ${ldflags} -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."

@@ -18,9 +18,7 @@ package bind
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -290,7 +288,6 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
 		return nil, nil, err
 	}
-
 	return nil, receipt, nil
 }
 
@@ -310,7 +307,6 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 	if err != nil {
 		return nil, err
 	}
-
 	return signTx(opts, rawTx)
 }
 
@@ -385,7 +381,8 @@ func (c *BoundContract) generateRawTx(opts *TransactOpts, contract *common.Addre
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
-	from := string("latest")
+	from := "1"
+	to := "-1"
 	// Don't crash on a lazy user
 	if fromBlock != nil {
 		from = strconv.FormatUint(*fromBlock, 10)
@@ -395,7 +392,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 
 	topics, err := makeTopics(query...)
 	if err != nil {
-		return "", err
+		return err
 	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,

@@ -15,7 +15,7 @@ import (
 // Config contains configuration items for sdk
 type Config struct {
 	IsHTTP         bool
-	ChainID        int64
+	ChainID        string
 	ConfigFile     string
 	CAFile         string
 	TLSCAContext   []byte
@@ -81,7 +81,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 
 	if viper.IsSet("Chain") {
 		if viper.IsSet("Chain.ChainID") {
-			config.ChainID = int64(viper.GetInt("Chain.ChainID"))
+			config.ChainID = viper.GetString("Chain.ChainID")
 		} else {
 			return nil, fmt.Errorf("Chain.ChainID has not been set")
 		}
@@ -172,7 +172,7 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 }
 
 // ParseConfigOptions parses from arguments
-func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, isHttp bool, chainId int64, isSMCrypto bool) (*Config, error) {
+func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, isHttp bool, chainId string, isSMCrypto bool) (*Config, error) {
 	config := Config{
 		IsHTTP:     isHttp,
 		ChainID:    chainId,

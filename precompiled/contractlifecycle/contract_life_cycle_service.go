@@ -64,7 +64,7 @@ type Service struct {
 }
 
 // contractLifeCyclePrecompileAddress is the contract address of ContractLifeCycle
-var contractLifeCyclePrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001007")
+var contractLifeCyclePrecompileAddress = common.HexToAddress("0x0000000000000000000000000000000000001005")
 
 // NewService returns ptr of Service
 func NewService(client *client.Client) (*Service, error) {
