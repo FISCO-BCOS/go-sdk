@@ -421,7 +421,7 @@ For more information please refer:
 			fmt.Printf("freezeAccount failed, chainGovernanceService.FreezeAccount err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Printf("freezeAccount failed, the result is: %v\n", result)
 			return
 		}

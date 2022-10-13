@@ -1,4 +1,3 @@
-// Package golink 连接
 package golink
 
 import (
@@ -18,8 +17,7 @@ func Intsert(ctx context.Context, chanID uint64, ch chan<- *model.RequestResults
 	defer func() {
 		wg.Done()
 	}()
-
-	// fmt.Printf("启动协程 编号:%05d \n", chanID)
+	// fmt.Printf("start goroutines id:%05d \n", chanID)
 	for i := uint64(0); i < totalNumber; i++ {
 		if ctx.Err() != nil {
 			fmt.Printf("ctx.Err err: %v \n", ctx.Err())

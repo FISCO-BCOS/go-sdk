@@ -34,8 +34,9 @@ For more information please refer:
 			fmt.Printf("addObserver failed, consensusService.AddObserver err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Println("addObserver failed")
+			fmt.Println("result:", result)
 			return
 		}
 		fmt.Println(DefaultSuccessMessage)
@@ -69,7 +70,7 @@ For more information please refer:
 			fmt.Printf("addSealer failed, consensusService.AddSealer err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Println("addSealer failed")
 			return
 		}
@@ -104,7 +105,7 @@ For more information please refer:
 			fmt.Printf("removeNode failed, consensusService.RemoveNode err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Println("removeNode failed")
 			return
 		}
