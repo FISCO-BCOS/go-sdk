@@ -77,7 +77,7 @@ type ContractTransactor interface {
 	// GetGroupID returns the groupID of the client
 	GetGroupID() string
 	// GetChainID returns the chainID of the blockchain
-	GetChainID(ctx context.Context) (*big.Int, error)
+	GetChainID(ctx context.Context) (string, error)
 	// GetContractAddress returns the contract address once it was deployed
 	GetContractAddress(ctx context.Context, txHash common.Hash) (common.Address, error)
 	// SMCrypto returns true if use sm crypto

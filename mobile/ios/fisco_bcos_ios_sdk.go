@@ -115,7 +115,7 @@ type NetworkResponse struct {
 // Connect to the proxy or FISCO BCOS node.
 // Please make sure ca.crt, sdk.crt, sdk.key under path certPath.
 // Please provider full keyFile path
-func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID string, chainID int64, isSMCrypto bool) *BuildSDKResult {
+func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID string, chainID string, isSMCrypto bool) *BuildSDKResult {
 	// init config and callback
 	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", true, chainID, isSMCrypto)
 	if err != nil {
@@ -141,7 +141,7 @@ func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, gro
 	// Init backend
 	sdk.backend = &ContractProxy{
 		groupID:  groupID,
-		chainID:  big.NewInt(chainID),
+		chainID:  chainID,
 		callback: callback,
 		smCrypto: isSMCrypto,
 	}

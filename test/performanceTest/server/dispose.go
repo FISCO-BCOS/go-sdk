@@ -1,4 +1,3 @@
-// Package server 压测启动
 package server
 
 import (
@@ -13,13 +12,13 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/test/performanceTest/server/statistics"
 )
 
-// Dispose 处理函数
+// Dispose
 func Dispose(ctx context.Context, concurrency, totalNumber uint64, request *model.Request, session interface{}) {
 	// 设置接收数据缓存
 	ch := make(chan *model.RequestResults, 1000)
 	var (
-		wg          sync.WaitGroup // 发送数据完成
-		wgReceiving sync.WaitGroup // 数据处理完成
+		wg          sync.WaitGroup // Sending data is completed
+		wgReceiving sync.WaitGroup // Data processing completed
 	)
 	wgReceiving.Add(1)
 	go statistics.ReceivingResults(concurrency, ch, &wgReceiving)
@@ -34,16 +33,16 @@ func Dispose(ctx context.Context, concurrency, totalNumber uint64, request *mode
 			parallelOkSession := session.(*parallelOk.ParallelOkSession)
 			go golink.Transfer(ctx, i, ch, totalNumber, &wg, request, parallelOkSession)
 		default:
-			// 类型不支持
+			// Unsupported Media Type
 			wg.Done()
 		}
 	}
-	// 等待所有的数据都发送完成
+	// Wait for all the data to be sent
 	wg.Wait()
-	// 延时1毫秒 确保数据都处理完成了
+	//Delay 1 millisecond to ensure that all data is processed
 	time.Sleep(1 * time.Millisecond)
 	close(ch)
-	// 数据全部处理完成了
+	// The data processing is complete
 	wgReceiving.Wait()
 	return
 }
