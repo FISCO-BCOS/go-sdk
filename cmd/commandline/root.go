@@ -29,7 +29,7 @@ func getClient(config *conf.Config) *client.Client {
 	// RPC API
 	c, err := client.Dial(config) // change to your RPC and groupID
 	if err != nil {
-		fmt.Println("can not dial to FISCO node, please check ./config.toml. error message: ", err)
+		fmt.Println("can not dial to FISCO node, please check ./config.ini. error message: ", err)
 		os.Exit(1)
 	}
 	return c
@@ -71,7 +71,7 @@ func Execute() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	configs, err := conf.ParseConfigFile("config.toml")
+	configs, err := conf.ParseConfigFile("config.ini")
 	if err != nil {
 		log.Fatalf("iniConfig failed, err: %v", err)
 	}

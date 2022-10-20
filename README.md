@@ -29,12 +29,10 @@ https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.h
 - [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
-# 配置文件说明(config.toml)
+# 配置文件说明(config.ini)
 
 ```toml
 [Network]
-#type rpc or channel
-Type="channel"
 CAFile="./conf/ca.crt"
 Cert="./conf/sdk.crt"
 Key="./conf/sdk.key"
@@ -64,7 +62,6 @@ Path="./"
 
 **注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
 
-- Type：支持channel模式，其中`channel`使用ssl链接，需要提供证书。
 - CAFile：链根证书
 - Cert：SDK建立SSL链接时使用的证书
 - Key：SDK建立SSL链接时使用的证书对应的私钥
@@ -85,7 +82,7 @@ Path="./"
 
 # 控制台使用
 
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.toml`进行更改:
+在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.ini`进行更改:
 
 1. 拉取代码并编译
 
@@ -97,9 +94,9 @@ go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" cmd/console.go
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
-3. config.toml默认使用channel模式，新建conf文件夹,请拷贝对应的SDK证书。
+3. 新建conf文件夹,请拷贝对应的SDK证书。
    
-4. go-sdk需要依赖csdk的动态库，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
+4. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
 
 5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。
 
@@ -221,7 +218,7 @@ import (
 )
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
+	configs, err := conf.ParseConfigFile("config.ini")
 	if err != nil {
 		log.Fatalf("ParseConfigFile failed, err: %v", err)
 	}

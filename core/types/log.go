@@ -56,12 +56,10 @@ type Log struct {
 }
 
 type EventLogParams struct {
-	FromBlock string   `json:"fromBlock"`
-	ToBlock   string   `json:"toBlock"`
+	FromBlock int64    `json:"fromBlock"`
+	ToBlock   int64    `json:"toBlock"`
 	Addresses []string `json:"addresses"`
 	Topics    []string `json:"topics"`
-	GroupID   string   `json:"groupID"`
-	FilterID  string   `json:"filterID"`
 }
 
 type logMarshaling struct {

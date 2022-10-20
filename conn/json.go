@@ -32,12 +32,11 @@ import (
 )
 
 const (
-	defaultErrorCode         = -32000
-	vsn                      = "2.0"
-	serviceMethodSeparator   = "_"
-	subscribeMethodSuffix    = "_subscribe"
-	unsubscribeMethodSuffix  = "_unsubscribe"
-	notificationMethodSuffix = "_subscription"
+	defaultErrorCode        = -32000
+	vsn                     = "2.0"
+	serviceMethodSeparator  = "_"
+	subscribeMethodSuffix   = "_subscribe"
+	unsubscribeMethodSuffix = "_unsubscribe"
 
 	defaultWriteTimeout = 10 * time.Second // used if context has no deadline
 )
@@ -48,7 +47,7 @@ var null = json.RawMessage("null")
 // error response. Which one it is depends on the fields.
 type jsonrpcMessage struct {
 	Version string          `json:"jsonrpc,omitempty"`
-	ID      json.RawMessage `json:"id,omitempty"`
+	ID      int64           `json:"id,omitempty"`
 	Method  string          `json:"method,omitempty"`
 	Params  json.RawMessage `json:"params,omitempty"`
 	Error   *jsonError      `json:"error,omitempty"`
@@ -58,14 +57,18 @@ type jsonrpcMessage struct {
 
 // A value of this type can a JSON-RPC request, notification, successful response or
 // error response. Which one it is depends on the fields.
-type resRpcMessage struct {
-	ID      int             `json:"id,omitempty"`
-	Jsonrpc string          `json:"jsonrpc,omitempty"`
-	Result  json.RawMessage `json:"result,omitempty"`
-}
+//type resRpcMessage struct {
+//	Version string          `json:"jsonrpc,omitempty"`
+//	Method  string          `json:"method,omitempty"`
+//	Params  json.RawMessage `json:"params,omitempty"`
+//	Error   *jsonError      `json:"error,omitempty"`
+//	ID      int             `json:"id,omitempty"`
+//	Jsonrpc string          `json:"jsonrpc,omitempty"`
+//	Result  json.RawMessage `json:"result,omitempty"`
+//}
 
 func (msg *jsonrpcMessage) isNotification() bool {
-	return msg.ID == nil && msg.Method != ""
+	return msg.ID == 1 && msg.Method != ""
 }
 
 func (msg *jsonrpcMessage) isCall() bool {
@@ -115,7 +118,7 @@ func (msg *jsonrpcMessage) response(result interface{}) *jsonrpcMessage {
 }
 
 func errorMessage(err error) *jsonrpcMessage {
-	msg := &jsonrpcMessage{Version: vsn, ID: nil, Error: &jsonError{
+	msg := &jsonrpcMessage{Version: vsn, ID: -1, Error: &jsonError{
 		Code:    defaultErrorCode,
 		Message: err.Error(),
 	}}

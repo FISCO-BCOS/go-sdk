@@ -60,7 +60,7 @@ generate_main() {
 cat << EOF >> "${output}"
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
+	configs, err := conf.ParseConfigFile("config.ini")
 	if err != nil {
 		log.Fatalf("ParseConfigFile failed, err: %v", err)
 	}
@@ -332,8 +332,8 @@ integration_gm()
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
-    sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
-    sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
+    sed -i "s/SMCrypto=false/SMCrypto=true/g" config.ini
+    sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.ini
 
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"

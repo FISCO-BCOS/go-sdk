@@ -46,7 +46,7 @@ func invokeSetHandler(receipt *types.Receipt, err error) {
 }
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
+	configs, err := conf.ParseConfigFile("config.ini")
 	if err != nil {
 		logrus.Fatal(err)
 	}

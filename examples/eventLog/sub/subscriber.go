@@ -44,8 +44,8 @@ func main() {
 		logrus.Fatalf("init subscriber failed, err: %v\n", err)
 	}
 	var eventLogParams types.EventLogParams
-	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "-1"
+	eventLogParams.FromBlock = 1
+	eventLogParams.ToBlock = -1
 	var topics = make([]string, 1)
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics
