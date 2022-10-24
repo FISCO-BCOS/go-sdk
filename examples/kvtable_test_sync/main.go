@@ -16,8 +16,8 @@ import (
 
 func main() {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{ChainID: "chain0", CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	config := &conf.Config{ChainID: "chain0", IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey,
+		NodeURL: "127.0.0.1:20200"}
 	client, err := client.Dial(config)
 	if err != nil {
 		logrus.Fatal(err)
