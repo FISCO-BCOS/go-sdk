@@ -334,9 +334,10 @@ integration_gm()
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     sed -i "s/SMCrypto=false/SMCrypto=true/g" config.ini
     sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.ini
-    sed -i "s#KeyFile=ca.crt#KeyFile=sm_ca.crt#g" config.ini
-    sed -i "s#KeyFile=sdk.key#KeyFile=sm_sdk.key#g" config.ini
-    sed -i "s#KeyFile=sdk.crt\"#KeyFile=sm_sdk.crt\"#g" config.ini
+    sed -i "s/ca_cert=ca.crt/sm_ca_cert=sm_ca.crt/g" config.ini
+    sed -i "s/sdk_key=sdk.key/sm_sdk_key=sm_sdk.key/g" config.ini
+    sed -i "s/sdk_cert=sdk.crt/sm_sdk_cert=sm_sdk.crt/g" config.ini
+    sed -i "s/ssl_type = ssl/ssl_type = sm_ssl/g" config.ini
 
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
