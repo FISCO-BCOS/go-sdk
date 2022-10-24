@@ -333,16 +333,16 @@ func TestGetGroupInfo(t *testing.T) {
 	t.Logf("get group info:\n%s", string(raw))
 }
 
-func TestGetGroupNodeInfo(t *testing.T) {
-	c := GetClient(t)
-	nodeId := "7c9e8d63a5451ef71e567216f1e2db1478147b9e3eca1c2889f864dc6711d291d3cf458606e39cad5a5dd876ab8cdc3a7dc8f227e9aff1ff1f309329a64f87a7"
-	raw, err := c.GetGroupNodeInfo(context.Background(), nodeId)
-	if err != nil {
-		t.Fatalf("the value not found: %v", err)
-	}
-
-	t.Logf("get group node info:\n%s", string(raw))
-}
+//func TestGetGroupNodeInfo(t *testing.T) {
+//	c := GetClient(t)
+//	nodeId := "7c9e8d63a5451ef71e567216f1e2db1478147b9e3eca1c2889f864dc6711d291d3cf458606e39cad5a5dd876ab8cdc3a7dc8f227e9aff1ff1f309329a64f87a7"
+//	raw, err := c.GetGroupNodeInfo(context.Background(), nodeId)
+//	if err != nil {
+//		t.Fatalf("the value not found: %v", err)
+//	}
+//
+//	t.Logf("get group node info:\n%s", string(raw))
+//}
 
 func TestTotalTransactionCount(t *testing.T) {
 	c := GetClient(t)
