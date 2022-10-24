@@ -26,24 +26,14 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 - [Golang](https://golang.org/), 版本需不低于`1.7`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
 https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
-- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应1.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos) 
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
 # 配置文件说明(config.ini)
 
 ```toml
-[Network]
-CAFile="./conf/ca.crt"
-Cert="./conf/sdk.crt"
-Key="./conf/sdk.key"
-# if the certificate context is not empty, use it, otherwise read from the certificate file
-# multi lines use triple quotes
-CAContext=''''''
-KeyContext=''''''
-CertContext=''''''
-
-[[Network.Connection]]
-NodeURL="127.0.0.1:20200"
+[Group]
 GroupID="group0"
 
 [Account]
@@ -56,16 +46,41 @@ SMCrypto=false
 
 [log]
 Path="./"
+
+[common]
+    ; if ssl connection is disabled, default: false
+    ; disable_ssl = true
+    ; thread pool size for network message sending receiving handing
+    thread_pool_size = 8
+    ; send message timeout(ms)
+    message_timeout_ms = 10000
+
+; ssl cert config items,
+[cert]
+    ; ssl_type: ssl or sm_ssl, default: ssl
+    ssl_type = ssl
+    ; directory the certificates located in, default: ./conf
+    ca_path=./conf
+    ; the ca certificate file
+    ca_cert=ca.crt
+    ; the node private key file
+    sdk_key=sdk.key
+    ; the node certificate file
+    sdk_cert=sdk.crt
+
+[peers]
+# supported ipv4 and ipv6
+    node.0=127.0.0.1:20200
+    node.1=127.0.0.1:20201
 ```
 
-## Network
+## Cert
+- ca_cert：链根证书
+- sdk_cert：SDK建立SSL链接时使用的证书
+- sdk_key：SDK建立SSL链接时使用的证书对应的私钥
 
-**注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
-
-- CAFile：链根证书
-- Cert：SDK建立SSL链接时使用的证书
-- Key：SDK建立SSL链接时使用的证书对应的私钥
-- Network.Connection数组，配置节点信息，可配置多个。
+##peers  
+- node.0，配置节点信息，可配置多个。
 
 ## Account
 

@@ -26,8 +26,8 @@ func main() {
 	}
 	topic := os.Args[3]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsHTTP: false, ChainID: "chain0", CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, Host: host, Port: port}
+	config := &conf.Config{IsHTTP: false, ChainID: "chain0", IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: host, Port: port}
 	var c *client.Client
 	for i := 0; i < 3; i++ {
 		logrus.Printf("%d try to connect\n", i)
