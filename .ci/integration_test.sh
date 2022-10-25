@@ -164,7 +164,7 @@ EOF
 generate_hello_gm() {
     local struct="${1}"
     local output="${2}"
-    generate_main "${1}" "${2}"
+    generate_main_gm "${1}" "${2}"
 cat << EOF >> "${output}"
 
 	hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
