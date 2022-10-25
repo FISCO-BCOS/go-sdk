@@ -30,70 +30,20 @@ https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.h
 - [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应1.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos) 
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
-# 配置文件说明(config.ini)
+# 配置结构体说明
 
-```toml
-[Group]
-GroupID="group0"
-
-[Account]
-# only support PEM format for now
-KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
-
-[Chain]
-ChainID="chain0"
-SMCrypto=false
-
-[log]
-Path="./"
-
-[common]
-    ; if ssl connection is disabled, default: false
-    ; disable_ssl = true
-    ; thread pool size for network message sending receiving handing
-    thread_pool_size = 8
-    ; send message timeout(ms)
-    message_timeout_ms = 10000
-
-; ssl cert config items,
-[cert]
-    ; ssl_type: ssl or sm_ssl, default: ssl
-    ssl_type = ssl
-    ; directory the certificates located in, default: ./conf
-    ca_path=./conf
-    ; the ca certificate file
-    ca_cert=ca.crt
-    ; the node private key file
-    sdk_key=sdk.key
-    ; the node certificate file
-    sdk_cert=sdk.crt
-
-[peers]
-# supported ipv4 and ipv6
-    node.0=127.0.0.1:20200
-    node.1=127.0.0.1:20201
+```go
+type Config struct {
+	IsSMCrypto     bool
+    PrivateKey     []byte
+    GroupID        string
+    NodeURL        string
+}
 ```
-
-## Cert
-- ca_cert：链根证书
-- sdk_cert：SDK建立SSL链接时使用的证书
-- sdk_key：SDK建立SSL链接时使用的证书对应的私钥
-
-##peers  
-- node.0，配置节点信息，可配置多个。
-
-## Account
-
-- KeyFile：节点签发交易时所使用的私钥，PEM格式，支持国密和非国密。
-
-请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
-
-如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#环境配置#外部账户)。
-
-## Chain
-
-- ChainID：链ID，与节点config.ini中`chain.id`保持一致。
-- SMCrypto：链使用的签名算法，`ture`表示使用国密SM2，`false`表示使用普通ECDSA。
+- IsSMCrypto:使用的签名算法，ture表示使用国密SM2，false表示使用普通ECDSA。
+- PrivateKey:节点签发交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
+- GroupID:账本id
+- NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
 
 # 控制台使用
 
