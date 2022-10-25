@@ -1,8 +1,8 @@
 package commandline
 
 import (
+	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -29,7 +29,7 @@ func getClient(config *conf.Config) *client.Client {
 	// RPC API
 	c, err := client.Dial(config) // change to your RPC and groupID
 	if err != nil {
-		fmt.Println("can not dial to FISCO node, please check ./config.ini. error message: ", err)
+		fmt.Println("can not dial to FISCO node, please check config. error message: ", err)
 		os.Exit(1)
 	}
 	return c
@@ -71,9 +71,8 @@ func Execute() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	configs, err := conf.ParseConfigFile("config.ini")
-	if err != nil {
-		log.Fatalf("iniConfig failed, err: %v", err)
-	}
-	RPC = getClient(&configs[0])
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsHTTP: false, ChainID: "chain0",
+		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	RPC = getClient(config)
 }
