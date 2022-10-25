@@ -79,7 +79,7 @@ func main() {
 EOF
 }
 
-generate__main() {
+generate_main() {
     local struct="${1}"
     local output="${2}"
 cat << EOF >> "${output}"
