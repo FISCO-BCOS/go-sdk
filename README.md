@@ -226,6 +226,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"encoding/hex"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -233,11 +234,10 @@ import (
 )
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.ini")
-	if err != nil {
-		log.Fatalf("ParseConfigFile failed, err: %v", err)
-	}
-	client, err := client.Dial(&configs[0])
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+
+	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
 	}

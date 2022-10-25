@@ -23,7 +23,7 @@ func main() {
 	}
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{ChainID: "chain0", IsSMCrypto: false, GroupID: "group0",
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error

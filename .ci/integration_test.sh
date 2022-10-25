@@ -61,8 +61,7 @@ cat << EOF >> "${output}"
 
 func main() {
 	privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
-	config := &conf.Config{IsHTTP: false, ChainID: "chain0",
-		IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	config := &conf.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 
 	client, err := client.Dial(config)
 	if err != nil {
@@ -86,8 +85,8 @@ cat << EOF >> "${output}"
 
 func main() {
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	config := &conf.Config{IsHTTP: false, ChainID: "chain0",
-		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	          PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 
 	client, err := client.Dial(config)
 	if err != nil {
@@ -357,12 +356,6 @@ integration_gm()
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
-    #sed -i "s/SMCrypto=false/SMCrypto=true/g" config.ini
-    #sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.ini
-    #sed -i "s/ca_cert=ca.crt/sm_ca_cert=sm_ca.crt/g" config.ini
-    #sed -i "s/sdk_key=sdk.key/sm_sdk_key=sm_sdk.key/g" config.ini
-    #sed -i "s/sdk_cert=sdk.crt/sm_sdk_cert=sm_sdk.crt/g" config.ini
-    #sed -i "s/ssl_type = ssl/ssl_type = sm_ssl/g" config.ini
 
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
