@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -413,27 +412,13 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 
 // eventlog
 func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-	var addressArrayStr string
-	for _, address := range eventLogParams.Addresses {
-		if addressArrayStr == "" {
-			addressArrayStr = "\"" + address + "\""
-		} else {
-			addressArrayStr += ",\"" + address + "\""
-		}
+	sendData, err := json.Marshal(eventLogParams)
+	if err != nil {
+		return "", err
 	}
-	var topicArrayStr string
-	for _, topic := range eventLogParams.Topics {
-		if topicArrayStr == "" {
-			topicArrayStr = "\"" + topic + "\""
-		} else {
-			topicArrayStr += ",\"" + topic + "\""
-		}
-	}
-	sendData := "{\"addresses\":[" + addressArrayStr + "],\"fromBlock\":" + eventLogParams.FromBlock +
-		",\"toBlock\":" + eventLogParams.ToBlock + ",\"topics\":[" + topicArrayStr + "]}"
-	log.Println("SubscribeEventLogs data:", sendData)
+	log.Println("SubscribeEventLogs data:", string(sendData))
 	var raw string
-	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", sendData, handler)
+	err = c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", string(sendData), handler)
 	if err != nil {
 		return "", err
 	}
@@ -486,26 +471,26 @@ func (c *Client) UnsubscribeTopic(ctx context.Context, topic string) error {
 	return nil
 }
 
-func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
-	return nil
-}
+//func (c *Client) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
+//	return nil
+//}
+//
+//func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+//	return nil
+//
+//}
 
-func (c *Client) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
-	return nil
-
-}
-
-func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
-	return nil, nil
-}
-
-func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
-	return nil
-}
-
-func (c *Client) UnsubscribePrivateTopic(topic string) error {
-	return nil
-}
+//func (c *Client) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
+//	return nil, nil
+//}
+//
+//func (c *Client) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+//	return nil
+//}
+//
+//func (c *Client) UnsubscribePrivateTopic(topic string) error {
+//	return nil
+//}
 
 func (c *Client) SubscribeBlockNumberNotify(ctx context.Context, handler func(int64)) error {
 	var raw interface{}
@@ -516,9 +501,9 @@ func (c *Client) SubscribeBlockNumberNotify(ctx context.Context, handler func(in
 	return nil
 }
 
-func (c *Client) UnsubscribeBlockNumberNotify() error {
-	return nil
-}
+//func (c *Client) UnsubscribeBlockNumberNotify() error {
+//	return nil
+//}
 
 // GetGroupID returns the groupID of the client
 func (c *Client) GetGroupID() string {
@@ -567,13 +552,6 @@ func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 // GetBlockLimit returns the blocklimit for current blocknumber
 func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
 	var blockLimit *big.Int
-	//if !api.IsHTTP() {
-	//	blockNumber := api.Connection.GetBlockNumber()
-	//	if blockNumber != 0 {
-	//		blockLimit = big.NewInt(blockNumber + BlockLimit)
-	//		return blockLimit, nil
-	//	}
-	//}
 	defaultNumber := big.NewInt(BlockLimit)
 	var raw int
 	err := c.conn.CallContext(ctx, &raw, "getBlockNumber", c.groupID)

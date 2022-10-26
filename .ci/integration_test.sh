@@ -56,17 +56,40 @@ compile_and_ut()
     execute_cmd "go test -v ./smcrypto"
 }
 
+generate_main_gm() {
+    local struct="${1}"
+    local output="${2}"
+cat << EOF >> "${output}"
+
+func main() {
+	privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
+	config := &conf.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	client, err := client.Dial(config)
+	if err != nil {
+		fmt.Printf("Dial Client failed, err:%v", err)
+		return
+	}
+	address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
+	if err != nil {
+		fmt.Printf("Deploy failed, err:%v", err)
+		return
+	}
+	fmt.Println("contract address: ", address.Hex()) // the address should be saved
+	//fmt.Println("transaction hash: ", tx.Hash().Hex())
+EOF
+}
+
 generate_main() {
     local struct="${1}"
     local output="${2}"
 cat << EOF >> "${output}"
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
-	if err != nil {
-		log.Fatalf("ParseConfigFile failed, err: %v", err)
-	}
-	client, err := client.Dial(&configs[0])
+	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	          PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+
+	client, err := client.Dial(config)
 	if err != nil {
 		fmt.Printf("Dial Client failed, err:%v", err)
 		return
@@ -141,7 +164,7 @@ EOF
 generate_hello_gm() {
     local struct="${1}"
     local output="${2}"
-    generate_main "${1}" "${2}"
+    generate_main_gm "${1}" "${2}"
 cat << EOF >> "${output}"
 
 	hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
@@ -333,8 +356,6 @@ integration_gm()
     bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
-    sed -i "s/SMCrypto=false/SMCrypto=true/g" config.toml
-    sed -i "s#KeyFile=\".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem\"#KeyFile=\".ci/sm2p256v1_0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b.pem\"#g" config.toml
 
     # abigen gm
     execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
