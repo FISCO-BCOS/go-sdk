@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
@@ -258,11 +257,11 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
-	from := "1"
-	to := "-1"
+	from := int64(1)
+	to := int64(-1)
 	// Don't crash on a lazy user
 	if fromBlock != nil {
-		from = strconv.FormatUint(*fromBlock, 10)
+		from = int64(*fromBlock)
 	}
 	// Append the event selector to the query parameters and construct the topic set
 	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
@@ -276,7 +275,6 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 		ToBlock:   to,
 		Addresses: []string{strings.ToLower(c.address.Hex())},
 		Topics:    topics,
-		GroupID:   c.transactor.GetGroupID(),
 	}
 	ctx, _ := context.WithCancel(context.Background())
 	return c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)

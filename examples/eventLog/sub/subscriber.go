@@ -23,8 +23,8 @@ func main() {
 	}
 	endpoint := os.Args[1]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{ChainID: "chain0", CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: endpoint}
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, NodeURL: endpoint}
 	var c *client.Client
 	var err error
 	const (
@@ -44,8 +44,8 @@ func main() {
 		logrus.Fatalf("init subscriber failed, err: %v\n", err)
 	}
 	var eventLogParams types.EventLogParams
-	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "-1"
+	eventLogParams.FromBlock = 1
+	eventLogParams.ToBlock = -1
 	var topics = make([]string, 1)
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics

@@ -87,7 +87,7 @@ const (
 
 func TestConfig(t *testing.T) {
 	// test parseConfig
-	configs, err := ParseConfig([]byte(fileContent))
+	configs, err := ParseConfig("config.ini")
 	if err != nil {
 		t.Fatalf("TestConfig failed, err: %v", err)
 	}

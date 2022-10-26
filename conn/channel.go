@@ -714,29 +714,29 @@ func (hc *channelSession) sendSubscribedTopics() error {
 	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-	if handler == nil {
-		return "", errors.New("handler is nil")
-	}
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return "", errors.New("new UUID failed")
-	}
-	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
-	hc.eventLogMu.RLock()
-	_, ok := hc.eventLogHandlers[eventLogParams.FilterID]
-	hc.eventLogMu.RUnlock()
-	if ok {
-		return "", errors.New("already subscribed to event " + eventLogParams.FilterID)
-	}
-	if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
-		return "", err
-	}
-	hc.eventLogMu.Lock()
-	hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
-	hc.eventLogMu.Unlock()
-	return eventLogParams.FilterID, nil
-}
+// func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
+// 	if handler == nil {
+// 		return "", errors.New("handler is nil")
+// 	}
+// 	id, err := uuid.NewUUID()
+// 	if err != nil {
+// 		return "", errors.New("new UUID failed")
+// 	}
+// 	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
+// 	hc.eventLogMu.RLock()
+// 	_, ok := hc.eventLogHandlers[eventLogParams.FilterID]
+// 	hc.eventLogMu.RUnlock()
+// 	if ok {
+// 		return "", errors.New("already subscribed to event " + eventLogParams.FilterID)
+// 	}
+// 	if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
+// 		return "", err
+// 	}
+// 	hc.eventLogMu.Lock()
+// 	hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
+// 	hc.eventLogMu.Unlock()
+// 	return eventLogParams.FilterID, nil
+// }
 
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	if len(topic) > maxTopicLength {
@@ -1043,13 +1043,13 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 			Index:       uint(logIndex),
 			Removed:     false,
 		})
-		nextBlock = uint64(number) + 1
+		nextBlock = uint64(int64(number) + 1)
 	}
 
 	hc.eventLogMu.RLock()
 	eventLogInfo, ok := hc.eventLogHandlers[eventLogResponse.FilterID]
 	if ok {
-		eventLogInfo.params.FromBlock = strconv.FormatUint(nextBlock, 10)
+		eventLogInfo.params.FromBlock = int64(nextBlock)
 	}
 	hc.eventLogMu.RUnlock()
 	if ok {
