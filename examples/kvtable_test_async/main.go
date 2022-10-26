@@ -46,12 +46,9 @@ func invokeSetHandler(receipt *types.Receipt, err error) {
 }
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.ini")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	config := &configs[0]
-
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
 	// deploy Asynccontract
 	fmt.Println("-------------------starting deploy contract-----------------------")
 	client, err := client.Dial(config)
