@@ -8,7 +8,8 @@ replace (
 )
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v3.0.0-rc4.0.20221010080543-9529311c9b2a+incompatible
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	github.com/FISCO-BCOS/bcos-c-sdk v3.0.2-0.20221024060715-1b3c2b3b02b8+incompatible
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ethereum/go-ethereum v1.10.21
@@ -20,5 +21,4 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/urfave/cli/v2 v2.10.2
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )

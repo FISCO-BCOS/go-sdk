@@ -26,66 +26,30 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 - [Golang](https://golang.org/), 版本需不低于`1.7`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
 https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
-- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应1.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos) 
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
 
-# 配置文件说明(config.toml)
+# 配置结构体说明
 
-```toml
-[Network]
-#type rpc or channel
-Type="channel"
-CAFile="./conf/ca.crt"
-Cert="./conf/sdk.crt"
-Key="./conf/sdk.key"
-# if the certificate context is not empty, use it, otherwise read from the certificate file
-# multi lines use triple quotes
-CAContext=''''''
-KeyContext=''''''
-CertContext=''''''
-
-[[Network.Connection]]
-NodeURL="127.0.0.1:20200"
-GroupID="group0"
-
-[Account]
-# only support PEM format for now
-KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
-
-[Chain]
-ChainID="chain0"
-SMCrypto=false
-
-[log]
-Path="./"
+```go
+type Config struct {
+	IsSMCrypto     bool
+    PrivateKey     []byte
+    GroupID        string
+    NodeURL        string
+}
 ```
-
-## Network
-
-**注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
-
-- Type：支持channel模式，其中`channel`使用ssl链接，需要提供证书。
-- CAFile：链根证书
-- Cert：SDK建立SSL链接时使用的证书
-- Key：SDK建立SSL链接时使用的证书对应的私钥
-- Network.Connection数组，配置节点信息，可配置多个。
-
-## Account
-
-- KeyFile：节点签发交易时所使用的私钥，PEM格式，支持国密和非国密。
-
-请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
-
-如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#环境配置#外部账户)。
-
-## Chain
-
-- ChainID：链ID，与节点config.ini中`chain.id`保持一致。
-- SMCrypto：链使用的签名算法，`ture`表示使用国密SM2，`false`表示使用普通ECDSA。
+- IsSMCrypto:使用的签名算法，ture表示使用国密SM2，false表示使用普通ECDSA。
+- PrivateKey:节点签发交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
+  请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
+  如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#环境配置#外部账户)。
+- GroupID:账本id
+- NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
 
 # 控制台使用
 
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.toml`进行更改:
+在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.ini`进行更改:
 
 1. 拉取代码并编译
 
@@ -97,9 +61,9 @@ go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" cmd/console.go
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
-3. config.toml默认使用channel模式，新建conf文件夹,请拷贝对应的SDK证书。
+3. 新建conf文件夹,请拷贝对应的SDK证书。
    
-4. go-sdk需要依赖csdk的动态库，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
+4. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
 
 5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。
 
@@ -214,6 +178,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"encoding/hex"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
@@ -221,11 +186,9 @@ import (
 )
 
 func main() {
-	configs, err := conf.ParseConfigFile("config.toml")
-	if err != nil {
-		log.Fatalf("ParseConfigFile failed, err: %v", err)
-	}
-	client, err := client.Dial(&configs[0])
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &conf.Config{IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+	client, err := client.Dial(config)
 	if err != nil {
 		log.Fatal(err)
 	}

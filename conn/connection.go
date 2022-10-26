@@ -19,10 +19,8 @@ package conn
 import "C"
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -127,10 +125,10 @@ type readOp struct {
 }
 
 type requestOp struct {
-	ids          []json.RawMessage
-	err          error
-	resp         chan *jsonrpcMessage // receives up to len(ids) responses
-	respData     chan *resRpcMessage  // receives up to len(ids) responses
+	ids  []json.RawMessage
+	err  error
+	resp chan *jsonrpcMessage // receives up to len(ids) responses
+	//respData     chan *resRpcMessage  // receives up to len(ids) responses
 	respChanData *csdk.ChanData
 }
 
@@ -151,13 +149,13 @@ type eventLogResp struct {
 	Status   int                  `json:"status"`
 }
 
-func (op *requestOp) waitRpcMessage(ctx context.Context) (*resRpcMessage, interface{}, error) {
+func (op *requestOp) waitRpcMessage(ctx context.Context) (*jsonrpcMessage, interface{}, error) {
 	select {
 	case respBody := <-op.respChanData.Data:
-		var respData resRpcMessage
+		var respData jsonrpcMessage
 		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
-			log.Println("json unmarshal res body:", respBody)
-			log.Println("json unmarshal err:", err)
+			//log.Println("json unmarshal res body:", respBody)
+			//log.Println("json unmarshal err:", err)
 			return nil, nil, err
 		}
 		return &respData, respData.Result, op.err
@@ -234,28 +232,28 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 	return nil
 }
 
-func (op *requestOp) wait(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
-	select {
-	// case <-ctx.Done():
-	// 	// Send the timeout to dispatch so it can remove the request IDs.
-	// 	// FIXME: remove the code below
-	// 	if !c.isHTTP {
-	// 		select {
-	// 		case c.reqTimeout <- op:
-	// 		case <-c.closing:
-	// 		}
-	// 	}
-	// 	return nil, ctx.Err()
-	case respBody := <-op.respChanData.Data:
-		var respData resRpcMessage
-		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
-			log.Println("json unmarshal res body:", respBody)
-			log.Println("json unmarshal err:", err)
-			return nil, nil, err
-		}
-		return &respData, respData.Result, op.err
-	}
-}
+//func (op *requestOp) wait(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
+//	select {
+//	// case <-ctx.Done():
+//	// 	// Send the timeout to dispatch so it can remove the request IDs.
+//	// 	// FIXME: remove the code below
+//	// 	if !c.isHTTP {
+//	// 		select {
+//	// 		case c.reqTimeout <- op:
+//	// 		case <-c.closing:
+//	// 		}
+//	// 	}
+//	// 	return nil, ctx.Err()
+//	case respBody := <-op.respChanData.Data:
+//		var respData resRpcMessage
+//		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
+//			log.Println("json unmarshal res body:", respBody)
+//			log.Println("json unmarshal err:", err)
+//			return nil, nil, err
+//		}
+//		return &respData, respData.Result, op.err
+//	}
+//}
 
 // DialContextHTTP creates a new RPC client, just like Dial.
 //
@@ -431,6 +429,8 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	switch resp, _, err := op.waitRpcMessage(ctx); {
 	case err != nil:
 		return err
+	case resp.Error != nil:
+		return resp.Error
 	case len(resp.Result) == 0:
 		logrus.Errorf("result is null, %+v, err:%+v \n", resp, err)
 		return ErrNoResult
@@ -469,91 +469,91 @@ func (c *Connection) CallHandlerContext(ctx context.Context, result interface{},
 	return err
 }
 
-func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {
-	msg, err := c.newMessage(method, args...)
-	if err != nil {
-		return err
-	}
-	hc := c.writeConn.(*channelSession)
-	if !c.isHTTP {
-		err = hc.asyncSendTransaction(msg, handler)
-	}
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {
+//	msg, err := c.newMessage(method, args...)
+//	if err != nil {
+//		return err
+//	}
+//	hc := c.writeConn.(*channelSession)
+//	if !c.isHTTP {
+//		err = hc.asyncSendTransaction(msg, handler)
+//	}
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
-func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.subscribeEvent(eventLogParams, handler)
-}
+//func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.subscribeEvent(eventLogParams, handler)
+//}
 
-func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.subscribeTopic(topic, handler)
-}
+//func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.subscribeTopic(topic, handler)
+//}
 
-func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.subscribePrivateTopic(topic, privateKey, handler)
-}
+//func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.subscribePrivateTopic(topic, privateKey, handler)
+//}
 
-func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.publishPrivateTopic(topic, publicKey)
-}
+//func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.publishPrivateTopic(topic, publicKey)
+//}
 
-func (c *Connection) UnsubscribeTopic(topic string) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.unsubscribeTopic(topic)
-}
+//func (c *Connection) UnsubscribeTopic(topic string) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.unsubscribeTopic(topic)
+//}
 
-func (c *Connection) UnsubscribePrivateTopic(topic string) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.unsubscribePrivateTopic(topic)
-}
+//func (c *Connection) UnsubscribePrivateTopic(topic string) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.unsubscribePrivateTopic(topic)
+//}
 
-func (c *Connection) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
-	hc := c.writeConn.(*channelSession)
-	return hc.sendAMOPMsg(topic, data)
-}
+//func (c *Connection) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.sendAMOPMsg(topic, data)
+//}
 
-func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.broadcastAMOPMsg(topic, data)
-}
+//func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.broadcastAMOPMsg(topic, data)
+//}
 
-func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
-	hc := c.writeConn.(*channelSession)
-	return hc.sendAMOPPrivateMsg(topic, data)
-}
+//func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.sendAMOPPrivateMsg(topic, data)
+//}
 
-func (c *Connection) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.broadcastAMOPPrivateMsg(topic, data)
-}
+//func (c *Connection) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.broadcastAMOPPrivateMsg(topic, data)
+//}
 
-func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.subscribeBlockNumberNotify(groupID, handler)
-}
+//func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.subscribeBlockNumberNotify(groupID, handler)
+//}
 
-func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
-	hc := c.writeConn.(*channelSession)
-	return hc.unSubscribeBlockNumberNotify(groupID)
-}
+//func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
+//	hc := c.writeConn.(*channelSession)
+//	return hc.unSubscribeBlockNumberNotify(groupID)
+//}
 
-func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
-	msg := &jsonrpcMessage{Version: vsn, ID: c.nextID(), Method: method}
-	if paramsIn != nil { // prevent sending "params":null
-		var err error
-		if msg.Params, err = json.Marshal(paramsIn); err != nil {
-			return nil, err
-		}
-	}
-	return msg, nil
-}
+//func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
+//	msg := &jsonrpcMessage{Version: vsn, ID: c.nextID(), Method: method}
+//	if paramsIn != nil { // prevent sending "params":null
+//		var err error
+//		if msg.Params, err = json.Marshal(paramsIn); err != nil {
+//			return nil, err
+//		}
+//	}
+//	return msg, nil
+//}
 
 func (c *Connection) reconnect(ctx context.Context) error {
 	if c.reconnectFunc == nil {
