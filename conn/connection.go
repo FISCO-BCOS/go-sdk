@@ -368,7 +368,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getGroupPeers":
 		c.csdk.GetGroupPeers(op.respChanData)
 	case "getPeers":
-		c.csdk.GetGroupPeers(op.respChanData)
+		c.csdk.GetPeers(op.respChanData)
 	case "getBlockNumber":
 		c.csdk.GetBlockNumber(op.respChanData)
 	case "getBlockByNumber":
@@ -413,8 +413,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getGroupInfoList":
 		c.csdk.GetGroupNodeInfoList(op.respChanData)
-		txHash := args[1].(string)
-		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
 	case "sendRawTransaction":
