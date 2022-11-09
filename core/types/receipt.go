@@ -9,20 +9,20 @@ import (
 
 // Receipt represents the results of a transaction.
 type Receipt struct {
-	TransactionHash  string    `json:"transactionHash"`
-	TransactionIndex string    `json:"transactionIndex"`
-	BlockHash        string    `json:"blockHash"`
 	BlockNumber      int       `json:"blockNumber"`
-	GasUsed          string    `json:"gasUsed"`
 	ContractAddress  string    `json:"contractAddress"`
-	Root             string    `json:"root"`
-	Status           int       `json:"status"`
 	From             string    `json:"from"`
-	To               string    `json:"to"`
+	GasUsed          string    `json:"gasUsed"`
+	Hash             string    `json:"hash"`
 	Input            string    `json:"input"`
+	Logs             []*NewLog `json:"logEntries"`
+	Message          string    `json:"message"`
 	Output           string    `json:"output"`
-	Logs             []*NewLog `json:"logs"`
-	LogsBloom        string    `json:"logsBloom"`
+	Status           int       `json:"status"`
+	To               string    `json:"to"`
+	TransactionHash  string    `json:"transactionHash"`
+	TransactionProof string    `json:"transactionProof"`
+	Version          uint64    `json:"version"`
 }
 
 const (
@@ -120,29 +120,9 @@ func getStatusMessage(status int) string {
 	return message
 }
 
-// GetTransactionHash returns the transaction hash string
-func (r *Receipt) GetTransactionHash() string {
-	return r.TransactionHash
-}
-
-// GetTransactionIndex returns the transaction index string
-func (r *Receipt) GetTransactionIndex() string {
-	return r.TransactionIndex
-}
-
-// GetBlockHash returns the block hash string
-func (r *Receipt) GetBlockHash() string {
-	return r.BlockHash
-}
-
 // GetBlockNumber returns the block number string
 func (r *Receipt) GetBlockNumber() int {
 	return r.BlockNumber
-}
-
-// GetGasUsed returns the used gas
-func (r *Receipt) GetGasUsed() string {
-	return r.GasUsed
 }
 
 // GetContractAddress returns the contract address
@@ -150,24 +130,18 @@ func (r *Receipt) GetContractAddress() string {
 	return r.ContractAddress
 }
 
-// GetRoot returns the transactions root
-func (r *Receipt) GetRoot() string {
-	return r.Root
-}
-
-// GetStatus returns the transaction status
-func (r *Receipt) GetStatus() int {
-	return r.Status
-}
-
 // GetFrom returns the transaction sender address
 func (r *Receipt) GetFrom() string {
 	return r.From
 }
 
-// GetTo returns the transaction receiver address
-func (r *Receipt) GetTo() string {
-	return r.To
+// GetGasUsed returns the used gas
+func (r *Receipt) GetGasUsed() string {
+	return r.GasUsed
+}
+
+func (r *Receipt) GetHash() string {
+	return r.Hash
 }
 
 // GetInput returns the transaction content
@@ -175,9 +149,34 @@ func (r *Receipt) GetInput() string {
 	return r.Input
 }
 
+// GetTransactionHash returns the transaction hash string
+func (r *Receipt) GetTransactionHash() string {
+	return r.TransactionHash
+}
+
 // GetOutput returns the transaction output
 func (r *Receipt) GetOutput() string {
 	return r.Output
+}
+
+// GetTransactionIndex returns the transaction index string
+func (r *Receipt) GetTransactionProof() string {
+	return r.TransactionProof
+}
+
+// GetStatus returns the transaction status
+func (r *Receipt) GetStatus() int {
+	return r.Status
+}
+
+// GetTo returns the transaction receiver address
+func (r *Receipt) GetTo() string {
+	return r.To
+}
+
+// GetTo returns the transaction receiver address
+func (r *Receipt) GetVersion() uint64 {
+	return r.Version
 }
 
 // ParseErrorMessage gets unusual output value from Receipt

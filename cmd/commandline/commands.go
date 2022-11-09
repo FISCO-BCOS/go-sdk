@@ -214,14 +214,10 @@ var getPeersCmd = &cobra.Command{
 	Long:  `Returns the information of connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		nodes, err := RPC.GetPeers(context.Background())
+		peers, err := RPC.GetPeers(context.Background())
 		if err != nil {
 			fmt.Printf("peers not found: %v\n", err)
 			return
-		}
-		peers, err := json.MarshalIndent(nodes, "", indent)
-		if err != nil {
-			fmt.Printf("peers marshalIndent error: %v", err)
 		}
 		fmt.Printf("Peers: \n%s\n", peers)
 	},
@@ -721,16 +717,16 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		configMap := make(map[string]struct{})
-		configMap["tx_count_limit"] = struct{}{}
-		configMap["tx_gas_limit"] = struct{}{}
-		configMap["rpbft_epoch_sealer_num"] = struct{}{}
-		configMap["rpbft_epoch_block_num"] = struct{}{}
-		configMap["consensus_timeout"] = struct{}{}
-		if _, ok := configMap[args[0]]; !ok {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
-			return
-		}
+		//configMap := make(map[string]struct{})
+		//configMap["tx_count_limit"] = struct{}{}
+		//configMap["tx_gas_limit"] = struct{}{}
+		//configMap["rpbft_epoch_sealer_num"] = struct{}{}
+		//configMap["rpbft_epoch_block_num"] = struct{}{}
+		//configMap["consensus_timeout"] = struct{}{}
+		//if _, ok := configMap[args[0]]; !ok {
+		//	fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
+		//	return
+		//}
 		key := args[0]
 		value, err := RPC.GetSystemConfigByKey(context.Background(), key)
 		if err != nil {
