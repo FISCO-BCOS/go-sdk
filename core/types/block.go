@@ -1,14 +1,13 @@
 package types
 
 type Block struct {
-	DbHash           string        `json:"dbHash"`
+	ConsensusWeights []uint64      `json:"consensusWeights"`
 	ExtraData        string        `json:"extraData"`
 	GasLimit         string        `json:"gasLimit"`
 	GasUsed          string        `json:"gasUsed"`
 	Hash             string        `json:"hash"`
-	LogsBloom        string        `json:"logsBloom"`
 	Number           uint64        `json:"number"`
-	ParentHash       string        `json:"parentHash"`
+	ParentInfo       []ParentInfo  `json:"parentInfo"`
 	ReceiptsRoot     string        `json:"receiptsRoot"`
 	Sealer           uint64        `json:"sealer"`
 	SealerList       []string      `json:"sealerList"`
@@ -16,17 +15,18 @@ type Block struct {
 	StateRoot        string        `json:"stateRoot"`
 	Timestamp        uint64        `json:"timestamp"`
 	Transactions     []interface{} `json:"transactions"`
-	TransactionsRoot string        `json:"transactionsRoot"`
+	TxsRoot          string        `json:"txsRoot"`
+	Version          uint64        `json:"version"`
 }
 
 type Signature struct {
-	Index     string `json:"index"`
-	Signature string `json:"signature"`
+	SealerIndex uint64 `json:"sealerIndex"`
+	Signature   string `json:"signature"`
 }
 
 // GetIndex returns the signature index string
-func (s *Signature) GetIndex() string {
-	return s.Index
+func (s *Signature) GetSealerIndex() uint64 {
+	return s.SealerIndex
 }
 
 // GetSignature returns signature string
@@ -34,9 +34,21 @@ func (s *Signature) GetSignature() string {
 	return s.Signature
 }
 
-// GetDbHash returns  records changes to transaction data hash string
-func (B *Block) GetDbHash() string {
-	return B.DbHash
+type ParentInfo struct {
+	BlockHash   string `json:"blockHash"`
+	BlockNumber uint64 `json:"blockNumber"`
+}
+
+func (p *ParentInfo) GetBlockHash() string {
+	return p.BlockHash
+}
+
+func (p *ParentInfo) GetBlockNumber() uint64 {
+	return p.BlockNumber
+}
+
+func (B *Block) GetParentInfo() []ParentInfo {
+	return B.ParentInfo
 }
 
 // GetGasLimit returns the block max gas limit string
@@ -54,19 +66,9 @@ func (B *Block) GetHash() string {
 	return B.Hash
 }
 
-// GetLogsBloom returns the block logs bloom string
-func (B *Block) GetLogsBloom() string {
-	return B.LogsBloom
-}
-
 // GetNumber returns the block number uint64
 func (B *Block) GetNumber() uint64 {
 	return B.Number
-}
-
-// GetParentHash returns parent block hash string
-func (B *Block) GetParentHash() string {
-	return B.ParentHash
 }
 
 // GetReceiptsRoot returns the block  receipts root string
@@ -99,7 +101,10 @@ func (B *Block) GetTransactions() []interface{} {
 	return B.Transactions
 }
 
-// GetTransactionsRoot returns the block all transcation root string
-func (B *Block) GetTransactionsRoot() string {
-	return B.TransactionsRoot
+func (B *Block) GetTxsRoot() string {
+	return B.TxsRoot
+}
+
+func (B *Block) GetVersion() uint64 {
+	return B.Version
 }
