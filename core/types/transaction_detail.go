@@ -1,27 +1,30 @@
 package types
 
 type TransactionDetail struct {
-	BlockHash        string `json:"blockHash"`
-	BlockNumber      string `json:"blockNumber"`
-	From             string `json:"from"`
-	Gas              string `json:"gas"`
-	GasPrice         string `json:"gasPrice"`
-	Hash             string `json:"hash"`
-	Input            string `json:"input"`
-	Nonce            string `json:"nonce"`
-	To               string `json:"to"`
-	TransactionIndex string `json:"transactionIndex"`
-	Value            string `json:"value"`
+	Abi        string `json:"abi"`
+	BlockLimit int64  `json:"blockLimit"`
+	ChainID    string `json:"chainID"`
+	From       string `json:"from"`
+	GroupID    string `json:"groupID"`
+	Hash       string `json:"hash"`
+	ImportTime int64  `json:"importTime"`
+	Input      string `json:"input"`
+	Nonce      string `json:"nonce"`
+	Signature  string `json:"signature"`
+	To         string `json:"to"`
+	Version    uint64 `json:"version"`
 }
 
-// GetBlockHash returns the block hash string
-func (t *TransactionDetail) GetBlockHash() string {
-	return t.BlockHash
+func (t *TransactionDetail) GetAbi() string {
+	return t.Abi
 }
 
-// GetBlockNumber returns the blcok number string
-func (t *TransactionDetail) GetBlockNumber() string {
-	return t.BlockNumber
+func (t *TransactionDetail) GetBlockLimit() int64 {
+	return t.BlockLimit
+}
+
+func (t *TransactionDetail) GetChainID() string {
+	return t.ChainID
 }
 
 // GetValue returns the transaction pfrom address string
@@ -29,19 +32,17 @@ func (t *TransactionDetail) GetFrom() string {
 	return t.From
 }
 
-// GetValue returns the transaction gas string
-func (t *TransactionDetail) GetGas() string {
-	return t.Gas
-}
-
-// GetValue returns the transaction gas price string
-func (t *TransactionDetail) GetGasPrice() string {
-	return t.GasPrice
+func (t *TransactionDetail) GetGroupID() string {
+	return t.GroupID
 }
 
 // GetValue returns the transaction hash string
 func (t *TransactionDetail) GetHash() string {
 	return t.Hash
+}
+
+func (t *TransactionDetail) GetImportTime() int64 {
+	return t.ImportTime
 }
 
 // GetValue returns the transaction input string
@@ -54,17 +55,15 @@ func (t *TransactionDetail) GetNonce() string {
 	return t.Nonce
 }
 
+func (t *TransactionDetail) GetSignature() string {
+	return t.Signature
+}
+
 // GetValue returns the transaction to address string
 func (t *TransactionDetail) GetTo() string {
 	return t.To
 }
 
-// GetValue returns the transaction index string
-func (t *TransactionDetail) GetTransactionIndex() string {
-	return t.TransactionIndex
-}
-
-// GetValue returns the transaction value string
-func (t *TransactionDetail) GetValue() string {
-	return t.Value
+func (t *TransactionDetail) GetVersion() uint64 {
+	return t.Version
 }

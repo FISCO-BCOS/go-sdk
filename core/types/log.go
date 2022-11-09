@@ -151,6 +151,7 @@ func (l *LogForStorage) DecodeRLP(s *rlp.Stream) error {
 
 // NewLog is used for the receipt
 type NewLog struct {
+	BlockNumber string `json:"blockNumber"`
 	// Consensus fields:
 	// address of the contract that generated the event
 	Address string `json:"address"`
