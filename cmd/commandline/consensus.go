@@ -2,6 +2,7 @@ package commandline
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/FISCO-BCOS/go-sdk/precompiled/consensus"
 	"github.com/spf13/cobra"
@@ -57,15 +58,20 @@ For example:
 For more information please refer:
 
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/console.html#addsealer`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		nodeID := args[0]
+		weight, err := strconv.ParseInt(args[1], 0, 64)
+		if err != nil {
+			fmt.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
+			return
+		}
 		consensusService, err := consensus.NewConsensusService(RPC)
 		if err != nil {
 			fmt.Printf("addSealer failed, consensus.NewConsensusService err: %v\n", err)
 			return
 		}
-		result, err := consensusService.AddSealer(nodeID)
+		result, err := consensusService.AddSealer(nodeID, weight)
 		if err != nil {
 			fmt.Printf("addSealer failed, consensusService.AddSealer err: %v\n", err)
 			return

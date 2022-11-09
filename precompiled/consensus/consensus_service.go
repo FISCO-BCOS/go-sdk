@@ -106,7 +106,7 @@ func (service *Service) AddObserver(nodeID string) (int64, error) {
 }
 
 // AddSealer add a new sealer node according to the node ID
-func (service *Service) AddSealer(nodeID string) (int64, error) {
+func (service *Service) AddSealer(nodeID string, weight int64) (int64, error) {
 	//flag, err := service.isValidNodeID(nodeID)
 	//if err != nil {
 	//	return precompiled.DefaultErrorCode, fmt.Errorf("AddSealer failed, err: %v", err)
@@ -132,7 +132,7 @@ func (service *Service) AddSealer(nodeID string) (int64, error) {
 		}
 	}
 
-	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID, big.NewInt(1))
+	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID, big.NewInt(weight))
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
 	}

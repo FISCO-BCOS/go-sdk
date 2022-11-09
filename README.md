@@ -24,7 +24,7 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 # 环境准备
 
-- [Golang](https://golang.org/), 版本需不低于`1.7`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
+- [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
 https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 - [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
 - [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应1.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos) 
@@ -48,30 +48,32 @@ type Config struct {
 - NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
 
 # 控制台使用
-
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.ini`进行更改:
+在使用控制台需要先拉取代码或下载代码:
 
 1. 拉取代码并编译
 
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
-go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" cmd/console.go
+git checkout dev-3.0.0
 ```
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
 
-3. 新建conf文件夹,请拷贝对应的SDK证书。
-   
+3. 请拷贝对应的SDK证书到conf文件夹。
+
 4. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
 
-5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。
+5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。(可以添加到/etc/profile文件中)
 
-6. 最后，运行控制台查看可用指令:
+6. 最后，编译,运行控制台查看可用指令:
 
 ```bash
+go mod tidy
+go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -o console cmd/console.go
 ./console help
 ```
+
 
 # Package功能使用
 

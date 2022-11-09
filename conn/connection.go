@@ -133,14 +133,14 @@ type requestOp struct {
 }
 
 type EventLogRespResult struct {
-	LogIndex         int      `json:"logIndex"`
-	TransactionIndex int      `json:"transactionIndex"`
-	TransactionHash  string   `json:"transactionHash"`
-	BlockHash        string   `json:"blockHash"`
-	BlockNumber      int      `json:"blockNumber"`
-	Address          string   `json:"address"`
-	Data             string   `json:"data"`
-	Topics           []string `json:"topics"`
+	LogIndex         int    `json:"logIndex"`
+	TransactionIndex int    `json:"transactionIndex"`
+	TransactionHash  string `json:"transactionHash"`
+	//BlockHash        string   `json:"blockHash"`
+	BlockNumber uint64   `json:"blockNumber"`
+	Address     string   `json:"address"`
+	Data        string   `json:"data"`
+	Topics      []string `json:"topics"`
 }
 
 type eventLogResp struct {
@@ -189,9 +189,9 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 			BlockNumber: uint64(number),
 			TxHash:      common.HexToHash(eventLog.TransactionHash),
 			TxIndex:     uint(txIndex),
-			BlockHash:   common.HexToHash(eventLog.BlockHash),
-			Index:       uint(logIndex),
-			Removed:     false,
+			//BlockHash:   common.HexToHash(eventLog.BlockHash),
+			Index:   uint(logIndex),
+			Removed: false,
 		})
 	}
 	eventHander := handler.(func(int, []types.Log))
@@ -368,7 +368,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getGroupPeers":
 		c.csdk.GetGroupPeers(op.respChanData)
 	case "getPeers":
-		c.csdk.GetGroupPeers(op.respChanData)
+		c.csdk.GetPeers(op.respChanData)
 	case "getBlockNumber":
 		c.csdk.GetBlockNumber(op.respChanData)
 	case "getBlockByNumber":
@@ -413,8 +413,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getGroupInfoList":
 		c.csdk.GetGroupNodeInfoList(op.respChanData)
-		txHash := args[1].(string)
-		c.csdk.GetTransaction(op.respChanData, txHash)
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
 	case "sendRawTransaction":
