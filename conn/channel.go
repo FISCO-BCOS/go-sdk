@@ -25,7 +25,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math/big"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -34,6 +33,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/channingduan/gmtls"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/google/uuid"
@@ -64,7 +64,7 @@ type eventInfo struct {
 type channelSession struct {
 	// groupID   uint
 	connMu    sync.Mutex
-	c         *tls.Conn
+	c         *gmtls.TlsConnection
 	mu        sync.RWMutex
 	responses map[string]*channelResponse
 	// receiptsMutex sync.Mutex
@@ -308,7 +308,7 @@ func (hc *channelSession) Write(context.Context, interface{}) error {
 }
 
 func (hc *channelSession) RemoteAddr() string {
-	return hc.c.RemoteAddr().String()
+	return ""
 }
 
 func (hc *channelSession) Read() ([]*jsonrpcMessage, bool, error) {
@@ -358,24 +358,28 @@ var DefaultChannelTimeouts = ChannelTimeouts{
 
 // DialChannelWithClient creates a new RPC client that connects to an RPC server over Channel
 // using the provided Channel Client.
-func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*Connection, error) {
+func DialChannelWithClient(endpoint string, config *tls.Config, groupID int, gmConfig *gmtls.Config) (*Connection, error) {
 	initctx := context.Background()
 	return newClient(initctx, func(context.Context) (ServerCodec, error) {
-		conn, err := tls.Dial("tcp", endpoint, config)
+		conn, err := GmDial(endpoint, gmConfig)
 		if err != nil {
 			return nil, err
 		}
 		ch := &channelSession{c: conn, responses: make(map[string]*channelResponse),
-			receiptResponses: make(map[string]*channelResponse), topicHandlers: make(map[string]func([]byte, *[]byte)),
+			receiptResponses:    make(map[string]*channelResponse),
+			topicHandlers:       make(map[string]func([]byte, *[]byte)),
 			eventLogHandlers:    make(map[string]eventInfo),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
-			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
-			tlsConfig: config,
-			heartBeat: time.NewTicker(heartBeatInterval * time.Second)}
-		go ch.processMessages()
+			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1},
+			closed:              make(chan interface{}),
+			endpoint:            endpoint,
+			tlsConfig:           config,
+			heartBeat:           time.NewTicker(heartBeatInterval * time.Second),
+		}
+		go ch.processMessages(gmConfig)
 		if err = ch.handshakeChannel(); err != nil {
-			logrus.Errorf("handshake channel protocol failed, use default protocol version")
+			logrus.Errorf("handshake channel protocol failed, use default protocol version: %v", err)
 		}
 		ch.topicHandlers[blockNotifyPrefix+strconv.Itoa(groupID)] = nil
 		if err = ch.sendSubscribedTopics(); err != nil {
@@ -670,6 +674,20 @@ func (hc *channelSession) handshakeChannel() error {
 	return nil
 }
 
+// sendHeartbeatMsg
+func (hc *channelSession) sendHeartbeatMsg() error {
+	msg, err := newChannelMessage(clientHeartbeat, nil)
+	if err != nil {
+		return fmt.Errorf("new topic message failed, err: %v", err)
+	}
+	// ignore response, because if wait response will block the process message
+	err = hc.sendMessageNoResponse(msg)
+	if err != nil {
+		return fmt.Errorf("sendMessage failed, err: %v", err)
+	}
+	return nil
+}
+
 func (hc *channelSession) sendSubscribedEvent(eventLogParams *types.EventLogParams) error {
 	data, err := json.Marshal(*eventLogParams)
 	if err != nil {
@@ -775,19 +793,6 @@ func (hc *channelSession) sendAMOPMsg(topic string, data []byte) ([]byte, error)
 		return nil, err
 	}
 	return responseTopicData.data, nil
-}
-
-func (hc *channelSession) sendHeartbeatMsg() error {
-	msg, err := newChannelMessage(clientHeartbeat, nil)
-	if err != nil {
-		return fmt.Errorf("new topic message failed, err: %v", err)
-	}
-	// ignore response, because if wait response will block the process message
-	err = hc.sendMessageNoResponse(msg)
-	if err != nil {
-		return fmt.Errorf("sendMessage failed, err: %v", err)
-	}
-	return nil
 }
 
 func (hc *channelSession) broadcastAMOPMsg(topic string, data []byte) error {
@@ -1053,13 +1058,23 @@ func (hc *channelSession) processEventLogMessage(msg *channelMessage) {
 }
 
 // processMessages process incoming messages from the node
-func (hc *channelSession) processMessages() {
+func (hc *channelSession) processMessages(gmConfig *gmtls.Config) {
+	// TODO use timeout?
+	receive := make(chan []byte, 5)
+	go func(ch chan []byte, hc *channelSession) {
+		for {
+			receiveBuf := make([]byte, 4096)
+			b, err := hc.c.Read(receiveBuf)
+			if err != nil || b == 0 {
+				hc.Close()
+				return
+			}
+			ch <- receiveBuf[:b]
+		}
+	}(receive, hc)
 	for {
 		select {
 		case <-hc.closed:
-			// delete old network
-			_ = hc.c.Close()
-			hc.c = nil
 			// return err for responses and receiptResponses
 			hc.mu.Lock()
 			for _, response := range hc.responses {
@@ -1079,49 +1094,47 @@ func (hc *channelSession) processMessages() {
 			}
 			hc.asyncMu.Unlock()
 			// re-connect network
+			hc.connMu.Lock()
+			// delete old network
+			_ = hc.c.Close()
+			hc.c = nil
 			for {
-				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
+				var err error
+				hc.c, err = GmDial(hc.endpoint, gmConfig)
 				if err != nil {
 					logrus.Warnf("tls.Dial %v failed, err: %v\n", hc.endpoint, err)
 					time.Sleep(5 * time.Second)
 					continue
 				}
-				hc.c = con
-				hc.closed = make(chan interface{})
-				hc.closeOnce = sync.Once{}
-				hc.nodeInfo.Protocol = 1
-				go hc.processMessages()
-				if err = hc.handshakeChannel(); err != nil {
-					logrus.Warnf("handshake channel protocol failed, use default protocol version")
-				}
-				err = hc.sendSubscribedTopics() // re-subscribe topic
-				if err != nil {
-					logrus.Errorf("re-subscriber topic failed, err: %v\n", err)
-				}
-				// resubscribe contract event
-				for _, eventLogInfo := range hc.eventLogHandlers {
-					err = hc.sendSubscribedEvent(eventLogInfo.params)
-					if err != nil {
-						logrus.Errorf("re-subscriber event failed, event: %+v, err: %v\n", *eventLogInfo.params, err)
-					}
-				}
-				return
+				logrus.Errorf("hchchchc: %v", hc)
+				logrus.Error("nodeInfo:", hc.nodeInfo)
+				//hc.nodeInfo = nodeInfo{blockNumber: 0, Protocol: 1}
+				break
 			}
+			hc.connMu.Unlock()
+			hc.closed = make(chan interface{})
+			hc.closeOnce = sync.Once{}
+			hc.nodeInfo.Protocol = 1
+			go hc.processMessages(gmConfig)
+			if err := hc.handshakeChannel(); err != nil {
+				logrus.Warnf("close handshake channel protocol failed, use default protocol version: %v", err)
+			}
+			err := hc.sendSubscribedTopics() // re-subscribe topic
+			if err != nil {
+				logrus.Errorf("re-subscriber topic failed, err: %v\n", err)
+			}
+			// resubscribe contract event
+			for _, eventLogInfo := range hc.eventLogHandlers {
+				err = hc.sendSubscribedEvent(eventLogInfo.params)
+				if err != nil {
+					logrus.Errorf("re-subscriber event failed, event: %+v, err: %v\n", *eventLogInfo.params, err)
+				}
+			}
+			return
 		case <-hc.heartBeat.C:
 			hc.sendHeartbeatMsg()
-		default:
-			receiveBuf := make([]byte, 4096)
-			hc.c.SetReadDeadline(time.Now().Add(tlsConnReadDeadline * time.Second))
-			b, err := hc.c.Read(receiveBuf)
-			if err != nil {
-				nerr, ok := err.(net.Error)
-				if !ok || !nerr.Timeout() {
-					logrus.Warnf("channel Read error:%v\n", err)
-					hc.Close()
-				}
-				continue
-			}
-			hc.buf = append(hc.buf, receiveBuf[:b]...)
+		case buf := <-receive:
+			hc.buf = append(hc.buf, buf...)
 			msg, err := decodeChannelMessage(hc.buf)
 			if err != nil {
 				logrus.Debugf("decodeChannelMessage error:%v", err)
@@ -1293,4 +1306,24 @@ func generateRandomNum() []byte {
 		panic("generate random number failed")
 	}
 	return n.Bytes()
+}
+
+// GmDial GM connection
+func GmDial(endpoint string, gmConfig *gmtls.Config) (*gmtls.TlsConnection, error) {
+	conn, err := gmtls.NewTlsContext(gmtls.VersionTLS12, gmConfig.CaCert)
+	if err != nil {
+		return nil, err
+	}
+	if err := conn.SetCertificate(gmConfig.SignCert, gmConfig.SignKey); err != nil {
+		return nil, err
+	}
+	if err := conn.SetEncryptCertificate(gmConfig.EnCert, gmConfig.EnKey); err != nil {
+		return nil, err
+	}
+
+	if err := conn.Connection(endpoint); err != nil {
+		return nil, err
+	}
+
+	return conn, err
 }

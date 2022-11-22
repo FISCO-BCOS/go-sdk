@@ -28,6 +28,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/channingduan/gmtls"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -82,7 +83,15 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 				return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
 			}
 		}
-		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
+		var gmConfig gmtls.Config
+		if config.IsSMCrypto {
+			gmConfig.CaCert = config.CAFile
+			gmConfig.SignCert = config.Cert
+			gmConfig.SignKey = config.Key
+			gmConfig.EnCert = config.EnCert
+			gmConfig.EnKey = config.EnKey
+		}
+		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID, &gmConfig)
 	}
 	if err != nil {
 		return nil, err
