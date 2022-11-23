@@ -31,7 +31,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/channingduan/gmtls"
 	"github.com/ethereum/go-ethereum/common"
@@ -82,7 +81,7 @@ type channelSession struct {
 	closeOnce           sync.Once
 	closed              chan interface{}
 	endpoint            string
-	tlsConfig           *tls.Config
+	tlsConfig           *gmtls.Config
 	heartBeat           *time.Ticker
 }
 
@@ -358,7 +357,7 @@ var DefaultChannelTimeouts = ChannelTimeouts{
 
 // DialChannelWithClient creates a new RPC client that connects to an RPC server over Channel
 // using the provided Channel Client.
-func DialChannelWithClient(endpoint string, config *tls.Config, groupID int, gmConfig *gmtls.Config) (*Connection, error) {
+func DialChannelWithClient(endpoint string, groupID int, gmConfig *gmtls.Config) (*Connection, error) {
 	initctx := context.Background()
 	return newClient(initctx, func(context.Context) (ServerCodec, error) {
 		conn, err := GmDial(endpoint, gmConfig)
@@ -374,7 +373,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int, gmC
 			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1},
 			closed:              make(chan interface{}),
 			endpoint:            endpoint,
-			tlsConfig:           config,
+			tlsConfig:           gmConfig,
 			heartBeat:           time.NewTicker(heartBeatInterval * time.Second),
 		}
 		go ch.processMessages(gmConfig)
@@ -1309,16 +1308,20 @@ func generateRandomNum() []byte {
 }
 
 // GmDial GM connection
-func GmDial(endpoint string, gmConfig *gmtls.Config) (*gmtls.TlsConnection, error) {
-	conn, err := gmtls.NewTlsContext(gmtls.VersionTLS12, gmConfig.CaCert)
+func GmDial(endpoint string, tlsConfig *gmtls.Config) (*gmtls.TlsConnection, error) {
+
+	conn, err := gmtls.NewTlsContext(gmtls.VersionTLS12, tlsConfig.CaCert)
 	if err != nil {
 		return nil, err
 	}
-	if err := conn.SetCertificate(gmConfig.SignCert, gmConfig.SignKey); err != nil {
+	if err := conn.SetCertificate(tlsConfig.SignCert, tlsConfig.SignKey); err != nil {
 		return nil, err
 	}
-	if err := conn.SetEncryptCertificate(gmConfig.EnCert, gmConfig.EnKey); err != nil {
-		return nil, err
+
+	if tlsConfig.IsSMCrypto {
+		if err := conn.SetEncryptCertificate(tlsConfig.EnCert, tlsConfig.EnKey); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := conn.Connection(endpoint); err != nil {

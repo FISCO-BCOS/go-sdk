@@ -26,10 +26,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/FISCO-BCOS/crypto/tls"
-	"github.com/FISCO-BCOS/crypto/x509"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
-	"github.com/channingduan/gmtls"
 )
 
 var (
@@ -153,23 +150,6 @@ func DialContextHTTP(rawurl string) (*Connection, error) {
 		rawurl = "http://" + rawurl
 	}
 	return DialHTTP(rawurl)
-}
-
-// DialContextChannel creates a new Channel client, just like Dial.
-func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int, gmConfig *gmtls.Config) (*Connection, error) {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(caRoot)
-	if !ok {
-		panic("failed to parse root certificate")
-	}
-	cer, err := tls.X509KeyPair(certContext, keyContext)
-	if err != nil {
-		return nil, err
-	}
-	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
-		InsecureSkipVerify: true}
-	config.CurvePreferences = append(config.CurvePreferences, tls.CurveSecp256k1, tls.CurveP256)
-	return DialChannelWithClient(rawurl, config, groupID, gmConfig)
 }
 
 // ClientFromContext Connection retrieves the client from the context, if any. This can be used to perform
