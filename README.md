@@ -43,7 +43,7 @@ type Config struct {
 - IsSMCrypto:使用的签名算法，ture表示使用国密SM2，false表示使用普通ECDSA。
 - PrivateKey:节点签发交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
   请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
-  如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#环境配置#外部账户)。
+  如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#外部账户)。
 - GroupID:账本id
 - NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
 
@@ -58,7 +58,7 @@ cd go-sdk
 git checkout dev-3.0.0
 ```
 
-2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
+2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
 
 3. 请拷贝对应的SDK证书到conf文件夹。
 
@@ -123,6 +123,16 @@ contract Store {
 ```bash
 # 如果是国密则添加-g选项
 bash tools/download_solc.sh -v 0.4.25
+```
+
+在linux 环境运行时，dos2unix是将Windows格式文件转换为Unix、Linux格式的实用命令。
+```shell script
+dos2unix tools/download_solc.sh
+```
+然后再执行 下载安装
+
+```shell script
+bash tools/download_solc.sh -v 0.6.10
 ```
 
 3.构建`go-sdk`的代码生成工具`abigen`
