@@ -2,6 +2,7 @@ package commandline
 
 import (
 	"fmt"
+	"github.com/FISCO-BCOS/go-sdk/auth"
 	"github.com/FISCO-BCOS/go-sdk/precompiled/permission"
 	"github.com/spf13/cobra"
 )
@@ -35,5 +36,33 @@ For more information please refer:
 			return
 		}
 		fmt.Println(jsonStr)
+	},
+}
+
+var getDeployAuthType = &cobra.Command{
+	Use:   "getDeployAuthType",
+	Short: "                                   get global deploy auth type",
+	Long: `get global deploy auth type.
+For example:
+
+    [getDeployAuthType]
+
+For more information please refer:
+
+  	https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/develop/sdk/java_sdk/rpc_api.html#getdeployauthtype`,
+	Args: cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		authManagerService, err := auth.NewAuthManagerService(RPC)
+		if err != nil {
+			fmt.Printf("getDeployAuthType failed, auth.NewAuthManagerService err:%v\n", err)
+			return
+		}
+		result, err := authManagerService.GetDeployAuthType()
+		if err != nil {
+			fmt.Printf("getDeployAuthType failed, auth.NewAuthManagerService err: %v\n", err)
+			return
+		}
+		fmt.Println(result)
 	},
 }
