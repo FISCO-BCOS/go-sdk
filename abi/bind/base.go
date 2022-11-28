@@ -194,8 +194,8 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 	return c.abi.Unpack(result, method, output)
 }
 
-// Transact invokes the (paid) contract method with params as input values.
-func (c *BoundContract) Transact(opts *TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+// TransactWithResult invokes the (paid) contract method with params as input values.
+func (c *BoundContract) TransactWithResult(opts *TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
 	// Otherwise pack up the parameters and invoke the contract
 	input, err := c.abi.Pack(method, params...)
 	if err != nil {
@@ -204,6 +204,16 @@ func (c *BoundContract) Transact(opts *TransactOpts, result interface{}, method 
 	tx, receipt, err := c.transact(opts, &c.address, input)
 	c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
 	return tx, receipt, err
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	// Otherwise pack up the parameters and invoke the contract
+	input, err := c.abi.Pack(method, params...)
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.transact(opts, &c.address, input)
 }
 
 func (c *BoundContract) AsyncTransact(opts *TransactOpts, handler func(*types.Receipt, error), method string, params ...interface{}) (*types.Transaction, error) {
