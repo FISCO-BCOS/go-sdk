@@ -5,6 +5,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"reflect"
@@ -185,8 +186,9 @@ func (service *AuthManagerService) GetAdmin(contractAddr common.Address) (accoun
 
 //6.2 治理委员账号专用接口
 //apply for update governor, only governor can call it
+//account new governor address
+//weight 0 == delete, bigger than 0 == update or insert
 func (service *AuthManagerService) UpdateGovernor(account common.Address, weight uint32) (proposalId *big.Int, err error) {
-
 	_, receipt, err := service.committeeManager.
 		CreateUpdateGovernorProposal(service.client.GetTransactOpts(), account, weight, DEFAULT_BLOCK_NUMBER_INTERVAL)
 	if err != nil {
@@ -197,48 +199,152 @@ func (service *AuthManagerService) UpdateGovernor(account common.Address, weight
 		return nil, fmt.Errorf("AuthManagerService UpdateGovernor failed, ErrorMessage: %v", receipt.GetErrorMessage())
 	}
 
-	//service.committeeManager.CreateUpdateGovernorProposal(receipt.GetOutput())
-
-	return nil, nil
+	return parseReturnValue(receipt, "createUpdateGovernorProposal")
 }
 
 //apply set participate rate and win rate. only governor can call it
-func (service *AuthManagerService) SetRate(participatesRate big.Int, winRate big.Int) (proposalId *big.Int, err error) {
-	return nil, nil
+//participatesRate [0,100]. if 0, always succeed.
+//winRate [0,100].
+func (service *AuthManagerService) SetRate(participatesRate uint8, winRate uint8) (proposalId *big.Int, err error) {
+	_, receipt, err := service.committeeManager.
+		CreateSetRateProposal(service.client.GetTransactOpts(), participatesRate, participatesRate, DEFAULT_BLOCK_NUMBER_INTERVAL)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService SetRate failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService SetRate failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	return parseReturnValue(receipt, "createSetRateProposal")
 }
 
 //submit a proposal of setting deploy contract auth type, only governor can call it
-func (service *AuthManagerService) SetDeployAuthType(deployAuthType big.Int) (proposalId *big.Int, err error) {
-	return nil, nil
+//deployAuthType 1-whitelist; 2-blacklist
+func (service *AuthManagerService) SetDeployAuthType(deployAuthType uint8) (proposalId *big.Int, err error) {
+	_, receipt, err := service.committeeManager.
+		CreateSetDeployAuthTypeProposal(service.client.GetTransactOpts(), deployAuthType, DEFAULT_BLOCK_NUMBER_INTERVAL)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService SetDeployAuthType failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService SetDeployAuthType failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	return parseReturnValue(receipt, "createSetDeployAuthTypeProposal")
 }
 
 //submit a proposal of adding deploy contract auth for account, only governor can call it
+//openFlag true-open; false-close
 func (service *AuthManagerService) ModifyDeployAuth(account common.Address, openFlag bool) (proposalId *big.Int, err error) {
-	return nil, nil
+	_, receipt, err := service.committeeManager.
+		CreateModifyDeployAuthProposal(service.client.GetTransactOpts(), account, openFlag, DEFAULT_BLOCK_NUMBER_INTERVAL)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService ModifyDeployAuth failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService ModifyDeployAuth failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	return parseReturnValue(receipt, "createModifyDeployAuthProposal")
 }
 
 //submit a proposal of resetting contract admin, only governor can call it
 func (service *AuthManagerService) ResetAdmin(newAdmin common.Address, contractAddr common.Address) (proposalId *big.Int, err error) {
-	return nil, nil
+	_, receipt, err := service.committeeManager.
+		CreateResetAdminProposal(service.client.GetTransactOpts(), newAdmin, contractAddr, DEFAULT_BLOCK_NUMBER_INTERVAL)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService ResetAdmin failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService ResetAdmin failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	return parseReturnValue(receipt, "createResetAdminProposal")
 }
 
 //revoke proposal, only governor can call it
 func (service *AuthManagerService) RevokeProposal(proposalId big.Int) (receipt *types.Receipt, err error) {
-	return nil, nil
+	_, receipt, err = service.committeeManager.RevokeProposal(service.client.GetTransactOpts(), &proposalId)
+
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService RevokeProposal failed, err: %v", err)
+	}
+
+	return receipt, nil
 }
 
 //unified vote, only governor can call it
 func (service *AuthManagerService) VoteProposal(proposalId big.Int, agree bool) (receipt *types.Receipt, err error) {
-	return nil, nil
+
+	_, receipt, err = service.committeeManager.VoteProposal(service.client.GetTransactOpts(), &proposalId, agree)
+
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService VoteProposal failed, err: %v", err)
+	}
+
+	return receipt, nil
 }
 
 //6.3 合约管理员账号专用接口
 //set a specific contract's method auth type, only contract admin can call it
-func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address, funcSelector [4]byte, authType big.Int) (rtCdoe *big.Int, err error) {
-	return nil, nil
+//authType white_list or black_list
+func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address, funcSelector [4]byte, authType uint8) (rtCode *big.Int, err error) {
+	_, receipt, err := service.contractAuthPrecompiled.SetMethodAuthType(service.client.GetTransactOpts(), contractAddr, funcSelector, authType)
+
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService SetMethodAuthType failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService SetMethodAuthType failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	return parseReturnValue(receipt, "setMethodAuthType")
 }
 
 //set a specific contract's method ACL, only contract admin can call it
-func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address, isOpen bool) (rtCdoe *big.Int, err error) {
-	return nil, nil
+func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address, isOpen bool) (rtCode *big.Int, err error) {
+
+	var receipt *types.Receipt
+	if isOpen {
+		_, receipt, err = service.contractAuthPrecompiled.OpenMethodAuth(service.client.GetTransactOpts(), contractAddr, funcSelector, account)
+
+		if err != nil {
+			return nil, fmt.Errorf("AuthManagerService OpenMethodAuth failed, err: %v", err)
+		}
+	} else {
+		_, receipt, err = service.contractAuthPrecompiled.CloseMethodAuth(service.client.GetTransactOpts(), contractAddr, funcSelector, account)
+
+		if err != nil {
+			return nil, fmt.Errorf("AuthManagerService CloseMethodAuth failed, err: %v", err)
+		}
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService SetMethodAuth failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+	if isOpen {
+		return parseReturnValue(receipt, "openMethodAuth")
+	} else {
+		return parseReturnValue(receipt, "closeMethodAuth")
+	}
+
+}
+
+func parseReturnValue(receipt *types.Receipt, name string) (*big.Int, error) {
+	fmt.Println(receipt)
+
+	errorMessage := receipt.GetErrorMessage()
+	if errorMessage != "" {
+		return nil, fmt.Errorf("receipt.Status err: %v", errorMessage)
+	}
+	bigNum, err := precompiled.ParseBigIntFromOutput(receipt)
+	if err != nil {
+		return nil, fmt.Errorf("parseReturnValue failed, err: %v", err)
+	}
+	return bigNum, nil
 }
