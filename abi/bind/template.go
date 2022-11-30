@@ -287,7 +287,7 @@ var (
 
 	// Transact invokes the (paid) contract method with params as input values.
 	func (_{{$contract.Type}} *{{$contract.Type}}Raw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-		return _{{$contract.Type}}.Contract.{{$contract.Type}}Transactor.contract.Transact(opts, result, method, params...)
+		return _{{$contract.Type}}.Contract.{{$contract.Type}}Transactor.contract.TransactWithResult(opts, result, method, params...)
 	}
 
 	// Call invokes the (constant) contract method with params as input values and
@@ -306,7 +306,7 @@ var (
 
 	// Transact invokes the (paid) contract method with params as input values.
 	func (_{{$contract.Type}} *{{$contract.Type}}TransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-		return _{{$contract.Type}}.Contract.contract.Transact(opts, result, method, params...)
+		return _{{$contract.Type}}.Contract.contract.TransactWithResult(opts, result, method, params...)
 	}
 
 	{{range .Calls}}
