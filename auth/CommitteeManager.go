@@ -712,3 +712,20 @@ func (_CommitteeManager *CommitteeManagerSession) WatchAllExecResult(fromBlock *
 func (_CommitteeManager *CommitteeManagerSession) ParseExecResult(log types.Log) (*CommitteeManagerExecResult, error) {
 	return _CommitteeManager.Contract.ParseExecResult(log)
 }
+
+
+// customer
+
+var committee Committee
+
+// todo kevin
+func GetCommittee() (*Committee) {
+
+	if committee = (Committee{}) {
+
+
+		committee , err := NewCommittee()
+	}
+
+	return committee
+}

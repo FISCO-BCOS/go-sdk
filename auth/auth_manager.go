@@ -7,6 +7,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+	"reflect"
 )
 
 type ProposalInfo struct {
@@ -19,6 +20,13 @@ type ProposalInfo struct {
 	AgainstVoters       []common.Address
 }
 
+type CommitteeInfo struct {
+	ParticipatesRate uint8
+	WinRate          uint8
+	Governors        []common.Address
+	Weights          []uint32
+}
+
 type AuthManagerService struct {
 	client          *client.Client
 	authManagerAuth *bind.TransactOpts
@@ -29,15 +37,17 @@ type AuthManagerService struct {
 	proposalManager         *ProposalManager
 }
 
-var committeeAddress = common.HexToAddress("0000000000000000000000000000000000010001")
+//var committeeAddress = common.HexToAddress("0000000000000000000000000000000000010001")
 
-var proposalManagerAddress = common.HexToAddress("0000000000000000000000000000000000010001")
+//var proposalManagerAddress = common.HexToAddress("0000000000000000000000000000000000010001")
 
 var committeeManagerAddress = common.HexToAddress("0000000000000000000000000000000000010001")
 
 var contractAuthPrecompiledAddress = common.HexToAddress("0000000000000000000000000000000000001005")
 
 func NewAuthManagerService(client *client.Client) (services *AuthManagerService, err error) {
+	authManagerAuth := client.GetTransactOpts()
+
 	mgr, err := NewCommitteeManager(committeeManagerAddress, client)
 	if err != nil {
 		return nil, fmt.Errorf("NewCommitteeManager construct Service failed, err: %+v", err)
@@ -48,17 +58,27 @@ func NewAuthManagerService(client *client.Client) (services *AuthManagerService,
 		return nil, fmt.Errorf("NewContractAuthPrecompiled construct Service failed, err: %+v", err)
 	}
 
-	committee, err := NewCommittee(committeeAddress, client)
+	opts := &bind.CallOpts{From: authManagerAuth.From}
+
+	fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+	fmt.Printf("services.committeeManager : %s", services.committeeManager)
+
+	committeeCon, err := services.committeeManager.CommitteeManagerCaller.Committee(opts)
+
+	fmt.Printf("committeeCon : %s", committeeCon)
+	fmt.Printf("committeeCon err : %w", err)
+
+	committee, err := NewCommittee(committeeCon, client)
 	if err != nil {
 		return nil, fmt.Errorf("NewCommittee construct Service failed, err: %+v", err)
 	}
 
-	proposalManager, err := NewProposalManager(proposalManagerAddress, client)
+	proposalMgrCon, err := services.committeeManager.ProposalMgr(opts)
+	proposalManager, err := NewProposalManager(proposalMgrCon, client)
 	if err != nil {
 		return nil, fmt.Errorf("NewProposalManager construct Service failed, err: %+v", err)
 	}
-
-	authManagerAuth := client.GetTransactOpts()
 
 	s := &AuthManagerService{client: client,
 		authManagerAuth:         authManagerAuth,
@@ -73,14 +93,30 @@ func NewAuthManagerService(client *client.Client) (services *AuthManagerService,
 
 //6.1 无需权限的查询接口
 //get Committee info
-func (service *AuthManagerService) GetCommitteeInfo() {
+func (service *AuthManagerService) GetCommitteeInfo() (c *CommitteeInfo, err error) {
+	opts := &bind.CallOpts{From: service.authManagerAuth.From}
+	result, err := service.committee.CommitteeCaller.GetCommitteeInfo(opts)
 
-	//service.committee.
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService GetCommitteeInfo failed, err: %v", err)
+	}
 
+	if reflect.DeepEqual(result, CommitteeInfo{}) {
+		return nil, fmt.Errorf("AuthManagerService GetCommitteeInfo is empty, err: %v", err)
+	}
+
+	var info CommitteeInfo
+
+	info.Governors = result.Governors
+	info.WinRate = result.WinRate
+	info.ParticipatesRate = result.ParticipatesRate
+	info.Weights = result.Weights
+
+	return &info, nil
 }
 
 //get proposal info
-func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (info *ProposalInfo, err error) {
+func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (proposalInfo *ProposalInfo, err error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.proposalManager.GetProposalInfo(opts, &proposalId)
 
@@ -88,6 +124,11 @@ func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (info *Pr
 		return nil, fmt.Errorf("AuthManagerService GetProposalInfo failed, err: %v", err)
 	}
 
+	if reflect.DeepEqual(result, ProposalInfo{}) {
+		return nil, fmt.Errorf("AuthManagerService GetProposalInfo is empty, err: %v", err)
+	}
+
+	var info ProposalInfo
 	info.ResourceId = result.ResourceId
 	info.Proposer = result.Proposer
 	info.ProposalType = result.ProposalType
@@ -96,7 +137,7 @@ func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (info *Pr
 	info.AgreeVoters = result.AgreeVoters
 	info.AgainstVoters = result.AgainstVoters
 
-	return info, nil
+	return &info, nil
 }
 
 //get global deploy auth type
