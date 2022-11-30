@@ -45,6 +45,8 @@ var committeeManagerAddress = common.HexToAddress("00000000000000000000000000000
 
 var contractAuthPrecompiledAddress = common.HexToAddress("0000000000000000000000000000000000001005")
 
+var DEFAULT_BLOCK_NUMBER_INTERVAL = big.NewInt(3600 * 24 * 7)
+
 func NewAuthManagerService(client *client.Client) (services *AuthManagerService, err error) {
 	authManagerAuth := client.GetTransactOpts()
 
@@ -58,34 +60,33 @@ func NewAuthManagerService(client *client.Client) (services *AuthManagerService,
 		return nil, fmt.Errorf("NewContractAuthPrecompiled construct Service failed, err: %+v", err)
 	}
 
-	opts := &bind.CallOpts{From: authManagerAuth.From}
-
-	fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-
-	fmt.Printf("services.committeeManager : %s", services.committeeManager)
-
-	committeeCon, err := services.committeeManager.CommitteeManagerCaller.Committee(opts)
-
-	fmt.Printf("committeeCon : %s", committeeCon)
-	fmt.Printf("committeeCon err : %w", err)
-
-	committee, err := NewCommittee(committeeCon, client)
-	if err != nil {
-		return nil, fmt.Errorf("NewCommittee construct Service failed, err: %+v", err)
-	}
-
-	proposalMgrCon, err := services.committeeManager.ProposalMgr(opts)
-	proposalManager, err := NewProposalManager(proposalMgrCon, client)
-	if err != nil {
-		return nil, fmt.Errorf("NewProposalManager construct Service failed, err: %+v", err)
-	}
+	//opts := &bind.CallOpts{From: authManagerAuth.From}
+	//fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+	//
+	//fmt.Printf("services.committeeManager : %s", services.committeeManager)
+	//
+	//committeeCon, err := services.committeeManager.CommitteeManagerCaller.Committee(opts)
+	//
+	//fmt.Printf("committeeCon : %s", committeeCon)
+	//fmt.Printf("committeeCon err : %w", err)
+	//
+	//committee, err := NewCommittee(committeeCon, client)
+	//if err != nil {
+	//	return nil, fmt.Errorf("NewCommittee construct Service failed, err: %+v", err)
+	//}
+	//
+	//proposalMgrCon, err := services.committeeManager.ProposalMgr(opts)
+	//proposalManager, err := NewProposalManager(proposalMgrCon, client)
+	//if err != nil {
+	//	return nil, fmt.Errorf("NewProposalManager construct Service failed, err: %+v", err)
+	//}
 
 	s := &AuthManagerService{client: client,
 		authManagerAuth:         authManagerAuth,
 		committeeManager:        mgr,
 		contractAuthPrecompiled: pre,
-		committee:               committee,
-		proposalManager:         proposalManager,
+		//committee:               committee,
+		//proposalManager:         proposalManager,
 	}
 
 	return s, nil
@@ -154,23 +155,50 @@ func (service *AuthManagerService) GetDeployAuthType() (*big.Int, error) {
 
 //check the account whether this account can deploy contract
 func (service *AuthManagerService) CheckDeployAuth(account common.Address) (*bool, error) {
-
-	return nil, nil
+	opts := &bind.CallOpts{From: service.authManagerAuth.From}
+	result, err := service.contractAuthPrecompiled.HasDeployAuth(opts, account)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService CheckDeployAuth failed, err: %v", err)
+	}
+	return &result, nil
 }
 
 //check the contract interface func whether this account can call
-func (service *AuthManagerService) CheckMethodAuth(contractAddr common.Address, funcSelector string, account common.Address) (*bool, error) {
-	return nil, nil
+func (service *AuthManagerService) CheckMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address) (*bool, error) {
+	opts := &bind.CallOpts{From: service.authManagerAuth.From}
+	result, err := service.contractAuthPrecompiled.CheckMethodAuth(opts, contractAddr, funcSelector, account)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService CheckMethodAuth failed, err: %v", err)
+	}
+	return &result, nil
 }
 
 //get a specific contract admin
 func (service *AuthManagerService) GetAdmin(contractAddr common.Address) (account *common.Address, err error) {
-	return nil, nil
+	opts := &bind.CallOpts{From: service.authManagerAuth.From}
+	result, err := service.contractAuthPrecompiled.GetAdmin(opts, contractAddr)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService GetAdmin failed, err: %v", err)
+	}
+	return &result, nil
 }
 
 //6.2 治理委员账号专用接口
 //apply for update governor, only governor can call it
-func (service *AuthManagerService) UpdateGovernor(account common.Address, weight big.Int) (proposalId *big.Int, err error) {
+func (service *AuthManagerService) UpdateGovernor(account common.Address, weight uint32) (proposalId *big.Int, err error) {
+
+	_, receipt, err := service.committeeManager.
+		CreateUpdateGovernorProposal(service.client.GetTransactOpts(), account, weight, DEFAULT_BLOCK_NUMBER_INTERVAL)
+	if err != nil {
+		return nil, fmt.Errorf("AuthManagerService UpdateGovernor failed, err: %v", err)
+	}
+
+	if receipt.Status != 0 {
+		return nil, fmt.Errorf("AuthManagerService UpdateGovernor failed, ErrorMessage: %v", receipt.GetErrorMessage())
+	}
+
+	//service.committeeManager.CreateUpdateGovernorProposal(receipt.GetOutput())
+
 	return nil, nil
 }
 
@@ -206,11 +234,11 @@ func (service *AuthManagerService) VoteProposal(proposalId big.Int, agree bool) 
 
 //6.3 合约管理员账号专用接口
 //set a specific contract's method auth type, only contract admin can call it
-func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address, funcSelector string, authType big.Int) (rtCdoe *big.Int, err error) {
+func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address, funcSelector [4]byte, authType big.Int) (rtCdoe *big.Int, err error) {
 	return nil, nil
 }
 
 //set a specific contract's method ACL, only contract admin can call it
-func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector string, account common.Address, isOpen bool) (rtCdoe *big.Int, err error) {
+func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address, isOpen bool) (rtCdoe *big.Int, err error) {
 	return nil, nil
 }

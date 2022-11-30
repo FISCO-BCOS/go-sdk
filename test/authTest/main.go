@@ -6,6 +6,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/auth"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/ethereum/go-ethereum/common"
 	"log"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	fmt.Println("starting test..........................")
 	getService()
 
-	TestAuthManagerService_GetCommitteeInfo()
+	TestAuthManagerService_GetAdmin()
 
 }
 
@@ -50,6 +51,29 @@ func TestAuthManagerService_GetDeployAuthType() {
 	}
 
 	log.Printf("GetDeployAuthType: %v", result)
+}
+
+func TestAuthManagerService_CheckDeployAuth() {
+	log.Println("starting test TestAuthManagerService_CheckDeployAuth ....................")
+
+	result, err := service.CheckDeployAuth(common.HexToAddress("0x83309d045a19c44Dc3722D15A6AbD472f95866bC"))
+	if err != nil {
+		log.Fatalf("CheckDeployAuth failed: %v", err)
+	}
+
+	log.Printf("CheckDeployAuth: %v", *result)
+}
+
+func TestAuthManagerService_GetAdmin() {
+	log.Println("starting test TestAuthManagerService_GetAdmin ....................")
+
+	//result, err := service.GetAdmin(common.HexToAddress("0000000000000000000000000000000000001005"))
+	result, err := service.GetAdmin(common.HexToAddress("0000000000000000000000000000000000010001"))
+	if err != nil {
+		log.Fatalf("GetAdmin failed: %v", err)
+	}
+
+	log.Printf("GetAdmin: %v", result)
 }
 
 func TestAuthManagerService_GetCommitteeInfo() {
