@@ -38,6 +38,7 @@ check_env(){
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
         macOS="macOS"
     fi
+    openssl version
     go install golang.org/x/tools/cmd/goimports@latest || true
     go get golang.org/x/tools/cmd/goimports || true
 }
@@ -45,6 +46,7 @@ check_env(){
 compile_and_ut()
 {
     export GO111MODULE="on"
+    # execute_cmd "go get github.com/sirupsen/logrus@v1.8.1"
     execute_cmd "go build cmd/console.go"
     execute_cmd "go build -o abigen ./cmd/abigen/main.go"
 
@@ -192,7 +194,7 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | grep -v 3. | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
@@ -305,7 +307,7 @@ main()
 
     if [ -z "${macOS}" ];then # linux
         integration_std
-        integration_gm
+        # integration_gm
     else
         integration_std
     fi
