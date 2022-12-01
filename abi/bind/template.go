@@ -286,8 +286,8 @@ var (
 	}
 
 	// Transact invokes the (paid) contract method with params as input values.
-	func (_{{$contract.Type}} *{{$contract.Type}}Raw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-		return _{{$contract.Type}}.Contract.{{$contract.Type}}Transactor.contract.Transact(opts, method, params...)
+	func (_{{$contract.Type}} *{{$contract.Type}}Raw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+		return _{{$contract.Type}}.Contract.{{$contract.Type}}Transactor.contract.TransactWithResult(opts, result, method, params...)
 	}
 
 	// Call invokes the (constant) contract method with params as input values and
@@ -305,8 +305,8 @@ var (
 	}
 
 	// Transact invokes the (paid) contract method with params as input values.
-	func (_{{$contract.Type}} *{{$contract.Type}}TransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-		return _{{$contract.Type}}.Contract.contract.Transact(opts, method, params...)
+	func (_{{$contract.Type}} *{{$contract.Type}}TransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+		return _{{$contract.Type}}.Contract.contract.TransactWithResult(opts, result, method, params...)
 	}
 
 	{{range .Calls}}
@@ -348,18 +348,30 @@ var (
 		// {{.Normalized.Name}} is a paid mutator transaction binding the contract method 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatmethod .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}Transactor) {{.Normalized.Name}}(opts *bind.TransactOpts {{range .Normalized.Inputs}}, {{.Name}} {{bindtype .Type $structs}} {{end}}) (*types.Transaction, *types.Receipt, error) {
-			return _{{$contract.Type}}.contract.Transact(opts, "{{.Original.Name}}" {{range .Normalized.Inputs}}, {{.Name}}{{end}})
+		func (_{{$contract.Type}} *{{$contract.Type}}Transactor) {{.Normalized.Name}}(opts *bind.TransactOpts {{range .Normalized.Inputs}}, {{.Name}} {{bindtype .Type $structs}} {{end}}) ({{if .Structured}}struct{ {{range .Normalized.Outputs}}{{.Name}} {{bindtype .Type $structs}};{{end}} },{{else}}{{range .Normalized.Outputs}}{{bindtype .Type $structs}},{{end}}{{end}} *types.Transaction, *types.Receipt, error) {
+			{{if .Structured}}ret := new(struct{
+				{{range .Normalized.Outputs}}{{.Name}} {{bindtype .Type $structs}}
+				{{end}}
+			}){{else}}var (
+				{{range $i, $_ := .Normalized.Outputs}}ret{{$i}} = new({{bindtype .Type $structs}})
+				{{end}}
+			){{end}}
+			out := {{if .Structured}}ret{{else}}{{if eq (len .Normalized.Outputs) 1}}ret0{{else}}&[]interface{}{
+				{{range $i, $_ := .Normalized.Outputs}}ret{{$i}},
+				{{end}}
+			}{{end}}{{end}}
+			transaction, receipt, err := _{{$contract.Type}}.contract.TransactWithResult(opts, out, "{{.Original.Name}}" {{range .Normalized.Inputs}}, {{.Name}}{{end}})
+			return {{if .Structured}}*ret,{{else}}{{range $i, $_ := .Normalized.Outputs}}*ret{{$i}},{{end}}{{end}} transaction, receipt, err
 		}
 
 		func (_{{$contract.Type}} *{{$contract.Type}}Transactor) Async{{.Normalized.Name}}(handler func(*types.Receipt, error), opts *bind.TransactOpts {{range .Normalized.Inputs}}, {{.Name}} {{bindtype .Type $structs}} {{end}}) (*types.Transaction, error) {
-			return _{{$contract.Type}}.contract.AsyncTransact(opts, handler, "{{.Original.Name}}" {{range .Normalized.Inputs}}, {{.Name}}{{end}})
+					return _{{$contract.Type}}.contract.AsyncTransact(opts, handler, "{{.Original.Name}}" {{range .Normalized.Inputs}}, {{.Name}}{{end}})
 		}
 
 		// {{.Normalized.Name}} is a paid mutator transaction binding the contract method 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatmethod .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}Session) {{.Normalized.Name}}({{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}},{{end}} {{.Name}} {{bindtype .Type $structs}} {{end}}) (*types.Transaction, *types.Receipt, error) {
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) {{.Normalized.Name}}({{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}},{{end}} {{.Name}} {{bindtype .Type $structs}} {{end}}) ({{if .Structured}}struct{ {{range .Normalized.Outputs}}{{.Name}} {{bindtype .Type $structs}};{{end}} },{{else}}{{range .Normalized.Outputs}}{{bindtype .Type $structs}},{{end}}{{end}} *types.Transaction, *types.Receipt, error) {
 		  return _{{$contract.Type}}.Contract.{{.Normalized.Name}}(&_{{$contract.Type}}.TransactOpts {{range $i, $_ := .Normalized.Inputs}}, {{.Name}}{{end}})
 		}
 
@@ -370,7 +382,7 @@ var (
 		// {{.Normalized.Name}} is a paid mutator transaction binding the contract method 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatmethod .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}TransactorSession) {{.Normalized.Name}}({{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}},{{end}} {{.Name}} {{bindtype .Type $structs}} {{end}}) (*types.Transaction, *types.Receipt, error) {
+		func (_{{$contract.Type}} *{{$contract.Type}}TransactorSession) {{.Normalized.Name}}({{range $i, $_ := .Normalized.Inputs}}{{if ne $i 0}},{{end}} {{.Name}} {{bindtype .Type $structs}} {{end}}) ({{if .Structured}}struct{ {{range .Normalized.Outputs}}{{.Name}} {{bindtype .Type $structs}};{{end}} },{{else}}{{range .Normalized.Outputs}}{{bindtype .Type $structs}},{{end}}{{end}} *types.Transaction, *types.Receipt, error) {
 		  return _{{$contract.Type}}.Contract.{{.Normalized.Name}}(&_{{$contract.Type}}.TransactOpts {{range $i, $_ := .Normalized.Inputs}}, {{.Name}}{{end}})
 		}
 
