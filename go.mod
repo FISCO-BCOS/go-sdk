@@ -7,6 +7,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/aristanetworks/goarista v0.0.0-20210107181124-fad53805024e // indirect
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
+	github.com/channingduan/gmtls v1.0.0 // indirect
 	github.com/ethereum/go-ethereum v1.9.16
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect

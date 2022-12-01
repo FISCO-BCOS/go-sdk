@@ -26,6 +26,8 @@ type Config struct {
 	PrivateKey     []byte
 	GroupID        int
 	NodeURL        string
+	EnCert         string
+	EnKey          string
 }
 
 // ParseConfigFile parses the configuration from toml config file
@@ -83,6 +85,8 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 		}
 		if viper.IsSet("Chain.SMCrypto") {
 			config.IsSMCrypto = viper.GetBool("Chain.SMCrypto")
+			config.EnCert = viper.GetString("Network.EnCert")
+			config.EnKey = viper.GetString("Network.EnKey")
 		} else {
 			return nil, fmt.Errorf("SMCrypto has not been set")
 		}

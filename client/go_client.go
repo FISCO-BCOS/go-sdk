@@ -19,7 +19,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"strconv"
 	"strings"
@@ -28,6 +27,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/channingduan/gmtls"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -64,25 +64,17 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 		c, err = conn.DialContextHTTP(config.NodeURL)
 	} else {
 		// try to parse use file
-		if config.TLSCAContext == nil {
-			config.TLSCAContext, err = ioutil.ReadFile(config.CAFile)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls root certificate %v failed, err:%v", config.CAFile, err)
-			}
+		tlsConfig := &gmtls.Config{
+			CaCert:   config.CAFile,
+			SignCert: config.Cert,
+			SignKey:  config.Key,
 		}
-		if config.TLSCertContext == nil {
-			config.TLSCertContext, err = ioutil.ReadFile(config.Cert)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls certificate %v failed, err:%v", config.Cert, err)
-			}
+		if config.IsSMCrypto {
+			tlsConfig.IsSMCrypto = true
+			tlsConfig.EnCert = config.EnCert
+			tlsConfig.EnKey = config.EnKey
 		}
-		if config.TLSKeyContext == nil {
-			config.TLSKeyContext, err = ioutil.ReadFile(config.Key)
-			if err != nil {
-				return nil, fmt.Errorf("parse tls key %v failed, err:%v", config.Key, err)
-			}
-		}
-		c, err = conn.DialContextChannel(config.NodeURL, config.TLSCAContext, config.TLSCertContext, config.TLSKeyContext, config.GroupID)
+		c, err = conn.DialChannelWithClient(config.NodeURL, config.GroupID, tlsConfig)
 	}
 	if err != nil {
 		return nil, err
