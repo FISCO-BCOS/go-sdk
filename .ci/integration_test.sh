@@ -172,7 +172,7 @@ cat << EOF >> "${output}"
 		fmt.Printf("counter.Version() failed, expected 0 (got %d)", ret)
 		return
 	}
-	_, _, err = counter.Add()
+	_, _, _, err = counter.Add()
 	if err != nil {
 		fmt.Printf("counter.Add() failed: %v", err)
 		return
