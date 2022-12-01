@@ -307,6 +307,7 @@ func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address
 }
 
 //set a specific contract's method ACL, only contract admin can call it
+//isOpen if open, then white_list type is true, black_list is false; if close, then white_list type is false, black_list is true
 func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address, isOpen bool) (rtCode *big.Int, err error) {
 
 	var receipt *types.Receipt
@@ -336,6 +337,7 @@ func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, fu
 }
 
 func parseReturnValue(receipt *types.Receipt, name string) (*big.Int, error) {
+	// todo
 	fmt.Println(receipt)
 
 	errorMessage := receipt.GetErrorMessage()

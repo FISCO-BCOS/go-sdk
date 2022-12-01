@@ -19,16 +19,20 @@ func main() {
 	fmt.Println("starting test..........................")
 	getService()
 
-	//TestAuthManagerService_GetDeployAuthType()
-	//TestAuthManagerService_SetDeployAuthType()
+	//GetDeployAuthType()
+	//SetDeployAuthType()
 
-	//TestAuthManagerService_ModifyDeployAuth()
+	//ModifyDeployAuth()
 
-	//TestAuthManagerService_RevokeProposal()
-	//TestAuthManagerService_VoteProposal()
+	//RevokeProposal()
+	//VoteProposal()
 
-	TestAuthManagerService_SetMethodAuthType()
+	//SetMethodAuthType()
 
+	//GetAdmin()
+	//ResetAdmin()
+
+	CheckMethodAuth()
 }
 
 func getClient() *client.Client {
@@ -52,8 +56,8 @@ func getService() {
 	service = newService
 }
 
-func TestAuthManagerService_GetDeployAuthType() {
-	log.Println("starting test TestAuthManagerService_GetDeployAuthType ....................")
+func GetDeployAuthType() {
+	log.Println("starting test GetDeployAuthType ....................")
 
 	result, err := service.GetDeployAuthType()
 	if err != nil {
@@ -63,8 +67,8 @@ func TestAuthManagerService_GetDeployAuthType() {
 	log.Printf("GetDeployAuthType: %v", result)
 }
 
-func TestAuthManagerService_CheckDeployAuth() {
-	log.Println("starting test TestAuthManagerService_CheckDeployAuth ....................")
+func CheckDeployAuth() {
+	log.Println("starting test CheckDeployAuth ....................")
 
 	result, err := service.CheckDeployAuth(common.HexToAddress("0x83309d045a19c44Dc3722D15A6AbD472f95866bC"))
 	if err != nil {
@@ -75,8 +79,8 @@ func TestAuthManagerService_CheckDeployAuth() {
 }
 
 // todo
-func TestAuthManagerService_GetCommitteeInfo() {
-	log.Println("starting test TestAuthManagerService_GetCommitteeInfo ....................")
+func GetCommitteeInfo() {
+	log.Println("starting test GetCommitteeInfo ....................")
 
 	result, err := service.GetCommitteeInfo()
 	if err != nil {
@@ -86,12 +90,41 @@ func TestAuthManagerService_GetCommitteeInfo() {
 	log.Printf("GetCommitteeInfo: %v", result)
 }
 
-// todo
-func TestAuthManagerService_GetAdmin() {
-	log.Println("starting test TestAuthManagerService_GetAdmin ....................")
+func CheckMethodAuth() {
+	log.Println("starting test CheckMethodAuth ....................")
 
-	result, err := service.GetAdmin(common.HexToAddress("0x1005"))
-	//result, err := service.GetAdmin(common.HexToAddress("0000000000000000000000000000000000010001"))
+	// console
+	//	[group0]: /apps> deploy ContractAuthPrecompiled
+	//	transaction hash: 0x1fa19bbff520ec13c67b5cd8ed202c6a0bf656b4f2790000e94b7de1c3ba065e
+	//	contract address: 0x41a1281dba209614f2ada8ecc75fd957ad179d7b
+	//	currentAccount: 0x357d2f663c8868b777eccc69a7bc8a9d7e4862ce
+	//	[group0]: /apps>
+
+	var funcs [4]byte
+	//0xc53057b4
+	funcs[0] = 0xc5
+	funcs[1] = 0x30
+	funcs[2] = 0x57
+	funcs[3] = 0xb4
+
+	result, err := service.CheckMethodAuth(common.HexToAddress("0x41a1281dba209614f2ada8ecc75fd957ad179d7b"), funcs, common.HexToAddress("0x357d2f663c8868b777eccc69a7bc8a9d7e4862ce"))
+	if err != nil {
+		log.Fatalf("CheckMethodAuth failed: %v", err)
+	}
+
+	log.Printf("CheckMethodAuth: %v", *result)
+}
+
+func GetAdmin() {
+	log.Println("starting test GetAdmin ....................")
+
+	// console
+	//	[group0]: /apps> deploy ContractAuthPrecompiled
+	//	transaction hash: 0x1fa19bbff520ec13c67b5cd8ed202c6a0bf656b4f2790000e94b7de1c3ba065e
+	//	contract address: 0x41a1281dba209614f2ada8ecc75fd957ad179d7b
+	//	currentAccount: 0x357d2f663c8868b777eccc69a7bc8a9d7e4862ce
+	//	[group0]: /apps>
+	result, err := service.GetAdmin(common.HexToAddress("0x41a1281dba209614f2ada8ecc75fd957ad179d7b"))
 	if err != nil {
 		log.Fatalf("GetAdmin failed: %v", err)
 	}
@@ -99,11 +132,10 @@ func TestAuthManagerService_GetAdmin() {
 	log.Printf("GetAdmin: %v", result)
 }
 
-// todo
-func TestAuthManagerService_ResetAdmin() {
-	log.Println("starting test TestAuthManagerService_GetAdmin ....................")
+func ResetAdmin() {
+	log.Println("starting test GetAdmin ....................")
 
-	result, err := service.ResetAdmin(common.HexToAddress("0xe2b91bb57b43239788740295db49301382d05021"), common.HexToAddress("0000000000000000000000000000000000010001"))
+	result, err := service.ResetAdmin(common.HexToAddress("0xe2b91bb57b43239788740295db49301382d05021"), common.HexToAddress("0x41a1281dba209614f2ada8ecc75fd957ad179d7b"))
 	if err != nil {
 		log.Fatalf("ResetAdmin failed: %v", err)
 	}
@@ -111,8 +143,8 @@ func TestAuthManagerService_ResetAdmin() {
 	log.Printf("ResetAdmin: %v", result)
 }
 
-func TestAuthManagerService_UpdateGovernor() {
-	log.Println("starting test TestAuthManagerService_UpdateGovernor ....................")
+func UpdateGovernor() {
+	log.Println("starting test UpdateGovernor ....................")
 
 	result, err := service.UpdateGovernor(common.HexToAddress("0xe2b91bb57b43239788740295db49301382d05021"), 2)
 	if err != nil {
@@ -122,8 +154,8 @@ func TestAuthManagerService_UpdateGovernor() {
 	log.Printf("UpdateGovernor: %v", result)
 }
 
-func TestAuthManagerService_SetRate() {
-	log.Println("starting test TestAuthManagerService_SetRate ....................")
+func SetRate() {
+	log.Println("starting test SetRate ....................")
 
 	result, err := service.SetRate(1, 2)
 	if err != nil {
@@ -133,10 +165,10 @@ func TestAuthManagerService_SetRate() {
 	log.Printf("SetRate: %v", result)
 }
 
-func TestAuthManagerService_SetDeployAuthType() {
-	log.Println("starting test TestAuthManagerService_SetDeployAuthType ....................")
+func SetDeployAuthType() {
+	log.Println("starting test SetDeployAuthType ....................")
 
-	TestAuthManagerService_GetDeployAuthType()
+	GetDeployAuthType()
 
 	result, err := service.SetDeployAuthType(1)
 	if err != nil {
@@ -146,10 +178,10 @@ func TestAuthManagerService_SetDeployAuthType() {
 	log.Printf("SetDeployAuthType: %v", result)
 }
 
-func TestAuthManagerService_ModifyDeployAuth() {
-	log.Println("starting test TestAuthManagerService_ModifyDeployAuth ....................")
+func ModifyDeployAuth() {
+	log.Println("starting test ModifyDeployAuth ....................")
 
-	TestAuthManagerService_GetDeployAuthType()
+	GetDeployAuthType()
 
 	result, err := service.ModifyDeployAuth(common.HexToAddress("0xe2b91bb57b43239788740295db49301382d05021"), true)
 	if err != nil {
@@ -159,8 +191,8 @@ func TestAuthManagerService_ModifyDeployAuth() {
 	log.Printf("ModifyDeployAuth: %v", result)
 }
 
-func TestAuthManagerService_RevokeProposal() {
-	log.Println("starting test TestAuthManagerService_RevokeProposal ....................")
+func RevokeProposal() {
+	log.Println("starting test RevokeProposal ....................")
 
 	result, err := service.RevokeProposal(*big.NewInt(5))
 	if err != nil {
@@ -170,8 +202,8 @@ func TestAuthManagerService_RevokeProposal() {
 	log.Printf("RevokeProposal: %v", result)
 }
 
-func TestAuthManagerService_VoteProposal() {
-	log.Println("starting test TestAuthManagerService_VoteProposal ....................")
+func VoteProposal() {
+	log.Println("starting test VoteProposal ....................")
 
 	result, err := service.VoteProposal(*big.NewInt(5), false)
 	if err != nil {
@@ -181,8 +213,8 @@ func TestAuthManagerService_VoteProposal() {
 	log.Printf("VoteProposal: %v", result)
 }
 
-func TestAuthManagerService_SetMethodAuthType() {
-	log.Println("starting test TestAuthManagerService_SetMethodAuthType ....................")
+func SetMethodAuthType() {
+	log.Println("starting test SetMethodAuthType ....................")
 
 	result, err := service.SetMethodAuthType(common.HexToAddress("0000000000000000000000000000000000001005"), [4]byte{}, 1)
 	if err != nil {
