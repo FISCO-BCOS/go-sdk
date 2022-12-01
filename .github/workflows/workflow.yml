@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        go: ["1.13", "1.15", "1.17", "1.18"]
+        go: ["1.17", "1.18", "1.19"]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -45,7 +45,7 @@ jobs:
         run: go mod tidy
       - name: test all
         if: ${{ runner.os == 'Linux' }}
-        run: bash .ci/integration_test.sh -a
+        run: bash -x .ci/integration_test.sh -a
       - name: test without amop
         if: ${{ runner.os == 'macOS' }}
         run: bash .ci/integration_test.sh
