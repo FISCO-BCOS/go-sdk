@@ -280,9 +280,17 @@ func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*typ
 	return nil
 }
 
-func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	hc := c.writeConn.(*channelSession)
 	return hc.subscribeEvent(eventLogParams, handler)
+}
+
+func (c *Connection) UnSubscribeEventLogs(filterID string) error {
+	hc := c.writeConn.(*channelSession)
+	hc.eventLogMu.Lock()
+	delete(hc.eventLogHandlers, filterID)
+	hc.eventLogMu.Unlock()
+	return nil
 }
 
 func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {

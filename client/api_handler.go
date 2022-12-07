@@ -210,8 +210,12 @@ func (api *APIHandler) TransactionReceipt(ctx context.Context, groupID int, txHa
 	return r, err
 }
 
-func (api *APIHandler) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (api *APIHandler) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	return api.Connection.SubscribeEventLogs(eventLogParams, handler)
+}
+
+func (api *APIHandler) UnSubscribeEventLogs(filterID string) error {
+	return api.Connection.UnSubscribeEventLogs(filterID)
 }
 
 func (api *APIHandler) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
