@@ -49,14 +49,14 @@ func main() {
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics
 	var addresses = make([]string, 1)
-	addresses[0] = "0xd2cf82e18f3d2c5cae0de87d29994be622f3fdd3"
+	addresses[0] = "0xdc82ef3680692b91552288adbf6ce83051d45d40"
 	eventLogParams.Addresses = addresses
 
 	timeout := 10 * time.Second
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	err = c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
+	id, err := c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
@@ -78,6 +78,11 @@ func main() {
 	for {
 		select {
 		case <-done:
+			err := c.UnSubscribeEventLogs(id)
+			if err != nil {
+				logrus.Println("UnSubscribeEventLogs error!")
+			}
+			c.Close()
 			logrus.Println("Done!")
 			os.Exit(0)
 		case <-queryTicker.C:
