@@ -175,7 +175,7 @@ func (c *ContractProxy) CallContext(ctx context.Context, result interface{}, met
 }
 
 // SubscribeEventLogs
-func (c *ContractProxy) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (c *ContractProxy) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	panic("implement me")
 }
 

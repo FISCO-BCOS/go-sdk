@@ -91,7 +91,7 @@ cat << EOF >> "${output}"
 		return
 	}
     done := make(chan bool)
-	err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+	_, err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
 		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := hello.ParseSetValue(logs[0])
 		if err != nil {

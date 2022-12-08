@@ -333,7 +333,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) error {
+func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
 	from := string("latest")
 	// Don't crash on a lazy user
 	if fromBlock != nil {
@@ -344,7 +344,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 
 	topics, err := makeTopics(query...)
 	if err != nil {
-		return err
+		return "", err
 	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,
