@@ -148,6 +148,10 @@ func (c *Client) Close() {
 	c.apiHandler.Close()
 }
 
+func (c *Client) ReConn() {
+	c.apiHandler.ReConn()
+}
+
 // ============================================== FISCO BCOS Blockchain Access ================================================
 
 // GetTransactOpts return *bind.TransactOpts

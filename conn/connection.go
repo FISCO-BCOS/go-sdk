@@ -220,6 +220,15 @@ func (c *Connection) Close() {
 	hc.Close()
 }
 
+// Close closes the client, aborting any in-flight requests.
+func (c *Connection) ReConn() {
+	if c.isHTTP {
+		return
+	}
+	hc := c.writeConn.(*channelSession)
+	hc.Reconnection()
+}
+
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
 // result if no error occurred.
 //

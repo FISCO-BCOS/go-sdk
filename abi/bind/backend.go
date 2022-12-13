@@ -90,6 +90,7 @@ type ContractFilterer interface {
 	// SubscribeEventLogs creates a background log filtering operation, returning
 	// a subscription immediately, which can be used to stream the found events.
 	SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error)
+	UnSubscribeEventLogs(filterID string) error
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
