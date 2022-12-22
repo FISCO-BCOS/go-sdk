@@ -81,6 +81,7 @@ type channelSession struct {
 	nodeInfo            nodeInfo
 	closeOnce           sync.Once
 	closed              chan interface{}
+	reconnection        chan interface{}
 	endpoint            string
 	tlsConfig           *tls.Config
 	heartBeat           *time.Ticker
@@ -320,6 +321,10 @@ func (hc *channelSession) Close() {
 	hc.closeOnce.Do(func() { close(hc.closed) })
 }
 
+func (hc *channelSession) Reconnection() {
+	close(hc.reconnection)
+}
+
 func (hc *channelSession) Closed() <-chan interface{} {
 	return hc.closed
 }
@@ -370,7 +375,7 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 			eventLogHandlers:    make(map[string]eventInfo),
 			asyncHandlers:       make(map[string]func(*types.Receipt, error)),
 			blockNotifyHandlers: make(map[uint64]func(int64)),
-			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), endpoint: endpoint,
+			nodeInfo:            nodeInfo{blockNumber: 0, Protocol: 1}, closed: make(chan interface{}), reconnection: make(chan interface{}), endpoint: endpoint,
 			tlsConfig: config,
 			heartBeat: time.NewTicker(heartBeatInterval * time.Second)}
 		go ch.processMessages()
@@ -709,28 +714,28 @@ func (hc *channelSession) sendSubscribedTopics() error {
 	return hc.sendMessageNoResponse(msg)
 }
 
-func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	if handler == nil {
-		return errors.New("handler is nil")
+		return "", errors.New("handler is nil")
 	}
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return errors.New("new UUID failed")
+		return "", errors.New("new UUID failed")
 	}
 	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
 	hc.eventLogMu.RLock()
 	_, ok := hc.eventLogHandlers[eventLogParams.FilterID]
 	hc.eventLogMu.RUnlock()
 	if ok {
-		return errors.New("already subscribed to event " + eventLogParams.FilterID)
+		return "", errors.New("already subscribed to event " + eventLogParams.FilterID)
 	}
 	if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
-		return err
+		return "", err
 	}
 	hc.eventLogMu.Lock()
 	hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
 	hc.eventLogMu.Unlock()
-	return nil
+	return eventLogParams.FilterID, nil
 }
 
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]byte)) error {
@@ -1078,6 +1083,28 @@ func (hc *channelSession) processMessages() {
 				delete(hc.asyncHandlers, key)
 			}
 			hc.asyncMu.Unlock()
+		case <-hc.reconnection:
+			// delete old network
+			_ = hc.c.Close()
+			hc.c = nil
+			// return err for responses and receiptResponses
+			hc.mu.Lock()
+			for _, response := range hc.responses {
+				response.Err = errors.New("connection lost, reconnecting")
+				response.Notify <- struct{}{}
+			}
+			for _, receiptResponse := range hc.receiptResponses {
+				receiptResponse.Err = errors.New("connection lost, reconnecting")
+				receiptResponse.Notify <- struct{}{}
+			}
+			hc.mu.Unlock()
+			// delete asyncHandler
+			hc.asyncMu.Lock()
+			for key, handler := range hc.asyncHandlers {
+				handler(nil, errors.New("connection lost, reconnecting"))
+				delete(hc.asyncHandlers, key)
+			}
+			hc.asyncMu.Unlock()
 			// re-connect network
 			for {
 				con, err := tls.Dial("tcp", hc.endpoint, hc.tlsConfig)
@@ -1117,7 +1144,7 @@ func (hc *channelSession) processMessages() {
 				nerr, ok := err.(net.Error)
 				if !ok || !nerr.Timeout() {
 					logrus.Warnf("channel Read error:%v\n", err)
-					hc.Close()
+					hc.Reconnection()
 				}
 				continue
 			}

@@ -148,6 +148,10 @@ func (c *Client) Close() {
 	c.apiHandler.Close()
 }
 
+func (c *Client) ReConn() {
+	c.apiHandler.ReConn()
+}
+
 // ============================================== FISCO BCOS Blockchain Access ================================================
 
 // GetTransactOpts return *bind.TransactOpts
@@ -244,9 +248,14 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.apiHandler.GetTransactionReceipt(ctx, c.groupID, txHash)
 }
 
-func (c *Client) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) error {
+func (c *Client) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	return c.apiHandler.SubscribeEventLogs(eventLogParams, handler)
 }
+
+func (c *Client) UnSubscribeEventLogs(filterID string) error {
+	return c.apiHandler.UnSubscribeEventLogs(filterID)
+}
+
 
 func (c *Client) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
 	return c.apiHandler.SubscribeTopic(topic, handler)
