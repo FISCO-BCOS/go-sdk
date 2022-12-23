@@ -20,9 +20,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-
 	"github.com/ethereum/go-ethereum/common"
+	"io"
 )
 
 // The ABI holds information about a contract's context and available
@@ -85,35 +84,61 @@ func (abi ABI) Pack(name string, args ...interface{}) ([]byte, error) {
 }
 
 // Unpack output in v according to the abi specification
-func (abi ABI) Unpack(v interface{}, name string, data []byte) (err error) {
+func (abi ABI) Unpack(v interface{}, name string, data []byte, topics [][]byte) (err error) {
 	// since there can't be naming collisions with contracts and events,
 	// we need to decide whether we're calling a method or an event
 	if method, ok := abi.Methods[name]; ok {
 		if len(data)%32 != 0 {
 			return fmt.Errorf("abi: improperly formatted output: %s - Bytes: [%+v]", string(data), data)
 		}
-		return method.Outputs.Unpack(v, data)
+		return method.Outputs.Unpack(v, data, topics)
 	}
 	if event, ok := abi.Events[name]; ok {
-		return event.Inputs.Unpack(v, data)
+		return event.Inputs.Unpack(v, data, topics)
 	}
 	return fmt.Errorf("abi: could not locate named method or event")
 }
 
 // UnpackIntoMap unpacks a log into the provided map[string]interface{}
-func (abi ABI) UnpackIntoMap(v map[string]interface{}, name string, data []byte) (err error) {
+func (abi ABI) UnpackIntoMap(v map[string]interface{}, name string, data []byte, topics [][]byte) (err error) {
 	// since there can't be naming collisions with contracts and events,
 	// we need to decide whether we're calling a method or an event
 	if method, ok := abi.Methods[name]; ok {
 		if len(data)%32 != 0 {
 			return fmt.Errorf("abi: improperly formatted output")
 		}
-		return method.Outputs.UnpackIntoMap(v, data)
+		return method.Outputs.UnpackIntoMap(v, data, nil)
 	}
 	if event, ok := abi.Events[name]; ok {
-		return event.Inputs.UnpackIntoMap(v, data)
+		return event.Inputs.UnpackIntoMap(v, data, topics)
 	}
 	return fmt.Errorf("abi: could not locate named method or event")
+}
+
+func (abi ABI) UnpackIntoNonAddressMap(v map[string]interface{}, name string, data []byte, topics [][]byte) (err error) {
+	// since there can't be naming collisions with contracts and events,
+	// we need to decide whether we're calling a method or an event
+	if method, ok := abi.Methods[name]; ok {
+		if len(data)%32 != 0 {
+			return fmt.Errorf("abi: improperly formatted output")
+		}
+		return method.Outputs.UnpackIntoMap(v, data, nil)
+	}
+	if event, ok := abi.Events[name]; ok {
+		err = event.Inputs.UnpackIntoMap(v, data, topics)
+		convertAddressToString(v)
+		return err
+	}
+	return fmt.Errorf("abi: could not locate named method or event")
+}
+
+func convertAddressToString(inputMap map[string]interface{}) {
+	for k, v := range inputMap {
+		switch v.(type) {
+		case common.Address:
+			inputMap[k] = v.(common.Address).String()
+		}
+	}
 }
 
 // UnmarshalJSON implements json.Unmarshaler interface
