@@ -82,6 +82,7 @@ func (arguments Arguments) NonIndexed() Arguments {
 	return ret
 }
 
+// Indexed returns the arguments with indexed arguments only
 func (arguments Arguments) Indexed() Arguments {
 	var ret []Argument
 	for _, arg := range arguments {
@@ -98,7 +99,7 @@ func (arguments Arguments) isTuple() bool {
 }
 
 // Unpack performs the operation hexdata -> Go format
-func (arguments Arguments) Unpack(v interface{}, data []byte, topics [][]byte) error {
+func (arguments Arguments) Unpack(v interface{}, data []byte) error {
 	if len(data) == 0 {
 		if len(arguments) != 0 {
 			return fmt.Errorf("abi: attempting to unmarshall an empty string while arguments are expected")
@@ -110,7 +111,7 @@ func (arguments Arguments) Unpack(v interface{}, data []byte, topics [][]byte) e
 	if reflect.Ptr != reflect.ValueOf(v).Kind() {
 		return fmt.Errorf("abi: Unpack(non-pointer %T)", v)
 	}
-	marshalledValues, err := arguments.UnpackValues(data, topics)
+	marshalledValues, err := arguments.UnpackValues(data)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (arguments Arguments) Unpack(v interface{}, data []byte, topics [][]byte) e
 }
 
 // UnpackIntoMap performs the operation hexdata -> mapping of argument name to argument value
-func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte, topics [][]byte) error {
+func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte) error {
 	if len(data) == 0 {
 		if len(arguments) != 0 {
 			return fmt.Errorf("abi: attempting to unmarshall an empty string while arguments are expected")
@@ -129,7 +130,7 @@ func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte, 
 			return nil // Nothing to unmarshal, return
 		}
 	}
-	marshalledValues, err := arguments.UnpackValues(data, topics)
+	marshalledValues, err := arguments.UnpackValues(data)
 	if err != nil {
 		return err
 	}
@@ -215,10 +216,6 @@ func (arguments Arguments) unpackIntoMap(v map[string]interface{}, marshalledVal
 	for i, arg := range arguments.NonIndexed() {
 		v[arg.Name] = marshalledValues[i]
 	}
-
-	for i, arg := range arguments.Indexed() {
-		v[arg.Name] = marshalledValues[i+arguments.LengthNonIndexed()]
-	}
 	return nil
 }
 
@@ -302,7 +299,7 @@ func (arguments Arguments) unpackTuple(v interface{}, marshalledValues []interfa
 // UnpackValues can be used to unpack ABI-encoded hexdata according to the ABI-specification,
 // without supplying a struct to unpack into. Instead, this method returns a list containing the
 // values. An atomic argument will be a list with one element.
-func (arguments Arguments) UnpackValues(data []byte, topics [][]byte) ([]interface{}, error) {
+func (arguments Arguments) UnpackValues(data []byte) ([]interface{}, error) {
 	retval := make([]interface{}, 0, arguments.LengthNonIndexed())
 	virtualArgs := 0
 	for index, arg := range arguments.NonIndexed() {
@@ -329,15 +326,17 @@ func (arguments Arguments) UnpackValues(data []byte, topics [][]byte) ([]interfa
 		}
 		retval = append(retval, marshalledValue)
 	}
+	return retval, nil
+}
 
-	if topics != nil {
-		for index, arg := range arguments.Indexed() {
-			marshalledValue, err := toGoType(0, arg.Type, topics[index+1])
-			if err != nil {
-				return nil, err
-			}
-			retval = append(retval, marshalledValue)
+func (arguments Arguments) UnpackTopicValues(topics [][]byte) ([]interface{}, error) {
+	retval := make([]interface{}, 0)
+	for index, arg := range arguments.Indexed() {
+		marshalledValue, err := toGoType(0, arg.Type, topics[index+1])
+		if err != nil {
+			return nil, err
 		}
+		retval = append(retval, marshalledValue)
 	}
 	return retval, nil
 }

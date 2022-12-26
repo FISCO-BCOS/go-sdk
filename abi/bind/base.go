@@ -191,7 +191,7 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 	if err != nil {
 		return err
 	}
-	return c.abi.Unpack(result, method, output, nil)
+	return c.abi.Unpack(result, method, output)
 }
 
 // TransactWithResult invokes the (paid) contract method with params as input values.
@@ -202,7 +202,7 @@ func (c *BoundContract) TransactWithResult(opts *TransactOpts, result interface{
 		return nil, nil, err
 	}
 	tx, receipt, err := c.transact(opts, &c.address, input)
-	c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()), nil)
+	c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
 	return tx, receipt, err
 }
 
@@ -359,7 +359,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 // UnpackLog unpacks a retrieved log into the provided output structure.
 func (c *BoundContract) UnpackLog(out interface{}, event string, log types.Log) error {
 	if len(log.Data) > 0 {
-		if err := c.abi.Unpack(out, event, log.Data, nil); err != nil {
+		if err := c.abi.Unpack(out, event, log.Data); err != nil {
 			return err
 		}
 	}
@@ -375,7 +375,7 @@ func (c *BoundContract) UnpackLog(out interface{}, event string, log types.Log) 
 // UnpackLogIntoMap unpacks a retrieved log into the provided map.
 func (c *BoundContract) UnpackLogIntoMap(out map[string]interface{}, event string, log types.Log) error {
 	if len(log.Data) > 0 {
-		if err := c.abi.UnpackIntoMap(out, event, log.Data, nil); err != nil {
+		if err := c.abi.UnpackIntoMap(out, event, log.Data); err != nil {
 			return err
 		}
 	}
