@@ -82,6 +82,17 @@ func (arguments Arguments) NonIndexed() Arguments {
 	return ret
 }
 
+// Indexed returns the arguments with indexed arguments only
+func (arguments Arguments) Indexed() Arguments {
+	var ret []Argument
+	for _, arg := range arguments {
+		if arg.Indexed {
+			ret = append(ret, arg)
+		}
+	}
+	return ret
+}
+
 // isTuple returns true for non-atomic constructs, like (uint,uint) or uint[]
 func (arguments Arguments) isTuple() bool {
 	return len(arguments) > 1
@@ -310,6 +321,18 @@ func (arguments Arguments) UnpackValues(data []byte) ([]interface{}, error) {
 			// coded as just like uint256,bool,uint256
 			virtualArgs += getTypeSize(arg.Type)/32 - 1
 		}
+		if err != nil {
+			return nil, err
+		}
+		retval = append(retval, marshalledValue)
+	}
+	return retval, nil
+}
+
+func (arguments Arguments) UnpackTopicValues(topics [][]byte) ([]interface{}, error) {
+	retval := make([]interface{}, 0)
+	for index, arg := range arguments.Indexed() {
+		marshalledValue, err := toGoType(0, arg.Type, topics[index+1])
 		if err != nil {
 			return nil, err
 		}

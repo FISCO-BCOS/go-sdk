@@ -116,6 +116,52 @@ func (abi ABI) UnpackIntoMap(v map[string]interface{}, name string, data []byte)
 	return fmt.Errorf("abi: could not locate named method or event")
 }
 
+func (abi ABI) UnpackIntoNonAddressMap(v map[string]interface{}, name string, data []byte, topics [][]byte) (err error) {
+	// since there can't be naming collisions with contracts and events,
+	// we need to decide whether we're calling a method or an event
+	if method, ok := abi.Methods[name]; ok {
+		if len(data)%32 != 0 {
+			return fmt.Errorf("abi: improperly formatted output")
+		}
+		return method.Outputs.UnpackIntoMap(v, data)
+	}
+	if event, ok := abi.Events[name]; ok {
+		err = event.Inputs.UnpackIntoMap(v, data)
+		if err != nil {
+			return err
+		}
+		err = unpackEventTopics(v, topics, event.Inputs)
+		if err != nil {
+			return err
+		}
+		convertAddressToString(v)
+		return nil
+	}
+	return fmt.Errorf("abi: could not locate named method or event")
+}
+
+func unpackEventTopics(v map[string]interface{}, topics [][]byte, arguments Arguments) error {
+	if topics != nil {
+		marshalledValues, err := arguments.UnpackTopicValues(topics)
+		if err != nil {
+			return err
+		}
+		for i, arg := range arguments.Indexed() {
+			v[arg.Name] = marshalledValues[i]
+		}
+	}
+	return nil
+}
+
+func convertAddressToString(inputMap map[string]interface{}) {
+	for k, v := range inputMap {
+		switch v.(type) {
+		case common.Address:
+			inputMap[k] = v.(common.Address).String()
+		}
+	}
+}
+
 // UnmarshalJSON implements json.Unmarshaler interface
 func (abi *ABI) UnmarshalJSON(data []byte) error {
 	var fields []struct {
