@@ -44,7 +44,6 @@ func TestHexToSM2(t *testing.T) {
 	if pem != sm2pem {
 		t.Fatalf("pem mismatch, want: %s have: %s", sm2pem, pem)
 	}
-
 }
 
 // func TestSM2Sign(t *testing.T) {

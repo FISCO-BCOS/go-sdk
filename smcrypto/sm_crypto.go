@@ -1,10 +1,12 @@
 package smcrypto
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
 
 	"github.com/FISCO-BCOS/crypto/ecdsa"
@@ -49,6 +51,23 @@ func SM2KeyToAddress(privateKey []byte) common.Address {
 	pubBytes := SM2PubBytes(&key.PublicKey)
 	sm3digest := sm3.Hash(pubBytes)
 	return common.BytesToAddress(sm3digest[12:])
+}
+
+var one = new(big.Int).SetInt64(1)
+
+// GenerateKey generates a new private key.
+func GenerateKey() (*ecdsa.PrivateKey, error) {
+	params := elliptic.Sm2p256v1().Params()
+	b := make([]byte, params.BitSize/8+8) // TODO: use params.N.BitLen()
+	_, err := io.ReadFull(rand.Reader, b)
+	if err != nil {
+		return nil, err
+	}
+	k := new(big.Int).SetBytes(b)
+	n := new(big.Int).Sub(params.N, one)
+	k.Mod(k, n)
+	k.Add(k, one)
+	return ToSM2(k.Bytes())
 }
 
 // ToSM2 creates a private key with the given D value.
