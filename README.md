@@ -1,6 +1,6 @@
-# go-sdk
+# Golang SDK For FISCO BCOS
 
-Golang SDK For FISCO BCOS 3.0.0+
+适配FISCO-BCOS v3 / [适配FISCO-BCOS v2](https://github.com/FISCO-BCOS/go-sdk/tree/master-2)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
@@ -8,38 +8,38 @@ Golang SDK For FISCO BCOS 3.0.0+
 [![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)](https://github.com/FISCO-BCOS/go-sdk)
 [![version](https://img.shields.io/github/tag/FISCO-BCOS/go-sdk.svg)](https://github.com/FISCO-BCOS/go-sdk/releases/latest)
 
-
 ![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg)
 [![Build Status](https://travis-ci.org/FISCO-BCOS/go-sdk.svg?branch=master)](https://travis-ci.org/FISCO-BCOS/go-sdk)
 
 ____
 
 FISCO BCOS Go语言版本的SDK，主要实现的功能有：
-- [FISCO BCOS 3.0 JSON-RPC服务](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html)
+
+- [FISCO BCOS 3.0 JSON-RPC服务](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/develop/api.html)
 - `Solidity`合约编译为Go文件
 - 部署、查询、写入智能合约
 - 控制台
 
 `go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS。
 
-# 环境准备
+## 环境准备
 
-- [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
-https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
-- [FISCO BCOS 3.0.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
-- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台(对应1.0版本sdk)，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
+- [FISCO BCOS 3.0.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
 - Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
+- 对应[FISCO BCOS v2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
-# 配置结构体说明
+## 配置结构体说明
 
-```go
+```golang
 type Config struct {
-	IsSMCrypto     bool
+    IsSMCrypto     bool
     PrivateKey     []byte
     GroupID        string
     NodeURL        string
 }
 ```
+
 - IsSMCrypto:使用的签名算法，ture表示使用国密SM2，false表示使用普通ECDSA。
 - PrivateKey:节点签发交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
   请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
@@ -47,7 +47,8 @@ type Config struct {
 - GroupID:账本id
 - NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
 
-# 控制台使用
+## 控制台使用
+
 在使用控制台需要先拉取代码或下载代码:
 
 1. 拉取代码并编译
@@ -59,14 +60,10 @@ git checkout dev-3.0.0
 ```
 
 2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
-
-3. 请拷贝对应的SDK证书到conf文件夹。
-
-4. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
-
-5. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。(可以添加到/etc/profile文件中)
-
-6. 最后，编译,运行控制台查看可用指令:
+1. 请拷贝对应的SDK证书到conf文件夹。
+1. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
+1. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。(可以添加到/etc/profile文件中)
+1. 最后，编译,运行控制台查看可用指令:
 
 ```bash
 go mod tidy
@@ -74,8 +71,7 @@ go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -o console cmd/conso
 ./console help
 ```
 
-
-# Package功能使用
+## Package功能使用
 
 以下的示例是通过`import`的方式来使用`go-sdk`，如引入RPC控制台库:
 
@@ -83,7 +79,7 @@ go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -o console cmd/conso
 import "github.com/FISCO-BCOS/go-sdk/client"
 ```
 
-## Solidity合约编译为Go文件
+### Solidity合约编译为Go文件
 
 在利用SDK进行项目开发时，对智能合约进行操作时需要将Solidity智能合约利用go-sdk的`abigen`工具转换为`Go`文件代码。整体上主要包含了五个流程：
 
@@ -92,7 +88,6 @@ import "github.com/FISCO-BCOS/go-sdk/client"
 - 构建go-sdk的合约编译工具`abigen`
 - 编译生成go文件
 - 使用生成的go文件进行合约调用
-
 
 下面的内容作为一个示例进行使用介绍。
 
@@ -118,20 +113,10 @@ contract Store {
 }
 ```
 
-2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.4.25)，目前FISCO BCOS默认的`solc`编译器版本为0.4.25。
+2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.4.25)，目前FISCO BCOS默认的`solc`编译器版本为0.6.10。
 
 ```bash
 # 如果是国密则添加-g选项
-bash tools/download_solc.sh -v 0.4.25
-```
-
-在linux 环境运行时，dos2unix是将Windows格式文件转换为Unix、Linux格式的实用命令。
-```shell script
-dos2unix tools/download_solc.sh
-```
-然后再执行 下载安装
-
-```shell script
 bash tools/download_solc.sh -v 0.6.10
 ```
 
@@ -144,7 +129,7 @@ go build ./cmd/abigen
 
 执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`Store.sol`放置在一个新的目录下：
 
-```
+```bash
 mkdir ./store
 mv Store.sol ./store
 ```
@@ -173,7 +158,7 @@ Store.abi  Store.bin  Store.go  Store.sol
 
 至此，合约已成功转换为go文件，用户可根据此文件在项目中利用SDK进行合约操作。具体的使用可参阅下一节。
 
-## 部署智能合约
+### 部署智能合约
 
 创建main函数，调用Store合约，
 ```bash
