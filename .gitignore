@@ -6,7 +6,7 @@
 *.dylib
 main
 console
-/abigen
+abigen
 
 # config files
 sdk.crt

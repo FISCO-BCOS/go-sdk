@@ -22,6 +22,11 @@ LOG_INFO() {
     echo -e "\033[32m[INFO] ${content}\033[0m"
 }
 
+LOG_WARN() {
+    local content=${1}
+    echo -e "\033[31m[ERROR] ${content}\033[0m"
+}
+
 execute_cmd() {
     command="${1}"
     eval ${command}
@@ -277,24 +282,20 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | grep -v 3. | cut -d \" -f 4 | sort -V | tail -n 1)
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
 get_csdk_lib()
 {
     #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
-    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so
-    curl -#LO https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk-x86_64.dylib
-    sudo mkdir /usr/local/lib/bcos-c-sdk
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
+    curl -#LO https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.so
+    curl -#LO https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.dylib
+    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/linux/
+    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/darwin/
+    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/win/
     sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/
-    sudo cp libbcos-c-sdk-x86_64.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
+    sudo cp libbcos-c-sdk.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
 }
 
 precompiled_test(){
@@ -312,7 +313,7 @@ integration_std()
     LOG_INFO "integration_std testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.6.10"
 
-    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -o nodes
+    bash build_chain.sh -l 127.0.0.1:2 -o nodes
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
     cp nodes/127.0.0.1/sdk/* ./conf/
     cp -R nodes/127.0.0.1/sdk/ ./client/conf/
@@ -353,7 +354,7 @@ integration_gm()
     LOG_INFO "integration_gm testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.6.10 -g"
 
-    bash build_chain.sh -v "${latest_version}" -l 127.0.0.1:2 -s -o nodes_gm
+    bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
 

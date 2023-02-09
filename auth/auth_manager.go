@@ -2,13 +2,14 @@ package auth
 
 import (
 	"fmt"
+	"math/big"
+	"reflect"
+
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
-	"reflect"
 )
 
 type ProposalInfo struct {
@@ -93,8 +94,8 @@ func NewAuthManagerService(client *client.Client) (services *AuthManagerService,
 	return s, nil
 }
 
-//6.1 无需权限的查询接口
-//get Committee info
+// 6.1 无需权限的查询接口
+// get Committee info
 func (service *AuthManagerService) GetCommitteeInfo() (c *CommitteeInfo, err error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.committee.CommitteeCaller.GetCommitteeInfo(opts)
@@ -117,7 +118,7 @@ func (service *AuthManagerService) GetCommitteeInfo() (c *CommitteeInfo, err err
 	return &info, nil
 }
 
-//get proposal info
+// get proposal info
 func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (proposalInfo *ProposalInfo, err error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.proposalManager.GetProposalInfo(opts, &proposalId)
@@ -142,7 +143,7 @@ func (service *AuthManagerService) GetProposalInfo(proposalId big.Int) (proposal
 	return &info, nil
 }
 
-//get global deploy auth type
+// get global deploy auth type
 func (service *AuthManagerService) GetDeployAuthType() (*big.Int, error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.contractAuthPrecompiled.DeployType(opts)
@@ -154,7 +155,7 @@ func (service *AuthManagerService) GetDeployAuthType() (*big.Int, error) {
 	return result, nil
 }
 
-//check the account whether this account can deploy contract
+// check the account whether this account can deploy contract
 func (service *AuthManagerService) CheckDeployAuth(account common.Address) (*bool, error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.contractAuthPrecompiled.HasDeployAuth(opts, account)
@@ -164,7 +165,7 @@ func (service *AuthManagerService) CheckDeployAuth(account common.Address) (*boo
 	return &result, nil
 }
 
-//check the contract interface func whether this account can call
+// check the contract interface func whether this account can call
 func (service *AuthManagerService) CheckMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address) (*bool, error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.contractAuthPrecompiled.CheckMethodAuth(opts, contractAddr, funcSelector, account)
@@ -174,7 +175,7 @@ func (service *AuthManagerService) CheckMethodAuth(contractAddr common.Address, 
 	return &result, nil
 }
 
-//get a specific contract admin
+// get a specific contract admin
 func (service *AuthManagerService) GetAdmin(contractAddr common.Address) (account *common.Address, err error) {
 	opts := &bind.CallOpts{From: service.authManagerAuth.From}
 	result, err := service.contractAuthPrecompiled.GetAdmin(opts, contractAddr)
@@ -184,10 +185,10 @@ func (service *AuthManagerService) GetAdmin(contractAddr common.Address) (accoun
 	return &result, nil
 }
 
-//6.2 治理委员账号专用接口
-//apply for update governor, only governor can call it
-//account new governor address
-//weight 0 == delete, bigger than 0 == update or insert
+// 6.2 治理委员账号专用接口
+// apply for update governor, only governor can call it
+// account new governor address
+// weight 0 == delete, bigger than 0 == update or insert
 func (service *AuthManagerService) UpdateGovernor(account common.Address, weight uint32) (proposalId *big.Int, err error) {
 	_, receipt, err := service.committeeManager.
 		CreateUpdateGovernorProposal(service.client.GetTransactOpts(), account, weight, DEFAULT_BLOCK_NUMBER_INTERVAL)
@@ -202,9 +203,9 @@ func (service *AuthManagerService) UpdateGovernor(account common.Address, weight
 	return parseReturnValue(receipt, "createUpdateGovernorProposal")
 }
 
-//apply set participate rate and win rate. only governor can call it
-//participatesRate [0,100]. if 0, always succeed.
-//winRate [0,100].
+// apply set participate rate and win rate. only governor can call it
+// participatesRate [0,100]. if 0, always succeed.
+// winRate [0,100].
 func (service *AuthManagerService) SetRate(participatesRate uint8, winRate uint8) (proposalId *big.Int, err error) {
 	_, receipt, err := service.committeeManager.
 		CreateSetRateProposal(service.client.GetTransactOpts(), participatesRate, participatesRate, DEFAULT_BLOCK_NUMBER_INTERVAL)
@@ -219,8 +220,8 @@ func (service *AuthManagerService) SetRate(participatesRate uint8, winRate uint8
 	return parseReturnValue(receipt, "createSetRateProposal")
 }
 
-//submit a proposal of setting deploy contract auth type, only governor can call it
-//deployAuthType 1-whitelist; 2-blacklist
+// submit a proposal of setting deploy contract auth type, only governor can call it
+// deployAuthType 1-whitelist; 2-blacklist
 func (service *AuthManagerService) SetDeployAuthType(deployAuthType uint8) (proposalId *big.Int, err error) {
 	_, receipt, err := service.committeeManager.
 		CreateSetDeployAuthTypeProposal(service.client.GetTransactOpts(), deployAuthType, DEFAULT_BLOCK_NUMBER_INTERVAL)
@@ -235,8 +236,8 @@ func (service *AuthManagerService) SetDeployAuthType(deployAuthType uint8) (prop
 	return parseReturnValue(receipt, "createSetDeployAuthTypeProposal")
 }
 
-//submit a proposal of adding deploy contract auth for account, only governor can call it
-//openFlag true-open; false-close
+// submit a proposal of adding deploy contract auth for account, only governor can call it
+// openFlag true-open; false-close
 func (service *AuthManagerService) ModifyDeployAuth(account common.Address, openFlag bool) (proposalId *big.Int, err error) {
 	_, receipt, err := service.committeeManager.
 		CreateModifyDeployAuthProposal(service.client.GetTransactOpts(), account, openFlag, DEFAULT_BLOCK_NUMBER_INTERVAL)
@@ -251,7 +252,7 @@ func (service *AuthManagerService) ModifyDeployAuth(account common.Address, open
 	return parseReturnValue(receipt, "createModifyDeployAuthProposal")
 }
 
-//submit a proposal of resetting contract admin, only governor can call it
+// submit a proposal of resetting contract admin, only governor can call it
 func (service *AuthManagerService) ResetAdmin(newAdmin common.Address, contractAddr common.Address) (proposalId *big.Int, err error) {
 	_, receipt, err := service.committeeManager.
 		CreateResetAdminProposal(service.client.GetTransactOpts(), newAdmin, contractAddr, DEFAULT_BLOCK_NUMBER_INTERVAL)
@@ -266,7 +267,7 @@ func (service *AuthManagerService) ResetAdmin(newAdmin common.Address, contractA
 	return parseReturnValue(receipt, "createResetAdminProposal")
 }
 
-//revoke proposal, only governor can call it
+// revoke proposal, only governor can call it
 func (service *AuthManagerService) RevokeProposal(proposalId big.Int) (receipt *types.Receipt, err error) {
 	_, receipt, err = service.committeeManager.RevokeProposal(service.client.GetTransactOpts(), &proposalId)
 
@@ -277,7 +278,7 @@ func (service *AuthManagerService) RevokeProposal(proposalId big.Int) (receipt *
 	return receipt, nil
 }
 
-//unified vote, only governor can call it
+// unified vote, only governor can call it
 func (service *AuthManagerService) VoteProposal(proposalId big.Int, agree bool) (receipt *types.Receipt, err error) {
 
 	_, receipt, err = service.committeeManager.VoteProposal(service.client.GetTransactOpts(), &proposalId, agree)
@@ -289,9 +290,9 @@ func (service *AuthManagerService) VoteProposal(proposalId big.Int, agree bool) 
 	return receipt, nil
 }
 
-//6.3 合约管理员账号专用接口
-//set a specific contract's method auth type, only contract admin can call it
-//authType white_list or black_list
+// 6.3 合约管理员账号专用接口
+// set a specific contract's method auth type, only contract admin can call it
+// authType white_list or black_list
 func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address, funcSelector [4]byte, authType uint8) (rtCode *big.Int, err error) {
 	_, receipt, err := service.contractAuthPrecompiled.SetMethodAuthType(service.client.GetTransactOpts(), contractAddr, funcSelector, authType)
 
@@ -306,8 +307,8 @@ func (service *AuthManagerService) SetMethodAuthType(contractAddr common.Address
 	return parseReturnValue(receipt, "setMethodAuthType")
 }
 
-//set a specific contract's method ACL, only contract admin can call it
-//isOpen if open, then white_list type is true, black_list is false; if close, then white_list type is false, black_list is true
+// set a specific contract's method ACL, only contract admin can call it
+// isOpen if open, then white_list type is true, black_list is false; if close, then white_list type is false, black_list is true
 func (service *AuthManagerService) SetMethodAuth(contractAddr common.Address, funcSelector [4]byte, account common.Address, isOpen bool) (rtCode *big.Int, err error) {
 
 	var receipt *types.Receipt

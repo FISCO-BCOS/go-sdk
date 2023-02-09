@@ -82,7 +82,7 @@ func main() {
 	for {
 		select {
 		case <-done:
-			err := c.UnSubscribeEventLogs(id)
+			err := c.UnSubscribeEventLogs(ctx, taskId)
 			if err != nil {
 				logrus.Println("UnSubscribeEventLogs error!")
 			}
