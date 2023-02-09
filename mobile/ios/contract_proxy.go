@@ -180,6 +180,10 @@ func (c *ContractProxy) SubscribeEventLogs(ctx context.Context, eventLogParams t
 	panic("implement me")
 }
 
+func (c *ContractProxy) UnSubscribeEventLogs(ctx context.Context, filterID string) error {
+	panic("implement me")
+}
+
 func (c *ContractProxy) nextID() json.RawMessage {
 	id := atomic.AddUint32(&c.idCounter, 1)
 	return strconv.AppendUint(nil, uint64(id), 10)

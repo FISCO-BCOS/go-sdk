@@ -391,7 +391,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 
 	topics, err := makeTopics(query...)
 	if err != nil {
-		return err
+		return "", err
 	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,

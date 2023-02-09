@@ -157,7 +157,7 @@ func (c *Client) Close() {
 }
 
 func (c *Client) ReConn() {
-	c.apiHandler.ReConn()
+	c.conn.ReConn()
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================

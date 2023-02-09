@@ -11,7 +11,6 @@ import (
 
 // Config contains configuration items for sdk
 type Config struct {
-	IsHTTP         bool
 	ChainID        string
 	ConfigFile     string
 	CAFile         string
@@ -181,9 +180,8 @@ func ParseConfig(cfgFile string) ([]Config, error) {
 }
 
 // ParseConfigOptions parses from arguments
-func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, isHttp bool, chainId string, isSMCrypto bool) (*Config, error) {
+func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, chainId string, isSMCrypto bool) (*Config, error) {
 	config := Config{
-		IsHTTP:     isHttp,
 		ChainID:    chainId,
 		CAFile:     caFile,
 		Key:        key,
