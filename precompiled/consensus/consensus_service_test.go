@@ -90,7 +90,7 @@ func TestAddSealer(t *testing.T) {
 	}
 	t.Logf("Sealer list before excute AddSealer: %s\n", observer)
 
-	result, err := service.AddSealer(nodeID)
+	result, err := service.AddSealer(nodeID, 1)
 	if err != nil {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
 	}
