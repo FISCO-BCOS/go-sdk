@@ -54,3 +54,6 @@ config.toml
 
 # idea
 .idea
+
+# library
+libs

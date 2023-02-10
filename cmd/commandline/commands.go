@@ -333,7 +333,8 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var includeTx bool
+		onlyHeader := true
+		onlyTxHash := true
 
 		_, err := isValidHex(args[0])
 		if err != nil {
@@ -341,19 +342,22 @@ For more information please refer:
 			return
 		}
 
-		if len(args) == 1 {
-			includeTx = true
-		} else {
-			_includeTx, err := strconv.ParseBool(args[1])
+		if len(args) == 2 {
+			onlyHeader, err = strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
 				return
 			}
-			includeTx = _includeTx
+		} else if len(args) == 3 {
+			onlyTxHash, err = strconv.ParseBool(args[2])
+			if err != nil {
+				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[2], info, err)
+				return
+			}
 		}
 
 		blockHash := common.HexToHash(args[0])
-		block, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
+		block, err := RPC.GetBlockByHash(context.Background(), blockHash, onlyHeader, onlyTxHash)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
@@ -380,7 +384,6 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var includeTx bool
 
 		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
@@ -393,18 +396,17 @@ For more information please refer:
 			return
 		}
 
-		if len(args) == 1 {
-			includeTx = true
-		} else {
-			_includeTx, err := strconv.ParseBool(args[1])
-			if err != nil {
-				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
-				return
-			}
-			includeTx = _includeTx
-		}
-
-		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, includeTx)
+		// if len(args) == 1 {
+		// 	includeTx = true
+		// } else {
+		// 	_includeTx, err := strconv.ParseBool(args[1])
+		// 	if err != nil {
+		// 		fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
+		// 		return
+		// 	}
+		// 	includeTx = _includeTx
+		// }
+		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, false, false)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
@@ -476,7 +478,7 @@ For more information please refer:
 		}
 
 		txHash := common.HexToHash(args[0])
-		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash)
+		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash, true)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
@@ -513,7 +515,7 @@ For more information please refer:
 		}
 
 		txHash := common.HexToHash(args[0])
-		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
+		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash, true)
 		if err != nil {
 			fmt.Printf("transaction receipt not found: %v\n", err)
 			return

@@ -26,10 +26,10 @@ func GetClient(t *testing.T) *Client {
 		t.Fatalf("decode hex failed of %v", err)
 	}
 	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200", Host: "127.0.0.1", Port: 20200}
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := Dial(config)
 	if err != nil {
-		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
+		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
 	return c
 }
@@ -38,7 +38,7 @@ func GetClient(t *testing.T) *Client {
 func TestBlockHashByNumber(t *testing.T) {
 	deployedAddress, txHash := deployHelloWorld(t)
 	c := GetClient(t)
-	raw, err := c.GetTransactionReceipt(context.Background(), *txHash)
+	raw, err := c.GetTransactionReceipt(context.Background(), *txHash, true)
 	if err != nil {
 		t.Fatalf("GetTransactionReceipt failed: %v", err)
 	}
@@ -55,8 +55,7 @@ func TestBlockHashByNumber(t *testing.T) {
 	if err != nil {
 		t.Fatalf("block hash not found: %v", err)
 	}
-	includeTx := false
-	block, err := c.GetBlockByHash(context.Background(), *blockHash, includeTx)
+	block, err := c.GetBlockByHash(context.Background(), *blockHash, false, false)
 	if err != nil {
 		t.Fatalf("block not found: %v", err)
 	}
@@ -66,12 +65,12 @@ func TestBlockHashByNumber(t *testing.T) {
 	//if err != nil {
 	//	t.Fatalf("GetTransactionByBlockHashAndIndex failed: %v", err)
 	//}
-	raw, err = c.GetTransactionReceipt(context.Background(), *txHash)
+	raw, err = c.GetTransactionReceipt(context.Background(), *txHash, true)
 	if err != nil {
 		t.Fatalf("transaction receipt not found: %v", err)
 	}
 	t.Logf("transaction receipt by transaction hash:\n%s", raw.TransactionHash)
-	transaction, err := c.GetTransactionByHash(context.Background(), *txHash)
+	transaction, err := c.GetTransactionByHash(context.Background(), *txHash, true)
 	if err != nil {
 		t.Fatalf("transaction not found: %v", err)
 	}
@@ -244,8 +243,7 @@ func TestBlockByNumber(t *testing.T) {
 	c := GetClient(t)
 
 	var blockNumber int64 = 1
-	includeTx := true
-	block, err := c.GetBlockByNumber(context.Background(), blockNumber, includeTx)
+	block, err := c.GetBlockByNumber(context.Background(), blockNumber, false, false)
 	if err != nil {
 		t.Fatalf("block not found: %v", err)
 	}
