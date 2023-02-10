@@ -1,11 +1,12 @@
-pragma solidity>=0.4.24 <0.6.11;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity >=0.6.10 <0.8.20;
 
 contract HelloWorld {
     string value;
     event setValue(string v, address indexed from, address indexed to, uint256 value);
     string public version = "1";
 
-    constructor() public {
+    constructor() {
         value = "Hello, World!";
     }
 
@@ -13,8 +14,10 @@ contract HelloWorld {
         return value;
     }
 
-    function set(string calldata v) public {
+    function set(string calldata v) public returns (string memory) {
+        string memory old = value;
         value = v;
         emit setValue(v, tx.origin, msg.sender, 1);
+        return old;
     }
 }

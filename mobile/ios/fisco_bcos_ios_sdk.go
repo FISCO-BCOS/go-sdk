@@ -113,7 +113,7 @@ type NetworkResponse struct {
 // Please provider full keyFile path
 func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID string, chainID string, isSMCrypto bool) *BuildSDKResult {
 	// init config and callback
-	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", isSMCrypto)
+	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", 20200, isSMCrypto)
 	if err != nil {
 		return &BuildSDKResult{false, err.Error()}
 	}
