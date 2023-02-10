@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230208094004-130a92b30d68
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230210020037-6a925ac65261
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ethereum/go-ethereum v1.10.21
@@ -18,7 +18,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.6.2
 	github.com/urfave/cli/v2 v2.10.2
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/net v0.2.0 // indirect

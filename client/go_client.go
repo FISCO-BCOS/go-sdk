@@ -63,28 +63,23 @@ func Dial(config *conf.Config) (*Client, error) {
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	var c *conn.Connection
-	var csdkStr = &csdk.CSDK{}
+	var csdkPointer *csdk.CSDK
+	var err error
 	if config.ConfigFile != "" {
-		//配置文件
-		csdkStr = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID, string(config.PrivateKey))
+		// 配置文件
+		csdkPointer, err = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID, config.PrivateKey)
 	} else {
-		var isSmSsl int
-		if config.IsSMCrypto == true {
-			isSmSsl = 1
-		} else {
-			isSmSsl = 0
-		}
 		if config.NodeURL != "" {
 			nodeUrlSplit := strings.Split(config.NodeURL, ":")
 			config.Host = nodeUrlSplit[0]
 			config.Port, _ = strconv.Atoi(nodeUrlSplit[1])
 		}
-		csdkStr = csdk.NewSDK(config.GroupID, config.Host, config.Port, isSmSsl, string(config.PrivateKey))
+		csdkPointer, err = csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey)
 	}
-	if csdkStr == nil {
+	if csdkPointer == nil {
 		return nil, errors.New("new sdk error")
 	}
-	c, err := conn.NewClient(nil, csdkStr)
+	c, err = conn.NewClient(nil, csdkPointer)
 	if err != nil {
 		return nil, fmt.Errorf("new client errors failed: %v", err)
 	}
@@ -135,7 +130,7 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	//	return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
 	//}
 	//todo compatibleVersion
-	client := Client{conn: c, groupID: config.GroupID, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
+	client := Client{conn: c, groupID: config.GroupID, chainID: csdkPointer.ChainID(), smCrypto: config.IsSMCrypto}
 
 	if config.IsSMCrypto {
 		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
@@ -710,31 +705,6 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash) (*types.TransactionDetail, error) {
 	var transactionDetail types.TransactionDetail
 	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByHash", c.groupID, txHash.String())
-	if err != nil {
-		return nil, err
-	}
-	return &transactionDetail, err
-}
-
-// GetTransactionByBlockHashAndIndex returns the transaction information according to
-// the given block hash and transaction index
-func (c *Client) GetTransactionByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, txIndex int) (*types.TransactionDetail, error) {
-	var transactionDetail types.TransactionDetail
-	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByBlockHashAndIndex", c.groupID, blockHash.Hex(), strconv.Itoa(txIndex))
-	if err != nil {
-		return nil, err
-	}
-	return &transactionDetail, err
-}
-
-// GetTransactionByBlockNumberAndIndex returns the transaction information according to
-// the given block number and transaction index
-func (c *Client) GetTransactionByBlockNumberAndIndex(ctx context.Context, blockNumber int64, txIndex int) (*types.TransactionDetail, error) {
-	if blockNumber < 0 {
-		return nil, errors.New("Invalid negative block number")
-	}
-	var transactionDetail types.TransactionDetail
-	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByBlockNumberAndIndex", c.groupID, strconv.FormatInt(blockNumber, 10), strconv.Itoa(txIndex))
 	if err != nil {
 		return nil, err
 	}

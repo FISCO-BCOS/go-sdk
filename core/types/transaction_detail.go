@@ -1,18 +1,19 @@
 package types
 
 type TransactionDetail struct {
-	Abi        string `json:"abi"`
-	BlockLimit int64  `json:"blockLimit"`
-	ChainID    string `json:"chainID"`
-	From       string `json:"from"`
-	GroupID    string `json:"groupID"`
-	Hash       string `json:"hash"`
-	ImportTime int64  `json:"importTime"`
-	Input      string `json:"input"`
-	Nonce      string `json:"nonce"`
-	Signature  string `json:"signature"`
-	To         string `json:"to"`
-	Version    uint64 `json:"version"`
+	Abi              string   `json:"abi"`
+	BlockLimit       int64    `json:"blockLimit"`
+	ChainID          string   `json:"chainID"`
+	From             string   `json:"from"`
+	GroupID          string   `json:"groupID"`
+	Hash             string   `json:"hash"`
+	ImportTime       int64    `json:"importTime"`
+	Input            string   `json:"input"`
+	Nonce            string   `json:"nonce"`
+	Signature        string   `json:"signature"`
+	To               string   `json:"to"`
+	TransactionProof []string `json:"txProof"`
+	Version          uint64   `json:"version"`
 }
 
 func (t *TransactionDetail) GetAbi() string {

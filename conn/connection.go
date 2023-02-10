@@ -1,28 +1,25 @@
-// Copyright 2016 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// Copyright FISCO-BCOS go-sdk
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package conn
 
 import "C"
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -63,6 +60,31 @@ const (
 	// dropped.
 	maxClientSubscriptionBuffer = 20000
 )
+
+// Error wraps RPC errors, which contain an error code in addition to the message.
+type Error interface {
+	Error() string  // returns the message
+	ErrorCode() int // returns the code
+}
+
+// ServerCodec implements reading, parsing and writing RPC messages for the server side of
+// a RPC session. Implementations must be go-routine safe since the codec can be called in
+// multiple go-routines concurrently.
+type ServerCodec interface {
+	Read() (msgs []*jsonrpcMessage, isBatch bool, err error)
+	Close()
+	jsonWriter
+}
+
+// jsonWriter can write JSON messages to its underlying connection.
+// Implementations must be safe for concurrent use.
+type jsonWriter interface {
+	Write(context.Context, interface{}) error
+	// Closed returns a channel which is closed when the connection is closed.
+	Closed() <-chan interface{}
+	// RemoteAddr returns the peer address of the connection.
+	RemoteAddr() string
+}
 
 // BatchElem is an element in a batch request.
 type BatchElem struct {
@@ -129,7 +151,7 @@ type requestOp struct {
 	err  error
 	resp chan *jsonrpcMessage // receives up to len(ids) responses
 	//respData     chan *resRpcMessage  // receives up to len(ids) responses
-	respChanData *csdk.ChanData
+	respChanData *csdk.CallbackChan
 }
 
 type EventLogRespResult struct {
@@ -150,16 +172,14 @@ type eventLogResp struct {
 }
 
 func (op *requestOp) waitRpcMessage(ctx context.Context) (*jsonrpcMessage, interface{}, error) {
-	select {
-	case respBody := <-op.respChanData.Data:
-		var respData jsonrpcMessage
-		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
-			//log.Println("json unmarshal res body:", respBody)
-			//log.Println("json unmarshal err:", err)
-			return nil, nil, err
-		}
-		return &respData, respData.Result, op.err
+	respBody := <-op.respChanData.Data
+	var respData jsonrpcMessage
+	if err := json.Unmarshal(respBody.Result, &respData); err != nil {
+		//log.Println("json unmarshal res body:", respBody)
+		//log.Println("json unmarshal err:", err)
+		return nil, nil, err
 	}
+	return &respData, respData.Result, op.err
 }
 
 func processEventLogMsg(respBody []byte, handler interface{}) {
@@ -199,7 +219,7 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 }
 
 func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method string, handler interface{}) error {
-	for true {
+	for {
 		select {
 		case <-ctx.Done():
 			//switch method {
@@ -211,18 +231,18 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 		case respBody := <-op.respChanData.Data:
 			switch method {
 			case "subscribeEventLogs":
-				processEventLogMsg([]byte(respBody), handler)
+				processEventLogMsg(respBody.Result, handler)
 			case "subscribeTopic":
-				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+				handler.(func([]byte, *[]byte))(respBody.Result, nil)
 			case "SendAMOPMsg":
-				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+				handler.(func([]byte, *[]byte))(respBody.Result, nil)
 			case "broadcastAMOPMsg":
-				handler.(func([]byte, *[]byte))([]byte(respBody), nil)
+				handler.(func([]byte, *[]byte))(respBody.Result, nil)
 			case "subscribeBlockNumberNotify":
 				//log.Println("subscribeBlockNumberNotify respBody:",respBody)
-				blockNum, err := strconv.Atoi(respBody)
-				if err == nil {
-					handler.(func(int64))(int64(blockNum))
+				if respBody.Err == nil {
+					blockNum := int64(binary.LittleEndian.Uint64(respBody.Result))
+					handler.(func(int64))(blockNum)
 				}
 			default:
 				return ErrNoResult
@@ -246,7 +266,7 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 //	// 	return nil, ctx.Err()
 //	case respBody := <-op.respChanData.Data:
 //		var respData resRpcMessage
-//		if err := json.Unmarshal([]byte(respBody), &respData); err != nil {
+//		if err := json.Unmarshal(respBody.Result, &respData); err != nil {
 //			log.Println("json unmarshal res body:", respBody)
 //			log.Println("json unmarshal err:", err)
 //			return nil, nil, err
@@ -254,18 +274,6 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 //		return &respData, respData.Result, op.err
 //	}
 //}
-
-// DialContextHTTP creates a new RPC client, just like Dial.
-//
-// The context is used to cancel or time out the initial connection establishment. It does
-// not affect subsequent interactions with the client.
-func DialContextHTTP(rawurl string) (*Connection, error) {
-	rawurl = strings.ToLower(rawurl)
-	if !strings.Contains(rawurl, "http://") {
-		rawurl = "http://" + rawurl
-	}
-	return DialHTTP(rawurl)
-}
 
 // DialContextChannel creates a new Channel client, just like Dial.
 func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int) (*Connection, error) {
@@ -309,9 +317,8 @@ func newClient(initctx context.Context, connect reconnectFunc) (*Connection, err
 }
 
 func initClient(conn ServerCodec) *Connection {
-	_, isHTTP := conn.(*httpConn)
 	c := &Connection{
-		isHTTP:      isHTTP,
+		isHTTP:      false,
 		writeConn:   conn,
 		close:       make(chan struct{}),
 		closing:     make(chan struct{}),
@@ -367,7 +374,7 @@ func (c *Connection) Call(result interface{}, method string, args ...interface{}
 // can also pass nil, in which case the result is ignored.
 func (c *Connection) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	//logrus.Infof("CallContext method:%s\n", method)
-	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
+	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
 	switch method {
 	case "call":
 		arg := args[1].(map[string]interface{})
@@ -414,8 +421,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getTotalTransactionCount":
 		c.csdk.GetTotalTransactionCount(op.respChanData)
 	case "getGroupNodeInfo":
-		nodeId := args[1].(string)
-		c.csdk.GetGroupnodeInfo(op.respChanData, nodeId)
+		c.csdk.GetGroupNodeInfo(op.respChanData)
 	case "getGroupList":
 		c.csdk.GetGroupList(op.respChanData)
 	case "getGroupInfo":
@@ -448,7 +454,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 
 func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData string, handler interface{}) error {
 	//logrus.Infof("CallEventContext method:%s", method)
-	op := &requestOp{respChanData: &csdk.ChanData{Data: make(chan string, 100)}}
+	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
 	switch method {
 	case "subscribeTopic":
 		c.csdk.SubscribeTopicWithCb(op.respChanData, topic)
@@ -604,11 +610,6 @@ func (c *Connection) drainRead() {
 			return
 		}
 	}
-}
-
-// IsHTTP returns whether is HTTP
-func (c *Connection) IsHTTP() bool {
-	return c.isHTTP
 }
 
 // GetBlockNumber returns BlockLimit
