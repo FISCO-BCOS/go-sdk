@@ -35,7 +35,7 @@ calculate_coverage() {
     bash build_chain.sh -l 127.0.0.1:4 -o nodes
     get_csdk_lib
     cp nodes/127.0.0.1/sdk/* ./
-    cp -R nodes/127.0.0.1/sdk/ ./client/conf/
+    cp nodes/127.0.0.1/sdk/* ./client/
     bash nodes/127.0.0.1/start_all.sh
 
     # generate code coverage report

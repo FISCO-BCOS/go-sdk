@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -22,9 +24,12 @@ func main() {
 		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200", os.Args[0])
 	}
 	endpoint := os.Args[1]
+	nodeUrlSplit := strings.Split(endpoint, ":")
+	host := nodeUrlSplit[0]
+	port, _ := strconv.Atoi(nodeUrlSplit[1])
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: endpoint}
+		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	var c *client.Client
 	var err error
 	const (

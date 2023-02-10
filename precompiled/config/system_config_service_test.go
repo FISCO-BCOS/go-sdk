@@ -12,7 +12,7 @@ import (
 func testSetValueByKey(t *testing.T, key string, value string) {
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.Dial(config)
 	if err != nil {
 		t.Fatalf("init client failed: %+v", err)

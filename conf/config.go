@@ -7,30 +7,32 @@ import (
 
 // Config contains configuration items for sdk
 type Config struct {
-	ConfigFile     string
-	CAFile         string
-	TLSCAContext   []byte
-	TLSKeyFile     string
-	TLSKeyContext  []byte
-	TLSCertFile    string
-	TLSCertContext []byte
-	IsSMCrypto     bool
-	PrivateKey     []byte
-	GroupID        string
-	NodeURL        string
-	Host           string
-	Port           int
+	ConfigFile      string
+	TLSCaFile       string
+	TLSKeyFile      string
+	TLSCertFile     string
+	TLSSmEnKeyFile  string
+	TLSSmEnCertFile string
+	// TLSCaContext   []byte
+	// TLSKeyContext  []byte
+	// TLSCertContext []byte
+	IsSMCrypto bool
+	PrivateKey []byte
+	GroupID    string
+	Host       string
+	Port       int
 }
 
 // ParseConfigOptions parses from arguments
-func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, ipPort string, isSMCrypto bool) (*Config, error) {
+func ParseConfigOptions(caFile string, key string, cert, keyFile string, groupId string, host string, port int, isSMCrypto bool) (*Config, error) {
 	config := Config{
-		CAFile:      caFile,
+		TLSCaFile:   caFile,
 		TLSKeyFile:  key,
 		TLSCertFile: cert,
 		IsSMCrypto:  isSMCrypto,
 		GroupID:     groupId,
-		NodeURL:     ipPort,
+		Host:        host,
+		Port:        port,
 	}
 	keyBytes, curve, err := LoadECPrivateKeyFromPEM(keyFile)
 	if err != nil {

@@ -716,27 +716,27 @@ func (hc *channelSession) sendSubscribedTopics() error {
 }
 
 // func (hc *channelSession) subscribeEvent(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-// 	if handler == nil {
-// 		return "", errors.New("handler is nil")
-// 	}
-// 	id, err := uuid.NewUUID()
-// 	if err != nil {
-// 		return "", errors.New("new UUID failed")
-// 	}
-// 	eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
-// 	hc.eventLogMu.RLock()
-// 	_, ok := hc.eventLogHandlers[eventLogParams.FilterID]
-// 	hc.eventLogMu.RUnlock()
-// 	if ok {
-// 		return "", errors.New("already subscribed to event " + eventLogParams.FilterID)
-// 	}
-// 	if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
-// 		return "", err
-// 	}
-// 	hc.eventLogMu.Lock()
-// 	hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
-// 	hc.eventLogMu.Unlock()
-// 	return eventLogParams.FilterID, nil
+//     if handler == nil {
+//         return "", errors.New("handler is nil")
+//     }
+//     id, err := uuid.NewUUID()
+//     if err != nil {
+//         return "", errors.New("new UUID failed")
+//     }
+//     eventLogParams.FilterID = strings.ReplaceAll(id.String(), "-", "")
+//     hc.eventLogMu.RLock()
+//     _, ok := hc.eventLogHandlers[eventLogParams.FilterID]
+//     hc.eventLogMu.RUnlock()
+//     if ok {
+//         return "", errors.New("already subscribed to event " + eventLogParams.FilterID)
+//     }
+//     if err := hc.sendSubscribedEvent(&eventLogParams); err != nil {
+//         return "", err
+//     }
+//     hc.eventLogMu.Lock()
+//     hc.eventLogHandlers[eventLogParams.FilterID] = eventInfo{&eventLogParams, handler}
+//     hc.eventLogMu.Unlock()
+//     return eventLogParams.FilterID, nil
 // }
 
 func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]byte)) error {

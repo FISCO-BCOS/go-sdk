@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
@@ -25,10 +26,13 @@ func main() {
 		waitToSend = time.Duration(i) * time.Second
 	}
 	endpoint := os.Args[1]
+	nodeUrlSplit := strings.Split(endpoint, ":")
+	host := nodeUrlSplit[0]
+	port, _ := strconv.Atoi(nodeUrlSplit[1])
 	topic := os.Args[2]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: endpoint}
+		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.Dial(config)
 	if err != nil {
 		logrus.Fatalf("init publisher failed, err: %v\n", err)
