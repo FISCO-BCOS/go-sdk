@@ -340,17 +340,3 @@ func parseArgumentArray(dec *json.Decoder, types []reflect.Type) ([]reflect.Valu
 	_, err := dec.Token()
 	return args, err
 }
-
-// parseSubscriptionName extracts the subscription name from an encoded argument array.
-func parseSubscriptionName(rawArgs json.RawMessage) (string, error) {
-	dec := json.NewDecoder(bytes.NewReader(rawArgs))
-	if tok, _ := dec.Token(); tok != json.Delim('[') {
-		return "", errors.New("non-array args")
-	}
-	v, _ := dec.Token()
-	method, ok := v.(string)
-	if !ok {
-		return "", errors.New("expected subscription name as first argument")
-	}
-	return method, nil
-}
