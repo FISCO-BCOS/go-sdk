@@ -9,20 +9,20 @@ import (
 
 // Receipt represents the results of a transaction.
 type Receipt struct {
-	BlockNumber      int       `json:"blockNumber"`
-	ContractAddress  string    `json:"contractAddress"`
-	From             string    `json:"from"`
-	GasUsed          string    `json:"gasUsed"`
-	Hash             string    `json:"hash"`
-	Input            string    `json:"input"`
-	Logs             []*NewLog `json:"logEntries"`
-	Message          string    `json:"message"`
-	Output           string    `json:"output"`
-	Status           int       `json:"status"`
-	To               string    `json:"to"`
-	TransactionHash  string    `json:"transactionHash"`
-	TransactionProof string    `json:"transactionProof"`
-	Version          uint64    `json:"version"`
+	BlockNumber     int       `json:"blockNumber"`
+	ContractAddress string    `json:"contractAddress"`
+	From            string    `json:"from"`
+	GasUsed         string    `json:"gasUsed"`
+	Hash            string    `json:"hash"`
+	Input           string    `json:"input"`
+	Logs            []*NewLog `json:"logEntries"`
+	Message         string    `json:"message"`
+	Output          string    `json:"output"`
+	Status          int       `json:"status"`
+	To              string    `json:"to"`
+	TransactionHash string    `json:"transactionHash"`
+	ReceiptProof    []string  `json:"txReceiptProof"`
+	Version         uint64    `json:"version"`
 }
 
 const (
@@ -160,8 +160,8 @@ func (r *Receipt) GetOutput() string {
 }
 
 // GetTransactionIndex returns the transaction index string
-func (r *Receipt) GetTransactionProof() string {
-	return r.TransactionProof
+func (r *Receipt) GetReceiptProof() []string {
+	return r.ReceiptProof
 }
 
 // GetStatus returns the transaction status

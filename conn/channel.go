@@ -42,12 +42,13 @@ import (
 )
 
 const (
-	maxTopicLength      = 254
-	messageHeaderLength = 42
-	protocolVersion     = 3
-	clientType          = "Go-SDK"
-	heartBeatInterval   = 30
-	tlsConnReadDeadline = 10
+	maxTopicLength          = 254
+	messageHeaderLength     = 42
+	protocolVersion         = 3
+	clientType              = "Go-SDK"
+	heartBeatInterval       = 30
+	tlsConnReadDeadline     = 10
+	maxRequestContentLength = 1024 * 512
 )
 
 type nodeInfo struct {
