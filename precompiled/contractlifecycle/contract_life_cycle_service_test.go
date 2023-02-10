@@ -24,10 +24,10 @@ var (
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("8c47f550380591adab955cf050c439c0ffabb236bf05a64849ee0ba8aed42a41")
 	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.Dial(config)
 	if err != nil {
-		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
+		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
 	return c
 }

@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230210020037-6a925ac65261
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230210082753-3c33f8a75d95
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ethereum/go-ethereum v1.10.21

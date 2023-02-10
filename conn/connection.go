@@ -45,6 +45,7 @@ const (
 	tcpKeepAliveInterval = 30 * time.Second
 	defaultDialTimeout   = 10 * time.Second // used if context has no deadline
 	subscribeTimeout     = 5 * time.Second  // overall timeout eth_subscribe, rpc_modules calls
+	amopTimeout          = 1000
 )
 
 const (
@@ -86,22 +87,8 @@ type jsonWriter interface {
 	RemoteAddr() string
 }
 
-// BatchElem is an element in a batch request.
-type BatchElem struct {
-	Method string
-	Args   []interface{}
-	// The result is unmarshaled into this field. Result must be set to a
-	// non-nil pointer value of the desired type, otherwise the response will be
-	// discarded.
-	Result interface{}
-	// Error is set if the server returns an error for this request, or if
-	// unmarshaling into Result fails. It is not set for I/O errors.
-	Error error
-}
-
 // Connection represents a connection to an RPC server.
 type Connection struct {
-	isHTTP    bool
 	csdk      *csdk.CSDK
 	idCounter uint32
 
@@ -252,35 +239,12 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 	return nil
 }
 
-//func (op *requestOp) wait(ctx context.Context, c *Connection) (*resRpcMessage, interface{}, error) {
-//	select {
-//	// case <-ctx.Done():
-//	// 	// Send the timeout to dispatch so it can remove the request IDs.
-//	// 	// FIXME: remove the code below
-//	// 	if !c.isHTTP {
-//	// 		select {
-//	// 		case c.reqTimeout <- op:
-//	// 		case <-c.closing:
-//	// 		}
-//	// 	}
-//	// 	return nil, ctx.Err()
-//	case respBody := <-op.respChanData.Data:
-//		var respData resRpcMessage
-//		if err := json.Unmarshal(respBody.Result, &respData); err != nil {
-//			log.Println("json unmarshal res body:", respBody)
-//			log.Println("json unmarshal err:", err)
-//			return nil, nil, err
-//		}
-//		return &respData, respData.Result, op.err
-//	}
-//}
-
 // DialContextChannel creates a new Channel client, just like Dial.
 func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int) (*Connection, error) {
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(caRoot)
 	if !ok {
-		//panic("failed to parse root certificate")
+		return nil, errors.New("failed to parse root certificate")
 	}
 	cer, err := tls.X509KeyPair(certContext, keyContext)
 	if err != nil {
@@ -318,7 +282,6 @@ func newClient(initctx context.Context, connect reconnectFunc) (*Connection, err
 
 func initClient(conn ServerCodec) *Connection {
 	c := &Connection{
-		isHTTP:      false,
 		writeConn:   conn,
 		close:       make(chan struct{}),
 		closing:     make(chan struct{}),
@@ -340,19 +303,11 @@ func (c *Connection) nextID() json.RawMessage {
 
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) Close() {
-	//if c.isHTTP {
-	//	return
-	//}
-	//hc := c.writeConn.(*channelSession)
-	//hc.Close()
 	c.csdk.Close()
 }
 
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) ReConn() {
-	if c.isHTTP {
-		return
-	}
 	hc := c.writeConn.(*channelSession)
 	hc.Reconnection()
 }
@@ -389,10 +344,14 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetBlockNumber(op.respChanData)
 	case "getBlockByNumber":
 		blockNumber := args[1].(int64)
-		c.csdk.GetBlockByNumber(op.respChanData, blockNumber, 0, 0)
+		onlyHeader := args[2].(bool)
+		onlyTxHash := args[3].(bool)
+		c.csdk.GetBlockByNumber(op.respChanData, blockNumber, onlyHeader, onlyTxHash)
 	case "getBlockByHash":
 		blockHash := args[1].(string)
-		c.csdk.GetBlockByhash(op.respChanData, blockHash, 0, 0)
+		onlyHeader := args[2].(bool)
+		onlyTxHash := args[3].(bool)
+		c.csdk.GetBlockByHash(op.respChanData, blockHash, onlyHeader, onlyTxHash)
 	case "getBlockHashByNumber":
 		blockNumber := args[1].(int64)
 		c.csdk.GetBlockHashByNumber(op.respChanData, blockNumber)
@@ -411,10 +370,12 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetObserverList(op.respChanData)
 	case "getTransactionReceipt":
 		txHash := args[1].(string)
-		c.csdk.GetTransactionReceipt(op.respChanData, txHash)
+		withProof := args[2].(bool)
+		c.csdk.GetTransactionReceipt(op.respChanData, txHash, withProof)
 	case "getTransactionByHash":
 		txHash := args[1].(string)
-		c.csdk.GetTransaction(op.respChanData, txHash)
+		withProof := args[2].(bool)
+		c.csdk.GetTransaction(op.respChanData, txHash, withProof)
 	case "getSystemConfigByKey":
 		key := args[1].(string)
 		c.csdk.GetSystemConfigByKey(op.respChanData, key)
@@ -433,7 +394,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "sendRawTransaction":
 		data := args[1].(string)
 		contractAddress := args[2].(string)
-		c.csdk.SendTransaction(op.respChanData, contractAddress, data)
+		c.csdk.SendTransaction(op.respChanData, contractAddress, data, true)
 	default:
 		return ErrNoRpcMehtod
 	}
@@ -452,7 +413,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
-func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData string, handler interface{}) error {
+func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData []byte, handler interface{}) error {
 	//logrus.Infof("CallEventContext method:%s", method)
 	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
 	switch method {
@@ -461,14 +422,14 @@ func (c *Connection) CallHandlerContext(ctx context.Context, result interface{},
 	case "unsubscribeTopic":
 		c.csdk.UnsubscribeTopicWithCb(op.respChanData, topic)
 	case "SendAMOPMsg":
-		c.csdk.PublishTopicMsg(op.respChanData, topic, reqData)
+		c.csdk.PublishTopicMsg(op.respChanData, topic, reqData, amopTimeout)
 	case "broadcastAMOPMsg":
 		c.csdk.BroadcastAmopMsg(op.respChanData, topic, reqData)
 	case "subscribeEventLogs":
-		taskId := c.csdk.SubscribeEvent(op.respChanData, reqData)
+		taskId := c.csdk.SubscribeEvent(op.respChanData, string(reqData))
 		*result.(*string) = taskId
 	case "unSubscribeEventLogs":
-		c.csdk.UnsubscribeEvent(op.respChanData, reqData)
+		c.csdk.UnsubscribeEvent(op.respChanData, string(reqData))
 	case "subscribeBlockNumberNotify":
 		c.csdk.RegisterBlockNotifier(op.respChanData)
 	default:
@@ -488,76 +449,11 @@ func (c *Connection) CallHandlerContext(ctx context.Context, result interface{},
 //		return err
 //	}
 //	hc := c.writeConn.(*channelSession)
-//	if !c.isHTTP {
-//		err = hc.asyncSendTransaction(msg, handler)
-//	}
+//	err = hc.asyncSendTransaction(msg, handler)
 //	if err != nil {
 //		return err
 //	}
 //	return nil
-//}
-
-// func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-// 	hc := c.writeConn.(*channelSession)
-// 	return hc.subscribeEvent(eventLogParams, handler)
-// }
-
-// func (c *Connection) UnSubscribeEventLogs(filterID string) error {
-// 	hc := c.writeConn.(*channelSession)
-// 	hc.eventLogMu.Lock()
-// 	delete(hc.eventLogHandlers, filterID)
-// 	hc.eventLogMu.Unlock()
-// 	return nil
-// }
-
-// func (c *Connection) SubscribeTopic(topic string, handler func([]byte, *[]byte)) error {
-// 	hc := c.writeConn.(*channelSession)
-// 	return hc.subscribeTopic(topic, handler)
-// }
-
-//func (c *Connection) SubscribePrivateTopic(topic string, privateKey *ecdsa.PrivateKey, handler func([]byte, *[]byte)) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.subscribePrivateTopic(topic, privateKey, handler)
-//}
-
-//func (c *Connection) PublishPrivateTopic(topic string, publicKey []*ecdsa.PublicKey) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.publishPrivateTopic(topic, publicKey)
-//}
-
-//func (c *Connection) UnsubscribeTopic(topic string) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.unsubscribeTopic(topic)
-//}
-
-//func (c *Connection) UnsubscribePrivateTopic(topic string) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.unsubscribePrivateTopic(topic)
-//}
-
-//func (c *Connection) SendAMOPMsg(topic string, data []byte) ([]byte, error) {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.sendAMOPMsg(topic, data)
-//}
-
-//func (c *Connection) BroadcastAMOPMsg(topic string, data []byte) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.broadcastAMOPMsg(topic, data)
-//}
-
-//func (c *Connection) SendAMOPPrivateMsg(topic string, data []byte) ([]byte, error) {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.sendAMOPPrivateMsg(topic, data)
-//}
-
-//func (c *Connection) BroadcastAMOPPrivateMsg(topic string, data []byte) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.broadcastAMOPPrivateMsg(topic, data)
-//}
-
-//func (c *Connection) SubscribeBlockNumberNotify(groupID uint64, handler func(int64)) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.subscribeBlockNumberNotify(groupID, handler)
 //}
 
 //func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {

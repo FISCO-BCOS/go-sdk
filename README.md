@@ -20,13 +20,13 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 - 部署、查询、写入智能合约
 - 控制台
 
-`go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS。
+`go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS，3.0版本的go sdk使用cgo依赖bcos-c-sdk以支持国密等特性，请注意`go build -r /usr/local/lib/`参数。
 
 ## 环境准备
 
 - [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
-- [FISCO BCOS 3.0.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
-- Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
+- [FISCO BCOS 3.2.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
+- Solidity编译器，默认[0.6.10版本](https://github.com/ethereum/solidity/releases/tag/v0.6.10)
 - 对应[FISCO BCOS v2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
 ## 配置结构体说明
@@ -91,33 +91,39 @@ import "github.com/FISCO-BCOS/go-sdk/client"
 
 下面的内容作为一个示例进行使用介绍。
 
-1.提供一份简单的样例智能合约`Store.sol`如下:
+1.提供一份简单的样例智能合约`HelloWorld.sol`如下:
 
 ```solidity
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity >=0.6.10 <0.8.20;
 
-contract Store {
-  event ItemSet(bytes32 key, bytes32 value);
+contract HelloWorld {
+    string value;
+    event setValue(string v, address indexed from, address indexed to, uint256 value);
+    string public version = "1";
 
-  string public version;
-  mapping (bytes32 => bytes32) public items;
+    constructor() {
+        value = "Hello, World!";
+    }
 
-  constructor(string _version) public {
-    version = _version;
-  }
+    function get() public view returns (string memory) {
+        return value;
+    }
 
-  function setItem(bytes32 key, bytes32 value) external {
-    items[key] = value;
-    emit ItemSet(key, value);
-  }
+    function set(string calldata v) public returns (string memory) {
+        string memory old = value;
+        value = v;
+        emit setValue(v, tx.origin, msg.sender, 1);
+        return old;
+    }
 }
 ```
 
-2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.4.25)，目前FISCO BCOS默认的`solc`编译器版本为0.6.10。
+2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.8.11)，目前FISCO BCOS默认的`solc`编译器版本为0.8.11。
 
 ```bash
 # 如果是国密则添加-g选项
-bash tools/download_solc.sh -v 0.6.10
+bash tools/download_solc.sh -v 0.8.11
 ```
 
 3.构建`go-sdk`的代码生成工具`abigen`
@@ -127,21 +133,21 @@ bash tools/download_solc.sh -v 0.6.10
 go build ./cmd/abigen
 ```
 
-执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`Store.sol`放置在一个新的目录下：
+执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`HelloWorld.sol`放置在一个新的目录下：
 
 ```bash
 mkdir ./store
-mv Store.sol ./store
+mv HelloWorld.sol ./store
 ```
 
-4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`Store.sol`为例：
+4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`HelloWorld.sol`为例：
 
 ```bash
-# 国密请使用 ./solc-0.4.25-gm --bin --abi -o ./store ./store/Store.sol
-./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
+# 国密请使用 ./solc-0.4.25-gm --bin --abi -o ./store ./store/HelloWorld.sol
+./solc-0.4.25 --bin --abi -o ./store ./store/HelloWorld.sol
 ```
 
-`Store.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
+`HelloWorld.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
 
 ```bash
 # 国密请使用 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go --smcrypto=true
@@ -151,7 +157,7 @@ mv Store.sol ./store
 最后store目录下面存在以下文件：
 
 ```bash
-Store.abi  Store.bin  Store.go  Store.sol
+Store.abi  Store.bin  Store.go  HelloWorld.sol
 ```
 
 5.调用生成的`Store.go`文件进行合约调用
@@ -165,7 +171,7 @@ Store.abi  Store.bin  Store.go  Store.sol
 touch store_main.go
 ```
 
-下面的例子先部署合约，在部署过程中设置的`Store.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
+下面的例子先部署合约，在部署过程中设置的`HelloWorld.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
 
 写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。
 
@@ -173,67 +179,67 @@ touch store_main.go
 package main
 
 import (
-	"fmt"
-	"log"
-	"encoding/hex"
+    "fmt"
+    "log"
+    "encoding/hex"
 
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/store"
+    "github.com/FISCO-BCOS/go-sdk/client"
+    "github.com/FISCO-BCOS/go-sdk/conf"
+    "github.com/FISCO-BCOS/go-sdk/store"
 )
 
 func main() {
-	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
-	client, err := client.Dial(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-	input := "Store deployment 1.0"
-	address, receipt, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
-	fmt.Println("transaction hash: ", receipt.TransactionHash)
+    privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+    config := &conf.Config{IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+    client, err := client.Dial(config)
+    if err != nil {
+        log.Fatal(err)
+    }
+    input := "Store deployment 1.0"
+    address, receipt, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
+    fmt.Println("transaction hash: ", receipt.TransactionHash)
 
-	// load the contract
-	// contractAddress := common.HexToAddress("contract address in hex String")
-	// instance, err := store.NewStore(contractAddress, client)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+    // load the contract
+    // contractAddress := common.HexToAddress("contract address in hex String")
+    // instance, err := store.NewStore(contractAddress, client)
+    // if err != nil {
+    //     log.Fatal(err)
+    // }
 
-	fmt.Println("================================")
-	storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    fmt.Println("================================")
+    storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
-	version, err := storeSession.Version()
-	if err != nil {
-		log.Fatal(err)
-	}
+    version, err := storeSession.Version()
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println("version :", version) // "Store deployment 1.0"
+    fmt.Println("version :", version) // "Store deployment 1.0"
 
-	// contract write interface demo
-	fmt.Println("================================")
-	key := [32]byte{}
-	value := [32]byte{}
-	copy(key[:], []byte("foo"))
-	copy(value[:], []byte("bar"))
+    // contract write interface demo
+    fmt.Println("================================")
+    key := [32]byte{}
+    value := [32]byte{}
+    copy(key[:], []byte("foo"))
+    copy(value[:], []byte("bar"))
 
-	_, receipt, err = storeSession.SetItem(key, value)
-	if err != nil {
-		log.Fatal(err)
-	}
+    _, receipt, err = storeSession.SetItem(key, value)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
+    fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
-	// read the result
-	result, err := storeSession.Items(key)
-	if err != nil {
-		log.Fatal(err)
-	}
+    // read the result
+    result, err := storeSession.Items(key)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println("get item: " + string(result[:])) // "bar"
+    fmt.Println("get item: " + string(result[:])) // "bar"
 }
 ```

@@ -67,20 +67,20 @@ generate_main_gm() {
 cat << EOF >> "${output}"
 
 func main() {
-	privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
-	config := &conf.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
-	client, err := client.Dial(config)
-	if err != nil {
-		fmt.Printf("Dial Client failed, err:%v", err)
-		return
-	}
-	address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
-	if err != nil {
-		fmt.Printf("Deploy failed, err:%v", err)
-		return
-	}
-	fmt.Println("contract address: ", address.Hex()) // the address should be saved
-	//fmt.Println("transaction hash: ", tx.Hash().Hex())
+    privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
+    config := &conf.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+    client, err := client.Dial(config)
+    if err != nil {
+        fmt.Printf("Dial Client failed, err:%v", err)
+        return
+    }
+    address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
+    if err != nil {
+        fmt.Printf("Deploy failed, err:%v", err)
+        return
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved
+    //fmt.Println("transaction hash: ", tx.Hash().Hex())
 EOF
 }
 
@@ -90,22 +90,22 @@ generate_main() {
 cat << EOF >> "${output}"
 
 func main() {
-	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
-	          PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+    privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+    config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+              PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
-	client, err := client.Dial(config)
-	if err != nil {
-		fmt.Printf("Dial Client failed, err:%v", err)
-		return
-	}
-	address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
-	if err != nil {
-		fmt.Printf("Deploy failed, err:%v", err)
-		return
-	}
-	fmt.Println("contract address: ", address.Hex()) // the address should be saved
-	//fmt.Println("transaction hash: ", tx.Hash().Hex())
+    client, err := client.Dial(config)
+    if err != nil {
+        fmt.Printf("Dial Client failed, err:%v", err)
+        return
+    }
+    address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client)
+    if err != nil {
+        fmt.Printf("Deploy failed, err:%v", err)
+        return
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved
+    //fmt.Println("transaction hash: ", tx.Hash().Hex())
 EOF
 }
 
@@ -115,52 +115,52 @@ generate_hello() {
     generate_main "${1}" "${2}"
 cat << EOF >> "${output}"
 
-	hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
-	ret, err := hello.Get()
-	if err != nil {
-		fmt.Printf("hello.Get() failed: %v", err)
-		return
-	}
+    hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    ret, err := hello.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
     done := make(chan bool)
-	_, err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
-		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+    _, err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := hello.ParseSetValue(logs[0])
-		if err != nil {
-			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-			panic("WatchAllSetValue hello.WatchAllSetValue() failed")
-		}
-		fmt.Printf("receive setValue: %+v\n", *setValue)
-		done <- true
-	})
-	if err != nil {
-		fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-		return
-	}
-	fmt.Printf("Get: %s\n", ret)
-	_, _, err = hello.Set("fisco")
-	if err != nil {
-		fmt.Printf("hello.Set failed: %v", err)
-		return
-	}
-	ret, err = hello.Get()
-	if err != nil {
-		fmt.Printf("hello.Get() failed: %v", err)
-		return
-	}
-	fmt.Printf("Get: %s\n", ret)
+        if err != nil {
+            fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+            panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+        }
+        fmt.Printf("receive setValue: %+v\n", *setValue)
+        done <- true
+    })
+    if err != nil {
+        fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
+    _, _, _, err = hello.Set("fisco")
+    if err != nil {
+        fmt.Printf("hello.Set failed: %v", err)
+        return
+    }
+    ret, err = hello.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
     <-done
     from := common.HexToAddress("0x83309d045a19c44Dc3722D15A6AbD472f95866aC")
-	hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
-		fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
-		setValue, err := hello.ParseSetValue(logs[0])
-		if err != nil {
-			fmt.Printf("hello.WatchSetValue() failed: %v", err)
-			panic("hello.WatchSetValue() failed")
-		}
-		fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
-		done <- true
-	}, from, from)
-	<-done
+    hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
+        setValue, err := hello.ParseSetValue(logs[0])
+        if err != nil {
+            fmt.Printf("hello.WatchSetValue() failed: %v", err)
+            panic("hello.WatchSetValue() failed")
+        }
+        fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
+        done <- true
+    }, from, from)
+    <-done
 }
 EOF
     "${GOPATH_BIN}"/goimports -w  "${output}"
@@ -172,52 +172,52 @@ generate_hello_gm() {
     generate_main_gm "${1}" "${2}"
 cat << EOF >> "${output}"
 
-	hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
-	ret, err := hello.Get()
-	if err != nil {
-		fmt.Printf("hello.Get() failed: %v", err)
-		return
-	}
+    hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    ret, err := hello.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
     done := make(chan bool)
-	err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
-		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+    err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := hello.ParseSetValue(logs[0])
-		if err != nil {
-			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-			panic("WatchAllSetValue hello.WatchAllSetValue() failed")
-		}
-		fmt.Printf("receive setValue: %+v\n", *setValue)
-		done <- true
-	})
-	if err != nil {
-		fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-		return
-	}
-	fmt.Printf("Get: %s\n", ret)
-	_, _, err = hello.Set("fisco")
-	if err != nil {
-		fmt.Printf("hello.Set failed: %v", err)
-		return
-	}
-	ret, err = hello.Get()
-	if err != nil {
-		fmt.Printf("hello.Get() failed: %v", err)
-		return
-	}
-	fmt.Printf("Get: %s\n", ret)
+        if err != nil {
+            fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+            panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+        }
+        fmt.Printf("receive setValue: %+v\n", *setValue)
+        done <- true
+    })
+    if err != nil {
+        fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
+    _, _, _, err = hello.Set("fisco")
+    if err != nil {
+        fmt.Printf("hello.Set failed: %v", err)
+        return
+    }
+    ret, err = hello.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
     <-done
     from := common.HexToAddress("0x000000000000000000000000791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b")
-	hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
-		fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
-		setValue, err := hello.ParseSetValue(logs[0])
-		if err != nil {
-			fmt.Printf("hello.WatchSetValue() failed: %v", err)
-			panic("hello.WatchSetValue() failed")
-		}
-		fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
-		done <- true
-	}, from, from)
-	<-done
+    hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
+        setValue, err := hello.ParseSetValue(logs[0])
+        if err != nil {
+            fmt.Printf("hello.WatchSetValue() failed: %v", err)
+            panic("hello.WatchSetValue() failed")
+        }
+        fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
+        done <- true
+    }, from, from)
+    <-done
 }
 EOF
     "${GOPATH_BIN}"/goimports -w  "${output}"
@@ -229,51 +229,51 @@ generate_counter() {
     generate_main "${1}" "${2}"
 cat << EOF >> "${output}"
 
-	counter := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
-	ret, err := counter.Get()
-	if err != nil {
-		fmt.Printf("counter.Get() failed: %v", err)
-		return
-	}
-	fmt.Printf("Get: %d\n", ret)
-	_, _, err = counter.Set(big.NewInt(111))
-	if err != nil {
-		fmt.Printf("counter.Set failed: %v", err)
-		return
-	}
-	ret, err = counter.Get()
-	if err != nil {
-		fmt.Printf("counter.Get() failed: %v", err)
-		return
-	}
-	if big.NewInt(111).Cmp(ret) != 0 {
-		fmt.Printf("counter.Set() failed, expected 111 (got %d)", ret)
-		return
-	}
-	fmt.Printf("Get: %s\n", ret)
-	ret, err = counter.Version()
-	if err != nil {
-		fmt.Printf("counter.Version() failed: %v", err)
-		return
-	}
-	if big.NewInt(0).Cmp(ret) != 0 {
-		fmt.Printf("counter.Version() failed, expected 0 (got %d)", ret)
-		return
-	}
-	_, _, _, err = counter.Add()
-	if err != nil {
-		fmt.Printf("counter.Add() failed: %v", err)
-		return
-	}
-	ret, err = counter.Get()
-	if err != nil {
-		fmt.Printf("counter.Get() failed: %v", err)
-		return
-	}
-	if big.NewInt(112).Cmp(ret) != 0 {
-		fmt.Printf("counter.Add() failed, expected 111 (got %d)", ret)
-		return
-	}
+    counter := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    ret, err := counter.Get()
+    if err != nil {
+        fmt.Printf("counter.Get() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %d\n", ret)
+    _, _, err = counter.Set(big.NewInt(111))
+    if err != nil {
+        fmt.Printf("counter.Set failed: %v", err)
+        return
+    }
+    ret, err = counter.Get()
+    if err != nil {
+        fmt.Printf("counter.Get() failed: %v", err)
+        return
+    }
+    if big.NewInt(111).Cmp(ret) != 0 {
+        fmt.Printf("counter.Set() failed, expected 111 (got %d)", ret)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
+    ret, err = counter.Version()
+    if err != nil {
+        fmt.Printf("counter.Version() failed: %v", err)
+        return
+    }
+    if big.NewInt(0).Cmp(ret) != 0 {
+        fmt.Printf("counter.Version() failed, expected 0 (got %d)", ret)
+        return
+    }
+    _, _, _, err = counter.Add()
+    if err != nil {
+        fmt.Printf("counter.Add() failed: %v", err)
+        return
+    }
+    ret, err = counter.Get()
+    if err != nil {
+        fmt.Printf("counter.Get() failed: %v", err)
+        return
+    }
+    if big.NewInt(112).Cmp(ret) != 0 {
+        fmt.Printf("counter.Add() failed, expected 111 (got %d)", ret)
+        return
+    }
 }
 
 EOF
@@ -288,17 +288,17 @@ get_build_chain()
 
 get_csdk_lib()
 {
-	if [ ! -d "/usr/local/lib/" ];then
-    	sudo mkdir -p /usr/local/lib
-	fi
-	local suffix="so"
-	if [ ! -z "${macOS}" ];then # macOS
-		suffix="dylib"
-	fi
-	if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
-		curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
-		sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
-	fi
+    if [ ! -d "/usr/local/lib/" ];then
+        sudo mkdir -p /usr/local/lib
+    fi
+    local suffix="so"
+    if [ ! -z "${macOS}" ];then # macOS
+        suffix="dylib"
+    fi
+    if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
+        curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
+        sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
+    fi
 }
 
 precompiled_test(){
@@ -307,6 +307,7 @@ precompiled_test(){
     # TODO: permission
     precompileds=(config crud)
     for pkg in ${precompileds[*]}; do
+        cp -R nodes/127.0.0.1/sdk/* "./precompiled/${pkg}"
         execute_cmd "go test ${ldflags} -v ./precompiled/${pkg}"
     done
 }
@@ -314,17 +315,15 @@ precompiled_test(){
 integration_std()
 {
     LOG_INFO "integration_std testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.6.10"
+    execute_cmd "bash tools/download_solc.sh -v 0.8.11"
 
     bash build_chain.sh -l 127.0.0.1:2 -o nodes
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
-    cp nodes/127.0.0.1/sdk/* ./conf/
-    cp -R nodes/127.0.0.1/sdk/ ./client/conf/
-    cp -R nodes/127.0.0.1/sdk/ ./precompiled/config/conf/
-    cp -R nodes/127.0.0.1/sdk/ ./precompiled/crud/conf/
+    cp nodes/127.0.0.1/sdk/* ./
+    cp nodes/127.0.0.1/sdk/* ./client/
 
     # abigen std
-    execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
+    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
     execute_cmd "go build ${ldflags} -o hello hello.go"
@@ -339,7 +338,7 @@ integration_std()
     if [ ! -z "$(cat hello.out | grep failed)" ];then LOG_ERROR "call hello failed." && cat hello.out && exit 1;fi
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
 
-    execute_cmd "./solc-0.6.10 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
+    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
     execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
     execute_cmd "go build ${ldflags} -o counter counter.go"
@@ -355,14 +354,16 @@ integration_std()
 integration_gm()
 {
     LOG_INFO "integration_gm testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.6.10 -g"
+    execute_cmd "bash tools/download_solc.sh -v 0.8.11 -g"
 
     bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
+    cp nodes/127.0.0.1/sdk/* ./
+    cp nodes/127.0.0.1/sdk/* ./client/
 
     # abigen gm
-    execute_cmd "./solc-0.6.10-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
+    execute_cmd "./solc-0.8.11-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
     execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello_gm Hello hello_gm.go
     execute_cmd "go build ${ldflags} -o hello_gm hello_gm.go"
