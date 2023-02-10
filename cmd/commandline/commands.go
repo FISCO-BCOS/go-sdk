@@ -490,96 +490,6 @@ For more information please refer:
 	},
 }
 
-var getTransactionByBlockHashAndIndexCmd = &cobra.Command{
-	Use:   `getTransactionByBlockHashAndIndex`,
-	Short: "[blockHash]   [transactionIndex]   Query the transaction by block hash and transaction index",
-	Long: `Returns transaction information based on block hash and transaction index inside the block.
-Arguments:
-       [blockHash]: block hash string.
-[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
-
-For example:
-
-    [getTransactionByBlockHashAndIndex] [0x10bfdc1e97901ed22cc18a126d3ebb8125717c2438f61d84602f997959c631fa] [0x0]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		_, err := isValidHex(args[0])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		txIndex, err := strconv.ParseInt(args[1], 0, 0)
-		if err != nil {
-			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
-			return
-		}
-		blockHash := common.HexToHash(args[0])
-		transaction, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		tx, err := json.MarshalIndent(transaction, "", indent)
-		if err != nil {
-			fmt.Printf("transaction marshalIndent error: %v\n", err)
-			return
-		}
-		fmt.Printf("Transaction: \n%s\n", tx)
-	},
-}
-
-var getTransactionByBlockNumberAndIndexCmd = &cobra.Command{
-	Use:   "getTransactionByBlockNumberAndIndex",
-	Short: "[blockNumber] [transactionIndex]   Query the transaction by block number and transaction index",
-	Long: `Returns transaction information based on block number and transaction index inside the block.
-Arguments:
-     [blockNumber]: block number encoded in decimal format or in hex(prefix with "0x").
-[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
-
-For example:
-
-    [getTransactionByBlockNumberAndIndex] [0x9] [0x0]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
-		if err != nil {
-			fmt.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
-			return
-		}
-
-		_, err = isBlockNumberOutOfRange(blockNumber)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		txIndex, err := strconv.Atoi(args[1])
-		if err != nil {
-			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
-			return
-		}
-		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		raw, err := json.MarshalIndent(tx, "", indent)
-		if err != nil {
-			fmt.Printf("transaction marshalIndent error: %v", err)
-		}
-		fmt.Printf("Transaction: \n%s\n", raw)
-	},
-}
-
 var getTransactionReceiptCmd = &cobra.Command{
 	Use:   "getTransactionReceipt",
 	Short: "[transactionHash]                  Query the transaction receipt by transaction hash",
@@ -802,9 +712,8 @@ func init() {
 	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getGroupNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
-	// add transaction command
-	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionByBlockHashAndIndexCmd, getTransactionByBlockNumberAndIndexCmd)
-	rootCmd.AddCommand(getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
+	// add transaction/receipt command
+	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
 	// add contract command

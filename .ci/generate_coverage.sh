@@ -14,13 +14,17 @@ LOG_INFO() {
 
 get_csdk_lib()
 {
-    curl -#LO https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.so
-    sudo mkdir /usr/local/lib/bcos-c-sdk
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/darwin/
-    sudo mkdir /usr/local/lib/bcos-c-sdk/libs/win/
-    sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
+	if [ ! -d "/usr/local/lib/" ];then
+    	sudo mkdir -p /usr/local/lib
+	fi
+	local suffix="so"
+	if [ "$(uname)" == "Darwin" ];then # macOS
+		suffix="dylib"
+	fi
+	if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
+		curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
+		sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
+	fi
     export GODEBUG=cgocheck=0
 }
 
@@ -35,7 +39,7 @@ calculate_coverage() {
     bash nodes/127.0.0.1/start_all.sh
 
     # generate code coverage report
-    go test -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" ./client -race -coverprofile=coverage.txt -covermode=atomic
+    go test -ldflags="-r /usr/local/lib/" ./client -race -coverprofile=coverage.txt -covermode=atomic
 }
 
 calculate_coverage

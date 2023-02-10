@@ -4,7 +4,7 @@ set -e
 
 start_time=15
 macOS=
-ldflags="-ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/linux\""
+ldflags="-ldflags=\"-r /usr/local/lib/\""
 check_amop=
 GOPATH_BIN=$(go env GOPATH)/bin
 SHELL_FOLDER=$(
@@ -42,13 +42,13 @@ execute_cmd() {
 check_env(){
     if [ "$(uname)" == "Darwin" ];then
         # export PATH="/usr/local/opt/openssl/bin:$PATH"
-        ldflags="-ldflags=\"-r /usr/local/lib/bcos-c-sdk/libs/darwin\""
+        ldflags="-ldflags=\"-r /usr/local/lib/\""
         macOS="macOS"
     fi
     openssl version
     export GODEBUG=cgocheck=0
-    go install golang.org/x/tools/cmd/goimports@latest || true
-    go get golang.org/x/tools/cmd/goimports || true
+    go install golang.org/x/tools/cmd/goimports@latest
+    # go get golang.org/x/tools/cmd/goimports || true
 }
 
 compile_and_ut()
@@ -288,14 +288,17 @@ get_build_chain()
 
 get_csdk_lib()
 {
-    #latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[2-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    curl -#LO https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.so
-    curl -#LO https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.dylib
-    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/darwin/
-    sudo mkdir -p /usr/local/lib/bcos-c-sdk/libs/win/
-    sudo cp libbcos-c-sdk.so /usr/local/lib/bcos-c-sdk/libs/linux/
-    sudo cp libbcos-c-sdk.dylib /usr/local/lib/bcos-c-sdk/libs/darwin/libbcos-c-sdk.dylib
+	if [ ! -d "/usr/local/lib/" ];then
+    	sudo mkdir -p /usr/local/lib
+	fi
+	local suffix="so"
+	if [ ! -z "${macOS}" ];then # macOS
+		suffix="dylib"
+	fi
+	if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
+		curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
+		sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
+	fi
 }
 
 precompiled_test(){
