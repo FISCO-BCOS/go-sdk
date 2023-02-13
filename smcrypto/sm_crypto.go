@@ -14,7 +14,6 @@ import (
 	"github.com/FISCO-BCOS/crypto/x509"
 	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
 )
 
 const publicKeyLength = 64
@@ -160,7 +159,7 @@ func Sign(hash, privateKey []byte) (sig []byte, err error) {
 
 	r, s, err := SM2Sign(hash, key)
 	if err != nil {
-		logrus.Fatal(err)
+		return nil, err
 	}
 	sig = make([]byte, 128)
 	copy(sig[32-len(r.Bytes()):], r.Bytes())

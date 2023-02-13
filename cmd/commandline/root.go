@@ -1,12 +1,12 @@
 package commandline
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/spf13/cobra"
 )
 
@@ -25,9 +25,9 @@ var ChainID int64
 var URL string
 
 // GetClient is used for test, it will be init by a config file later.
-func getClient(config *conf.Config) *client.Client {
+func getClient(config *client.Config) *client.Client {
 	// RPC API
-	c, err := client.Dial(config) // change to your RPC and groupID
+	c, err := client.DialContext(context.Background(), config) // change to your RPC and groupID
 	if err != nil {
 		fmt.Println("can not dial to FISCO node, please check config. error message: ", err)
 		os.Exit(1)
@@ -72,7 +72,7 @@ func Execute() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200}
 	RPC = getClient(config)
 }

@@ -25,7 +25,7 @@ func main() {
 	//	publicKeys = make([]*ecdsa.PublicKey, 0)
 	//	for ; keys < len(os.Args); keys++ {
 	//		fmt.Printf("use user specified public key %s\n", os.Args[keys])
-	//		keyBytes, _, err := conf.LoadECPublicKeyFromPEM(os.Args[keys])
+	//		keyBytes, _, err := client.LoadECPublicKeyFromPEM(os.Args[keys])
 	//		if err != nil {
 	//			fmt.Printf("parse public key failed, err: %v\n", err)
 	//			return
@@ -42,9 +42,9 @@ func main() {
 	//endpoint := os.Args[1]
 	//topic := os.Args[2]
 	//privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	//config := &conf.Config{
+	//config := &client.Config{
 	//	IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: endpoint}
-	//c, err := client.Dial(config)
+	//c, err := client.DialContext(context.Background(), config)
 	//if err != nil {
 	//	logrus.Fatalf("init publisher failed, err: %v\n", err)
 	//}
