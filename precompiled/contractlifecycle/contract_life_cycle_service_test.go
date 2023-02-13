@@ -1,13 +1,13 @@
 package contractlifecycle
 
 import (
+	"context"
 	"encoding/hex"
 	"os"
 	"testing"
 
 	helloworld "github.com/FISCO-BCOS/go-sdk/.ci/hello"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -23,9 +23,9 @@ var (
 
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("8c47f550380591adab955cf050c439c0ffabb236bf05a64849ee0ba8aed42a41")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
-	c, err := client.Dial(config)
+	c, err := client.DialContext(context.Background(), config)
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
