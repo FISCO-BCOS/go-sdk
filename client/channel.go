@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package conn
+package client
 
 import (
 	"bytes"
@@ -26,7 +26,6 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -366,7 +365,7 @@ var DefaultChannelTimeouts = ChannelTimeouts{
 // using the provided Channel Client.
 func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*Connection, error) {
 	initctx := context.Background()
-	return newClient(initctx, func(context.Context) (ServerCodec, error) {
+	return newConnection(initctx, func(context.Context) (ServerCodec, error) {
 		conn, err := tls.Dial("tcp", endpoint, config)
 		if err != nil {
 			return nil, err
@@ -1286,30 +1285,6 @@ func (hc *channelSession) unSubscribeBlockNumberNotify(groupID uint64) error {
 	hc.blockNotifyMu.Unlock()
 	return nil
 }
-
-// channelServerConn turns a Channel connection into a Conn.
-type channelServerConn struct {
-	io.Reader
-	io.Writer
-	r *http.Request
-}
-
-func newChannelServerConn(r *http.Request, w http.ResponseWriter) ServerCodec {
-	body := io.LimitReader(r.Body, maxRequestContentLength)
-	conn := &channelServerConn{Reader: body, Writer: w, r: r}
-	return NewJSONCodec(conn)
-}
-
-// Close does nothing and always returns nil.
-func (t *channelServerConn) Close() error { return nil }
-
-// RemoteAddr returns the peer address of the underlying connection.
-func (t *channelServerConn) RemoteAddr() string {
-	return t.r.RemoteAddr
-}
-
-// SetWriteDeadline does nothing and always returns nil.
-func (t *channelServerConn) SetWriteDeadline(time.Time) error { return nil }
 
 func generateRandomNum() []byte {
 	// Max random value, a 130-bits integer, i.e 2^130 - 1

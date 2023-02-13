@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,12 +25,12 @@ func main() {
 	}
 	topic := os.Args[3]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: host, Port: port}
 	var c *client.Client
 	for i := 0; i < 3; i++ {
 		logrus.Printf("%d try to connect\n", i)
-		c, err = client.Dial(config)
+		c, err = client.DialContext(context.Background(), config)
 		if err != nil {
 			logrus.Printf("init subscriber failed, err: %v, retrying\n", err)
 			continue

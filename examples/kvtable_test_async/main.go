@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	kvtable "github.com/FISCO-BCOS/go-sdk/examples" // import kvtabletest
 )
@@ -47,11 +47,11 @@ func invokeSetHandler(receipt *types.Receipt, err error) {
 
 func main() {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	// deploy Asynccontract
 	fmt.Println("-------------------starting deploy contract-----------------------")
-	client, err := client.Dial(config)
+	client, err := client.DialContext(context.Background(), config)
 	if err != nil {
 		logrus.Fatal(err)
 	}

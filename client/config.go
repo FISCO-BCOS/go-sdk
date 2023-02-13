@@ -1,5 +1,4 @@
-// Package conf parse config to configuration
-package conf
+package client
 
 import (
 	"fmt"
@@ -7,7 +6,7 @@ import (
 
 // Config contains configuration items for sdk
 type Config struct {
-	ConfigFile      string
+	// ConfigFile      string
 	TLSCaFile       string
 	TLSKeyFile      string
 	TLSCertFile     string

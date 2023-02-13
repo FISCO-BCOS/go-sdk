@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/precompiled/auth"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -39,9 +39,9 @@ func main() {
 func getClient() *client.Client {
 	//privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	privateKey, _ := hex.DecodeString("8f21f97898615eb58c24f8310e7ee3fae148ebc03d14938c2ebc87587129e44d")
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
-	c, err := client.Dial(config)
+	c, err := client.DialContext(context.Background(), config)
 	if err != nil {
 		log.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}

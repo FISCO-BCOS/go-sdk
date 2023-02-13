@@ -15,14 +15,14 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type BcosSDK struct {
-	config   *conf.Config
+	config   *client.Config
 	backend  *ContractProxy
 	auth     *bind.TransactOpts
 	callOpts *bind.CallOpts
@@ -113,7 +113,7 @@ type NetworkResponse struct {
 // Please provider full keyFile path
 func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID string, chainID string, isSMCrypto bool) *BuildSDKResult {
 	// init config and callback
-	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", 20200, isSMCrypto)
+	config, err := client.ParseConfigOptions("", "", "", keyFile, groupID, "", 20200, isSMCrypto)
 	if err != nil {
 		return &BuildSDKResult{false, err.Error()}
 	}
