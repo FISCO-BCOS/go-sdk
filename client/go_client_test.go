@@ -10,7 +10,6 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -25,9 +24,9 @@ func GetClient(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("decode hex failed of %v", err)
 	}
-	config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
-	c, err := Dial(config)
+	c, err := DialContext(context.Background(), config)
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
@@ -253,38 +252,6 @@ func TestBlockByNumber(t *testing.T) {
 	}
 	t.Logf("block by number:\n%s", raw)
 }
-
-// todo 3.0 no this rpc mothod
-//func TestTransactionByBlockNumberAndIndex(t *testing.T) {
-//	c := GetClient(t)
-//
-//	var blockNumber int64 = 1
-//	txIndex := 0
-//	transcation, err := c.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
-//	if err != nil {
-//		t.Fatalf("transaction not found: %v", err)
-//	}
-//	raw, err := json.MarshalIndent(transcation, "", indent)
-//	if err != nil {
-//		t.Fatalf("transaction marshalIndent error: %v", err)
-//	}
-//	t.Logf("transaction by block number and transaction index:\n%s", raw)
-//}
-
-// todo 3.0 no this rpc mothod
-//func TestPendingTransactions(t *testing.T) {
-//	c := GetClient(t)
-//
-//	pendingTransactions, err := c.GetPendingTransactions(context.Background())
-//	if err != nil {
-//		t.Fatalf("pending transactions not found: %v", err)
-//	}
-//	raw, err := json.MarshalIndent(pendingTransactions, "", indent)
-//	if err != nil {
-//		t.Fatalf("pendingTransactions marshalIndent error: %v", err)
-//	}
-//	t.Logf("pending transactions:\n%s", raw)
-//}
 
 func TestPendingTxSize(t *testing.T) {
 	c := GetClient(t)

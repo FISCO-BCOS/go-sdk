@@ -28,19 +28,16 @@ import (
 
 	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
-	"github.com/FISCO-BCOS/go-sdk/conn"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/sirupsen/logrus"
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
 type Client struct {
-	conn     *conn.Connection
+	conn     *Connection
 	groupID  string
 	chainID  string
 	auth     *bind.TransactOpts
@@ -55,87 +52,58 @@ const (
 )
 
 // Dial connects a client to the given URL and groupID.
-func Dial(config *conf.Config) (*Client, error) {
-	return DialContext(context.Background(), config)
+func Dial(configFile, groupID string, privateKey []byte) (*Client, error) {
+	csdkPointer, err := newCSdkClientByConfigFile(configFile, groupID, privateKey)
+	if err != nil {
+		return nil, err
+	}
+	return newClient(csdkPointer)
 }
 
 // DialContext pass the context to the rpc client
-func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
-	var c *conn.Connection
-	var csdkPointer *csdk.CSDK
-	var err error
-	if config.ConfigFile != "" {
-		// 配置文件
-		csdkPointer, err = csdk.NewSDKByConfigFile(config.ConfigFile, config.GroupID, config.PrivateKey)
-	} else {
-		path, _ := os.Getwd()
-
-		if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
-		} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
-		} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
-		}
-		csdkPointer, err = csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
-	}
+func DialContext(ctx context.Context, config *Config) (*Client, error) {
+	csdkPointer, err := newCSdkClient(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("new csdk failed: %v", err)
 	}
-	c, err = conn.NewClient(nil, csdkPointer)
+	return newClient(csdkPointer)
+}
+
+func newCSdkClientByConfigFile(configFile, groupID string, privateKey []byte) (*csdk.CSDK, error) {
+	return csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
+}
+
+func newCSdkClient(groupID, host string, port int, isSmCrypto bool, privateKey []byte, tlsCaPath, tlsKeyPath, tlsCertPath, tlsSmEnKeyPath, tlsSEnCertPath string) (*csdk.CSDK, error) {
+	path, _ := os.Getwd()
+	if _, err := os.Stat(tlsCaPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsCaPath, path)
+	} else if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsCertPath, path)
+	} else if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsKeyPath, path)
+	}
+	if isSmCrypto {
+		if _, err := os.Stat(tlsSmEnKeyPath); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsSmEnKeyPath, path)
+		} else if _, err := os.Stat(tlsSEnCertPath); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsSEnCertPath, path)
+		}
+	}
+	return csdk.NewSDK(groupID, host, port, isSmCrypto, privateKey, tlsCaPath, tlsKeyPath, tlsCertPath, tlsSmEnKeyPath, tlsSEnCertPath)
+}
+
+func newClient(csdkPointer *csdk.CSDK) (*Client, error) {
+	c, err := NewClient(nil, csdkPointer)
 	if err != nil {
 		return nil, fmt.Errorf("new client errors failed: %v", err)
 	}
-	//var response []byte
-	//response, err = apiHandler.GetClientVersion(ctx)
-	//if err != nil {
-	//	return nil, fmt.Errorf("%v", err)
-	//}
-	//var raw interface{}
-	//err = json.Unmarshal(response, &raw)
-	//if err != nil {
-	//	return nil, fmt.Errorf("DialContext errors, unmarshal []byte to interface{} failed: %v", err)
-	//}
-	//m, ok := raw.(map[string]interface{})
-	//if !ok {
-	//	return nil, errors.New("parse response json to map error")
-	//}
-
-	// get supported FISCO BCOS version
-	//var compatibleVersionStr string
-	//compatibleVersionStr, ok = m["Supported Version"].(string)
-	//if !ok {
-	//	return nil, errors.New("JSON response does not contains the key : Supported Version")
-	//}
-
-	// determine whether FISCO-BCOS Version is consistent with SMCrypto configuration item
-	//var fiscoBcosVersion string
-	//fiscoBcosVersion, ok = m["FISCO-BCOS Version"].(string)
-	//if !ok {
-	//	return nil, errors.New("JSON response does not contains the key : FISCO-BCOS Version")
-	//}
-	//nodeIsSupportedSM := strings.Contains(fiscoBcosVersion, "gm") || strings.Contains(fiscoBcosVersion, "GM")
-	//if nodeIsSupportedSM != config.IsSMCrypto {
-	//	return nil, fmt.Errorf("the SDK set SMCrypt=%v, but the node is mismatched", config.IsSMCrypto)
-	//}
-
-	// get node chain ID
-	//var nodeChainID int64
-	//nodeChainID, err = strconv.ParseInt(m["Chain Id"].(string), 10, 64)
-	//if err != nil {
-	//	return nil, errors.New("JSON response does not contains the key : Chain Id")
-	//}
-	//if config.ChainID != nodeChainID {
-	//	return nil, errors.New("The chain ID of node is " + fmt.Sprint(nodeChainID) + ", but configuration is " + fmt.Sprint(config.ChainID))
-	//}
-	client := Client{conn: c, groupID: config.GroupID, chainID: csdkPointer.ChainID(), smCrypto: config.IsSMCrypto}
-
-	if config.IsSMCrypto {
-		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
+	client := Client{conn: c, groupID: csdkPointer.GroupID(), chainID: csdkPointer.ChainID(), smCrypto: csdkPointer.SMCrypto()}
+	if csdkPointer.SMCrypto() {
+		client.auth = bind.NewSMCryptoTransactor(csdkPointer.PrivateKeyBytes())
 	} else {
-		privateKey, err := crypto.ToECDSA(config.PrivateKey)
+		privateKey, err := crypto.ToECDSA(csdkPointer.PrivateKeyBytes())
 		if err != nil {
-			logrus.Fatal(err)
+			return nil, fmt.Errorf("new client errors failed: %v", err)
 		}
 		client.auth.GasLimit = big.NewInt(30000000)
 		client.callOpts = &bind.CallOpts{From: client.auth.From}

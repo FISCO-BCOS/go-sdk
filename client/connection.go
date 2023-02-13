@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package conn
+package client
 
 import "C"
 import (
@@ -270,7 +270,7 @@ func NewClient(connect reconnectFunc, csdk *csdk.CSDK) (*Connection, error) {
 	return c, nil
 }
 
-func newClient(initctx context.Context, connect reconnectFunc) (*Connection, error) {
+func newConnection(initctx context.Context, connect reconnectFunc) (*Connection, error) {
 	conn, err := connect(initctx)
 	if err != nil {
 		return nil, err

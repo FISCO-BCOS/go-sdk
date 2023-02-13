@@ -68,8 +68,8 @@ cat << EOF >> "${output}"
 
 func main() {
     privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
-    config := &conf.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
-    client, err := client.Dial(config)
+    config := &client.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+    client, err := DialContext(context.Background(), config)
     if err != nil {
         fmt.Printf("Dial Client failed, err:%v", err)
         return
@@ -91,10 +91,10 @@ cat << EOF >> "${output}"
 
 func main() {
     privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-    config := &conf.Config{IsSMCrypto: false, GroupID: "group0",
+    config := &client.Config{IsSMCrypto: false, GroupID: "group0",
               PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
-    client, err := client.Dial(config)
+    client, err := client.DialContext(context.Background(), config)
     if err != nil {
         fmt.Printf("Dial Client failed, err:%v", err)
         return
