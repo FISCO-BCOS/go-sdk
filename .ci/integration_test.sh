@@ -68,7 +68,7 @@ cat << EOF >> "${output}"
 
 func main() {
     privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
-    config := &client.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+    config := &client.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./sm_ca.crt", TLSKeyFile: "./sm_sdk.key", TLSCertFile: "./sm_sdk.crt", TLSSmEnKeyFile: "./sm_ensdk.key", TLSSmEnCertFile: "./sm_ensdk.crt"}
     client, err := DialContext(context.Background(), config)
     if err != nil {
         fmt.Printf("Dial Client failed, err:%v", err)
@@ -112,9 +112,24 @@ EOF
 generate_hello() {
     local struct="${1}"
     local output="${2}"
-    generate_main "${1}" "${2}"
 cat << EOF >> "${output}"
+func main() {
+    privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+    config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+              PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
+    client, err := client.DialContext(context.Background(), config)
+    if err != nil {
+        fmt.Printf("Dial Client failed, err:%v", err)
+        return
+    }
+    input := "HelloWorld deployment 1.0"
+    address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client, input)
+    if err != nil {
+        fmt.Printf("Deploy failed, err:%v", err)
+        return
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved
     hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
     ret, err := hello.Get()
     if err != nil {
@@ -169,9 +184,22 @@ EOF
 generate_hello_gm() {
     local struct="${1}"
     local output="${2}"
-    generate_main_gm "${1}" "${2}"
 cat << EOF >> "${output}"
-
+func main() {
+    privateKey, _ := hex.DecodeString("389bb3e29db735b5dc4f114923f1ac5136891efda282a18dc0768e34305c861b")
+    config := &client.Config{IsSMCrypto: true, GroupID: "group0", PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./sm_ca.crt", TLSKeyFile: "./sm_sdk.key", TLSCertFile: "./sm_sdk.crt", TLSSmEnKeyFile: "./sm_ensdk.key", TLSSmEnCertFile: "./sm_ensdk.crt"}
+    client, err := DialContext(context.Background(), config)
+    if err != nil {
+        fmt.Printf("Dial Client failed, err:%v", err)
+        return
+    }
+	input := "HelloWorld deployment 1.0"
+    address, _, instance, err := Deploy${struct}(client.GetTransactOpts(), client, input)
+    if err != nil {
+        fmt.Printf("Deploy failed, err:%v", err)
+        return
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved
     hello := &${struct}Session{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
     ret, err := hello.Get()
     if err != nil {
@@ -282,7 +310,8 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    # latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
 }
 
