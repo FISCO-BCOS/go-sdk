@@ -46,7 +46,6 @@ type Client struct {
 }
 
 const (
-	V3_2_0     int   = 0x03020000
 	indent           = "  "
 	BlockLimit int64 = 600
 )
@@ -93,6 +92,9 @@ func newCSdkClient(groupID, host string, port int, isSmCrypto bool, privateKey [
 }
 
 func newClient(csdkPointer *csdk.CSDK) (*Client, error) {
+	if csdkPointer.WASM() {
+		return nil, errors.New("wasm is not supported for now")
+	}
 	c, err := NewClient(nil, csdkPointer)
 	if err != nil {
 		return nil, fmt.Errorf("new client errors failed: %v", err)

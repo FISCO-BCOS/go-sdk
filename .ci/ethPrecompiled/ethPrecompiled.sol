@@ -1,4 +1,5 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity >=0.6.10 <0.8.20;
 pragma experimental ABIEncoderV2;
 
 
@@ -15,7 +16,7 @@ contract Precompiledbn256 {
         input[2] = bx;
         input[3] = by;
         assembly {
-            let success := call(gas, 0x06, 0, input, 0x80, result, 0x40)
+            let success := call(gas(), 0x06, 0, input, 0x80, result, 0x40)
             switch success
                 case 0 {
                     revert(0, 0)
@@ -32,7 +33,7 @@ contract Precompiledbn256 {
         input[1] = y;
         input[2] = scalar;
         assembly {
-            let success := call(gas, 0x07, 0, input, 0x60, result, 0x40)
+            let success := call(gas(), 0x07, 0, input, 0x60, result, 0x40)
             switch success
                 case 0 {
                     revert(0, 0)
@@ -47,7 +48,7 @@ contract Precompiledbn256 {
         assembly {
             let memPtr := mload(0x40)
             let success := call(
-                gas,
+                gas(),
                 0x08,
                 0,
                 add(input, 0x20),
@@ -81,7 +82,7 @@ contract Precompiledbn256 {
             mstore(add(memPtr, 0x80), exponent)
             mstore(add(memPtr, 0xa0), modulus)
             // call the precompiled contract BigModExp (0x05)
-            let success := call(gas, 0x05, 0x0, memPtr, 0xc0, memPtr, 0x20)
+            let success := call(gas(), 0x05, 0x0, memPtr, 0xc0, memPtr, 0x20)
             switch success
                 case 0 {
                     revert(0x0, 0x0)
