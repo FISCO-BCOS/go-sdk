@@ -73,6 +73,6 @@ func Execute() {
 func initConfig() {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200}
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	RPC = getClient(config)
 }
