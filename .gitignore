@@ -24,6 +24,9 @@ go.work
 main
 console
 abigen
+hello
+hello_main*
+conf
 
 # config files
 sdk.crt

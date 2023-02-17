@@ -6,20 +6,19 @@ import (
 
 // Config contains configuration items for sdk
 type Config struct {
-	// ConfigFile      string
 	TLSCaFile       string
 	TLSKeyFile      string
 	TLSCertFile     string
 	TLSSmEnKeyFile  string
 	TLSSmEnCertFile string
+	IsSMCrypto      bool
+	PrivateKey      []byte
+	GroupID         string
+	Host            string
+	Port            int
 	// TLSCaContext   []byte
 	// TLSKeyContext  []byte
 	// TLSCertContext []byte
-	IsSMCrypto bool
-	PrivateKey []byte
-	GroupID    string
-	Host       string
-	Port       int
 }
 
 // ParseConfigOptions parses from arguments

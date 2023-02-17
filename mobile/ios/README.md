@@ -85,10 +85,10 @@ contract HelloWorld {
 ```bash
 # 当前目录~/go/src/github.com/FISCO-BCOS/go-sdk/helloworld
 # 下载编译器
-bash ../tools/download_solc.sh -v 0.4.25
+bash ../tools/download_solc.sh -v 0.8.11
 # 编译合约
-./solc-0.4.25 --bin --abi -o ./ ./HelloWorld.sol
-# 得到HelloWorld.abi, HelloWorld.bin, HelloWorld.sol, solc-0.4.25， 生成了ABI和Bin文件
+./solc-0.8.11 --bin --abi -o ./ ./HelloWorld.sol
+# 得到HelloWorld.abi, HelloWorld.bin, HelloWorld.sol, solc-0.8.11， 生成了ABI和Bin文件
 ```
 
 #### 第三步. 生成Objective-c调用接口

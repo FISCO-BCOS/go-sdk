@@ -33,41 +33,42 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 ```golang
 type Config struct {
-    IsSMCrypto     bool
-    PrivateKey     []byte
-    GroupID        string
-    NodeURL        string
+    TLSCaFile       string
+    TLSKeyFile      string
+    TLSCertFile     string
+    TLSSmEnKeyFile  string
+    TLSSmEnCertFile string
+    IsSMCrypto      bool
+    PrivateKey      []byte
+    GroupID         string
+    Host            string
+    Port            int
 }
 ```
 
-- IsSMCrypto:使用的签名算法，ture表示使用国密SM2，false表示使用普通ECDSA。
-- PrivateKey:节点签发交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
+- `TLSCaFile/TLSKeyFile/TLSCertFile`，建立TLS链接时需要用到的SDK端证书文件路径，如果是国密，其加密私钥和证书使用`TLSSmEnKeyFile/TLSSmEnCertFile`
+- IsSMCrypto：节点使用的签名和TLS算法，true表示使用国密，false表示使用RSA+ECDSA。
+- PrivateKey：节点签名交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
   请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
   如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#外部账户)。
-- GroupID:账本id
-- NodeURL:连接的节点的ip和port(示例:127.0.0.1:20200)
+- GroupID：账本的`GroupID`
+- Host：节点IP
+- Port：节点RPC端口
 
 ## 控制台使用
 
-在使用控制台需要先拉取代码或下载代码:
-
-1. 拉取代码并编译
+1. 搭建FISCO BCOS 3.2以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
+1. 请拷贝对应的SDK证书到conf文件夹，证书名为`ca.crt/sdk.key/sdk.crt`，国密时证书名为`sm_ca.crt/sm_sdk.key/sm_sdk.crt/sm_ensdk.key/sm_ensdk.crt`。
+1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases)，需要下载动态库,拷贝到/usr/local/lib/文件夹下。
+1. go-sdk需要使用cgo，**需要设置环境变量**`export GODEBUG=cgocheck=0`。(可以添加到/etc/profile文件中)
+1. 最后，编译控制台程序:
 
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
 git checkout dev-3.0.0
-```
-
-2. 搭建FISCO BCOS 3.0以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
-1. 请拷贝对应的SDK证书到conf文件夹。
-1. go-sdk需要依赖csdk的动态库,下载地址为(https://github.com/yinghuochongfly/bcos-c-sdk/releases/download/v3.0.1-rc4/libbcos-c-sdk.so)，需要下载动态库,拷贝到/usr/local/lib/bcos-c-sdk/libs/linux文件夹下。
-1. go-sdk需要使用cgo,linux环境需要设置环境变量 export GODEBUG=cgocheck=0。(可以添加到/etc/profile文件中)
-1. 最后，编译,运行控制台查看可用指令:
-
-```bash
 go mod tidy
-go build -ldflags="-r /usr/local/lib/bcos-c-sdk/libs/linux" -o console cmd/console.go
+go build -ldflags="-r /usr/local/lib" -o console cmd/console.go
 ./console help
 ```
 
@@ -99,11 +100,12 @@ pragma solidity >=0.6.10 <0.8.20;
 
 contract HelloWorld {
     string value;
-    event setValue(string v, address indexed from, address indexed to, uint256 value);
-    string public version = "1";
+    event setValue(string v, address indexed from, address indexed to, int256 value);
+    int public version;
 
-    constructor() {
-        value = "Hello, World!";
+    constructor(string memory initValue) {
+        value = initValue;
+        version = 0;
     }
 
     function get() public view returns (string memory) {
@@ -113,7 +115,8 @@ contract HelloWorld {
     function set(string calldata v) public returns (string memory) {
         string memory old = value;
         value = v;
-        emit setValue(v, tx.origin, msg.sender, 1);
+        version = version + 1;
+        emit setValue(v, tx.origin, msg.sender, version);
         return old;
     }
 }
@@ -136,66 +139,69 @@ go build ./cmd/abigen
 执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`HelloWorld.sol`放置在一个新的目录下：
 
 ```bash
-mkdir ./store
-mv HelloWorld.sol ./store
+mkdir ./hello
+cp .ci/hello/HelloWorld.sol ./hello
 ```
 
 4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`HelloWorld.sol`为例：
 
 ```bash
-# 国密请使用 ./solc-0.4.25-gm --bin --abi -o ./store ./store/HelloWorld.sol
-./solc-0.4.25 --bin --abi -o ./store ./store/HelloWorld.sol
+# 国密请使用 ./solc-0.8.11-gm --bin --abi -o ./hello ./hello/HelloWorld.sol
+./solc-0.8.11 --bin --abi -o ./hello ./hello/HelloWorld.sol
 ```
 
-`HelloWorld.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
+`HelloWorld.sol`目录下会生成`HelloWorld.bin`和`HelloWorld.abi`。此时利用`abigen`工具将`HelloWorld.bin`和`HelloWorld.abi`转换成`HelloWorld.go`：
 
 ```bash
-# 国密请使用 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go --smcrypto=true
-./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go
+# 国密请使用 ./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go --smcrypto=true
+./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go
 ```
 
-最后store目录下面存在以下文件：
+最后hello目录下面存在以下文件：
 
 ```bash
-Store.abi  Store.bin  Store.go  HelloWorld.sol
+HelloWorld.abi  HelloWorld.bin  HelloWorld.go  HelloWorld.sol
 ```
 
-5.调用生成的`Store.go`文件进行合约调用
+5.调用生成的`HelloWorld.go`文件进行合约调用
 
 至此，合约已成功转换为go文件，用户可根据此文件在项目中利用SDK进行合约操作。具体的使用可参阅下一节。
 
 ### 部署智能合约
 
-创建main函数，调用Store合约，
+创建main函数，调用合约，
+
 ```bash
-touch store_main.go
+touch hello_main.go
 ```
 
 下面的例子先部署合约，在部署过程中设置的`HelloWorld.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
 
-写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。
+写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`Set`的方法，它接受`string`类型的参数，然后将其设置为`value`，并且将`version`加1。
 
 ```go
 package main
 
 import (
+    "context"
+    "encoding/hex"
     "fmt"
     "log"
-    "encoding/hex"
 
     "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/store"
+    "github.com/FISCO-BCOS/go-sdk/hello"
 )
 
 func main() {
     privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-    config := &client.Config{IsSMCrypto: false, GroupID: "group0", PrivateKey: privateKey, NodeURL: "127.0.0.1:20200"}
+    config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+        PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
     client, err := client.DialContext(context.Background(), config)
     if err != nil {
         log.Fatal(err)
     }
-    input := "Store deployment 1.0"
-    address, receipt, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
+    input := "HelloWorld deployment 1.0"
+    address, receipt, instance, err := hello.DeployHelloWorld(client.GetTransactOpts(), client, input)
     if err != nil {
         log.Fatal(err)
     }
@@ -204,29 +210,26 @@ func main() {
 
     // load the contract
     // contractAddress := common.HexToAddress("contract address in hex String")
-    // instance, err := store.NewStore(contractAddress, client)
+    // instance, err := hello.NewStore(contractAddress, client)
     // if err != nil {
     //     log.Fatal(err)
     // }
 
     fmt.Println("================================")
-    storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    helloSession := &hello.HelloWorldSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
-    version, err := storeSession.Version()
+    version, err := helloSession.Version()
     if err != nil {
         log.Fatal(err)
     }
 
-    fmt.Println("version :", version) // "Store deployment 1.0"
+    fmt.Println("version :", version) // "HelloWorld deployment 1.0"
 
     // contract write interface demo
     fmt.Println("================================")
-    key := [32]byte{}
-    value := [32]byte{}
-    copy(key[:], []byte("foo"))
-    copy(value[:], []byte("bar"))
 
-    _, receipt, err = storeSession.SetItem(key, value)
+    oldValue, _, receipt, err := helloSession.Set("hello fisco")
+    fmt.Println("old value is: ", oldValue)
     if err != nil {
         log.Fatal(err)
     }
@@ -234,11 +237,12 @@ func main() {
     fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
     // read the result
-    result, err := storeSession.Items(key)
+    result, err := helloSession.Get()
     if err != nil {
         log.Fatal(err)
     }
 
-    fmt.Println("get item: " + string(result[:])) // "bar"
+    fmt.Println("get item: " + string(result[:])) // "hello fisco"
 }
+
 ```
