@@ -231,10 +231,6 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
-	//signedTx, err := c.generateSignedTx(opts, contract, input)
-	//if err != nil {
-	//	return nil, nil, err
-	//}
 	var receipt *types.Receipt
 	var err error
 	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
@@ -244,10 +240,6 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 }
 
 func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
-	//signedTx, err := c.generateSignedTx(opts, contract, input)
-	//if err != nil {
-	//	return nil, err
-	//}
 	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract, input, handler); err != nil {
 		return nil, err
 	}
