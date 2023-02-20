@@ -164,18 +164,6 @@ func main() {
     }
     fmt.Printf("Get: %s\n", ret)
     <-done
-    from := common.HexToAddress("0x83309d045a19c44Dc3722D15A6AbD472f95866aC")
-    hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
-        fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
-        setValue, err := hello.ParseSetValue(logs[0])
-        if err != nil {
-            fmt.Printf("hello.WatchSetValue() failed: %v", err)
-            panic("hello.WatchSetValue() failed")
-        }
-        fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
-        done <- true
-    }, from, from)
-    <-done
 }
 EOF
     "${GOPATH_BIN}"/goimports -w  "${output}"
@@ -207,7 +195,7 @@ func main() {
         return
     }
     done := make(chan bool)
-    err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+    _, err = hello.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
         fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := hello.ParseSetValue(logs[0])
         if err != nil {
@@ -233,18 +221,6 @@ func main() {
         return
     }
     fmt.Printf("Get: %s\n", ret)
-    <-done
-    from := common.HexToAddress("0x000000000000000000000000791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b")
-    hello.WatchSetValue(nil, func(ret int, logs []types.Log) {
-        fmt.Printf("WatchSetValue receive statud: %d, logs: %+v\n", ret, logs)
-        setValue, err := hello.ParseSetValue(logs[0])
-        if err != nil {
-            fmt.Printf("hello.WatchSetValue() failed: %v", err)
-            panic("hello.WatchSetValue() failed")
-        }
-        fmt.Printf("WatchSetValue receive setValue: %+v\n", *setValue)
-        done <- true
-    }, from, from)
     <-done
 }
 EOF
@@ -310,9 +286,16 @@ EOF
 
 get_build_chain()
 {
-    # latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
+    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    if [ -z "${latest_version}" ];then
+        latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    fi
+    if [ -z "${latest_version}" ];then
+        latest_version="v3.2.0"
+    fi
+    echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh"
+    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh
+    chmod u+x build_chain.sh
 }
 
 get_csdk_lib()
@@ -346,6 +329,7 @@ integration_std()
     LOG_INFO "integration_std testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.8.11"
 
+    head build_chain.sh
     bash build_chain.sh -l 127.0.0.1:2 -o nodes
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
     cp nodes/127.0.0.1/sdk/* ./
@@ -440,8 +424,8 @@ main()
 {
     check_env
     get_csdk_lib
-    compile_and_ut
     get_build_chain
+    compile_and_ut
 
     if [ -z "${macOS}" ];then # linux
         integration_std

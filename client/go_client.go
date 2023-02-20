@@ -52,58 +52,50 @@ const (
 
 // Dial connects a client to the given URL and groupID.
 func Dial(configFile, groupID string, privateKey []byte) (*Client, error) {
-	csdkPointer, err := newCSdkClientByConfigFile(configFile, groupID, privateKey)
+	sdk, err := csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	return newClient(csdkPointer)
+	return newClient(sdk)
 }
 
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *Config) (*Client, error) {
-	csdkPointer, err := newCSdkClient(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
+	path, _ := os.Getwd()
+	if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
+	} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
+	} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
+	}
+	if config.IsSMCrypto {
+		if _, err := os.Stat(config.TLSSmEnKeyFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnKeyFile, path)
+		} else if _, err := os.Stat(config.TLSSmEnCertFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnCertFile, path)
+		}
+	}
+	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("new csdk failed: %v", err)
 	}
-	return newClient(csdkPointer)
+	return newClient(sdk)
 }
 
-func newCSdkClientByConfigFile(configFile, groupID string, privateKey []byte) (*csdk.CSDK, error) {
-	return csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
-}
-
-func newCSdkClient(groupID, host string, port int, isSmCrypto bool, privateKey []byte, tlsCaPath, tlsKeyPath, tlsCertPath, tlsSmEnKeyPath, tlsSEnCertPath string) (*csdk.CSDK, error) {
-	path, _ := os.Getwd()
-	if _, err := os.Stat(tlsCaPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsCaPath, path)
-	} else if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsCertPath, path)
-	} else if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsKeyPath, path)
-	}
-	if isSmCrypto {
-		if _, err := os.Stat(tlsSmEnKeyPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsSmEnKeyPath, path)
-		} else if _, err := os.Stat(tlsSEnCertPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", tlsSEnCertPath, path)
-		}
-	}
-	return csdk.NewSDK(groupID, host, port, isSmCrypto, privateKey, tlsCaPath, tlsKeyPath, tlsCertPath, tlsSmEnKeyPath, tlsSEnCertPath)
-}
-
-func newClient(csdkPointer *csdk.CSDK) (*Client, error) {
-	if csdkPointer.WASM() {
+func newClient(sdk *csdk.CSDK) (*Client, error) {
+	if sdk.WASM() {
 		return nil, errors.New("wasm is not supported for now")
 	}
-	c, err := NewClient(nil, csdkPointer)
+	c, err := NewClient(nil, sdk)
 	if err != nil {
 		return nil, fmt.Errorf("new client errors failed: %v", err)
 	}
-	client := Client{conn: c, groupID: csdkPointer.GroupID(), chainID: csdkPointer.ChainID(), smCrypto: csdkPointer.SMCrypto()}
-	if csdkPointer.SMCrypto() {
-		client.auth = bind.NewSMCryptoTransactor(csdkPointer.PrivateKeyBytes())
+	client := Client{conn: c, groupID: sdk.GroupID(), chainID: sdk.ChainID(), smCrypto: sdk.SMCrypto()}
+	if sdk.SMCrypto() {
+		client.auth = bind.NewSMCryptoTransactor(sdk.PrivateKeyBytes())
 	} else {
-		privateKey, err := crypto.ToECDSA(csdkPointer.PrivateKeyBytes())
+		privateKey, err := crypto.ToECDSA(sdk.PrivateKeyBytes())
 		if err != nil {
 			return nil, fmt.Errorf("new client errors failed: %v", err)
 		}
@@ -117,10 +109,6 @@ func newClient(csdkPointer *csdk.CSDK) (*Client, error) {
 // Close disconnects the rpc
 func (c *Client) Close() {
 	c.conn.Close()
-}
-
-func (c *Client) ReConn() {
-	c.conn.ReConn()
 }
 
 // ============================================== FISCO BCOS Blockchain Access ================================================
@@ -177,7 +165,7 @@ func (c *Client) SMCrypto() bool {
 // The block number can be nil, in which case the code is taken from the latest known block.
 func (c *Client) CodeAt(ctx context.Context, address common.Address, blockNumber *big.Int) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	err := c.conn.CallContext(ctx, &raw, "getCode", address.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +205,7 @@ func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 // PendingCodeAt returns the contract code of the given account in the pending state.
 func (c *Client) PendingCodeAt(ctx context.Context, address common.Address) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, address.Hex())
+	err := c.conn.CallContext(ctx, &raw, "getCode", address.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +217,7 @@ func (c *Client) PendingCodeAt(ctx context.Context, address common.Address) ([]b
 func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
-	err := c.conn.CallContext(ctx, &cr, "call", c.groupID, toCallArg(msg))
+	err := c.conn.CallContext(ctx, &cr, "call", toCallArg(msg))
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +241,7 @@ func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNu
 func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
-	err := c.conn.CallContext(ctx, &cr, "call", c.groupID, toCallArg(msg))
+	err := c.conn.CallContext(ctx, &cr, "call", toCallArg(msg))
 	if err != nil {
 		return nil, err
 	}
@@ -282,9 +270,9 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 		types.Receipt
 	}{}
 	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()))
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, strings.ToLower(contract.String()))
 	} else {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, "")
 	}
 	if err != nil {
 		errorStr := fmt.Sprintf("%s", err)
@@ -304,30 +292,14 @@ func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction
 		types.Receipt
 	}{}
 	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), strings.ToLower(contract.String()[2:]))
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, strings.ToLower(contract.String()[2:]), handler)
 	} else {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendRawTransaction", c.groupID, hexutil.Encode(input), "")
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, "", handler)
 	}
 	if err != nil {
-		return nil
+		return err
 	}
-	var receipt *types.Receipt
-	go func() {
-		for {
-			receipt, err = c.TransactionReceipt(ctx, common.HexToHash(anonymityReceipt.TransactionHash))
-			if receipt != nil {
-				handler(receipt, nil)
-				return
-			}
-			if err != nil {
-				errorStr := fmt.Sprintf("%s", err)
-				if strings.Contains(errorStr, "connection refused") {
-					handler(nil, errors.New("connection refused"))
-					return
-				}
-			}
-		}
-	}()
+	// handler(&anonymityReceipt.Receipt, nil)
 	return nil
 }
 
@@ -422,16 +394,6 @@ func (c *Client) SetGroupID(newID string) {
 	c.groupID = newID
 }
 
-// GetClientVersion returns the version of FISCO BCOS running on the nodes.
-func (c *Client) GetClientVersion(ctx context.Context) (*types.ClientVersion, error) {
-	var clientVersion types.ClientVersion
-	err := c.conn.CallContext(ctx, &clientVersion, "getClientVersion")
-	if err != nil {
-		return nil, err
-	}
-	return &clientVersion, err
-}
-
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
 func (c *Client) GetChainID(ctx context.Context) (string, error) {
 	//convertor := new(big.Int)
@@ -442,11 +404,10 @@ func (c *Client) GetChainID(ctx context.Context) (string, error) {
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
 func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 	var raw int64
-	err := c.conn.CallContext(ctx, &raw, "getBlockNumber", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getBlockNumber")
 	if err != nil {
 		return -1, err
 	}
-	log.Println("json unmarshal respmsg blockNum:", raw)
 	return raw, err
 }
 
@@ -455,7 +416,7 @@ func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
 	var blockLimit *big.Int
 	defaultNumber := big.NewInt(BlockLimit)
 	var raw int
-	err := c.conn.CallContext(ctx, &raw, "getBlockNumber", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getBlockNumber")
 	if err != nil {
 		return nil, err
 	}
@@ -468,7 +429,7 @@ func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
 // if the consensus algorithm is not the PBFT.
 func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getPbftView", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getPbftView")
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +442,7 @@ func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
 // GetSealerList returns the list of consensus nodes' ID according to the groupID
 func (c *Client) GetSealerList(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getSealerList", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getSealerList")
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +453,7 @@ func (c *Client) GetSealerList(ctx context.Context) ([]byte, error) {
 // GetObserverList returns the list of observer nodes' ID according to the groupID
 func (c *Client) GetObserverList(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getObserverList", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getObserverList")
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +464,7 @@ func (c *Client) GetObserverList(ctx context.Context) ([]byte, error) {
 // GetConsensusStatus returns the status information about the consensus algorithm on a specific groupID
 func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getConsensusStatus", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getConsensusStatus")
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +476,7 @@ func (c *Client) GetConsensusStatus(ctx context.Context) ([]byte, error) {
 func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
 	var syncStatus types.SyncStatus
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getSyncStatus", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getSyncStatus")
 	if err != nil {
 		return nil, err
 	}
@@ -527,7 +488,7 @@ func (c *Client) GetSyncStatus(ctx context.Context) (*types.SyncStatus, error) {
 // GetPeers returns the information of the connected peers
 func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getPeers", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getPeers")
 	if err != nil {
 		return nil, err
 	}
@@ -538,7 +499,7 @@ func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
 // GetGroupPeers returns the nodes and the overser nodes list on a specific group
 func (c *Client) GetGroupPeers(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getGroupPeers", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getGroupPeers")
 	if err != nil {
 		return nil, err
 	}
@@ -549,7 +510,7 @@ func (c *Client) GetGroupPeers(ctx context.Context) ([]byte, error) {
 // GetNodeIDList returns the ID information of the connected peers and itself
 func (c *Client) GetNodeIDList(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getNodeIDList", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getNodeIDList")
 	if err != nil {
 		return nil, err
 	}
@@ -561,7 +522,7 @@ func (c *Client) GetNodeIDList(ctx context.Context) ([]byte, error) {
 // GetGroupInfoList returns the ID information of the connected peers and itself
 func (c *Client) GetGroupInfoList(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getGroupInfoList", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getGroupInfoList")
 	if err != nil {
 		return nil, err
 	}
@@ -583,7 +544,7 @@ func (c *Client) GetGroupList(ctx context.Context) ([]byte, error) {
 // GetBlockByHash returns the block information according to the given block hash
 func (c *Client) GetBlockByHash(ctx context.Context, blockHash common.Hash, onlyHeader, onlyTxHash bool) (*types.Block, error) {
 	var block types.Block
-	err := c.conn.CallContext(ctx, &block, "getBlockByHash", c.groupID, blockHash.Hex(), onlyHeader, onlyTxHash)
+	err := c.conn.CallContext(ctx, &block, "getBlockByHash", blockHash.Hex(), onlyHeader, onlyTxHash)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +557,7 @@ func (c *Client) GetBlockByNumber(ctx context.Context, blockNumber int64, onlyHe
 	if blockNumber < 0 {
 		return nil, errors.New("invalid negative block number")
 	}
-	err := c.conn.CallContext(ctx, &block, "getBlockByNumber", c.groupID, blockNumber, onlyHeader, onlyTxHash)
+	err := c.conn.CallContext(ctx, &block, "getBlockByNumber", blockNumber, onlyHeader, onlyTxHash)
 	if err != nil {
 		return nil, err
 	}
@@ -609,7 +570,7 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 		return nil, errors.New("invalid negative block number")
 	}
 	var raw string
-	err := c.conn.CallContext(ctx, &raw, "getBlockHashByNumber", c.groupID, blockNumber)
+	err := c.conn.CallContext(ctx, &raw, "getBlockHashByNumber", blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -620,7 +581,7 @@ func (c *Client) GetBlockHashByNumber(ctx context.Context, blockNumber int64) (*
 // GetTransactionByHash returns the transaction information according to the given transaction hash
 func (c *Client) GetTransactionByHash(ctx context.Context, txHash common.Hash, withProof bool) (*types.TransactionDetail, error) {
 	var transactionDetail types.TransactionDetail
-	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByHash", c.groupID, txHash.String(), withProof)
+	err := c.conn.CallContext(ctx, &transactionDetail, "getTransactionByHash", txHash.String(), withProof)
 	if err != nil {
 		return nil, err
 	}
@@ -633,7 +594,7 @@ func (c *Client) GetTransactionReceipt(ctx context.Context, txHash common.Hash, 
 	var anonymityReceipt = &struct {
 		types.Receipt
 	}{}
-	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", c.groupID, txHash.String(), withProof)
+	err := c.conn.CallContext(ctx, anonymityReceipt, "getTransactionReceipt", txHash.String(), withProof)
 	if err != nil {
 		return nil, err
 	}
@@ -653,7 +614,7 @@ func (c *Client) GetTransactionReceipt(ctx context.Context, txHash common.Hash, 
 func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (common.Address, error) {
 	var raw interface{}
 	var contractAddress common.Address
-	err := c.conn.CallContext(ctx, &raw, "getTransactionReceipt", c.groupID, txHash.Hex(), false)
+	err := c.conn.CallContext(ctx, &raw, "getTransactionReceipt", txHash.Hex(), false)
 	if err != nil {
 		return contractAddress, err
 	}
@@ -674,20 +635,10 @@ func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (co
 	return common.HexToAddress(strContractAddress), nil
 }
 
-// GetPendingTransactions returns information of the pending transactions
-func (c *Client) GetPendingTransactions(ctx context.Context) (*[]types.TransactionPending, error) {
-	var pendingTransactions []types.TransactionPending
-	err := c.conn.CallContext(ctx, &pendingTransactions, "getPendingTransactions", c.groupID)
-	if err != nil {
-		return nil, err
-	}
-	return &pendingTransactions, err
-}
-
 // GetPendingTxSize returns amount of the pending transactions
 func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getPendingTxSize", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getPendingTxSize")
 	if err != nil {
 		return nil, err
 	}
@@ -698,7 +649,7 @@ func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
 // GetCode returns the contract code according to the contract address
 func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getCode", c.groupID, strings.ToLower(address.String()[2:]))
+	err := c.conn.CallContext(ctx, &raw, "getCode", strings.ToLower(address.String()[2:]))
 	if err != nil {
 		return nil, err
 	}
@@ -709,16 +660,16 @@ func (c *Client) GetCode(ctx context.Context, address common.Address) ([]byte, e
 // GetTotalTransactionCount returns the total amount of transactions and the block height at present
 func (c *Client) GetTotalTransactionCount(ctx context.Context) (*types.TransactionCount, error) {
 	var transactionCount types.TransactionCount
-	err := c.conn.CallContext(ctx, &transactionCount, "getTotalTransactionCount", c.groupID)
+	err := c.conn.CallContext(ctx, &transactionCount, "getTotalTransactionCount")
 	if err != nil {
 		return nil, err
 	}
 	return &transactionCount, err
 }
 
-func (c *Client) GetGroupNodeInfo(ctx context.Context, nodeId string) ([]byte, error) {
+func (c *Client) GetNodeInfo(ctx context.Context, nodeId string) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getGroupNodeInfo", c.groupID, nodeId)
+	err := c.conn.CallContext(ctx, &raw, "getNodeInfo", nodeId)
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +679,7 @@ func (c *Client) GetGroupNodeInfo(ctx context.Context, nodeId string) ([]byte, e
 
 func (c *Client) GetGroupInfo(ctx context.Context) ([]byte, error) {
 	var raw interface{}
-	err := c.conn.CallContext(ctx, &raw, "getGroupInfo", c.groupID)
+	err := c.conn.CallContext(ctx, &raw, "getGroupInfo")
 	if err != nil {
 		return nil, err
 	}
@@ -739,7 +690,7 @@ func (c *Client) GetGroupInfo(ctx context.Context) ([]byte, error) {
 // GetSystemConfigByKey returns value according to the key(only tx_count_limit, tx_gas_limit could work)
 func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) (*types.SystemConfig, error) {
 	var raw types.SystemConfig
-	err := c.conn.CallContext(ctx, &raw, "getSystemConfigByKey", c.groupID, configKey)
+	err := c.conn.CallContext(ctx, &raw, "getSystemConfigByKey", configKey)
 	if err != nil {
 		return nil, err
 	}

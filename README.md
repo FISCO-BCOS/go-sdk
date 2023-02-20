@@ -193,7 +193,7 @@ import (
 )
 
 func main() {
-    privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+     privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
     config := &client.Config{IsSMCrypto: false, GroupID: "group0",
         PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
     client, err := client.DialContext(context.Background(), config)
@@ -201,6 +201,7 @@ func main() {
         log.Fatal(err)
     }
     input := "HelloWorld deployment 1.0"
+    fmt.Println("=================DeployHelloWorld===============")
     address, receipt, instance, err := hello.DeployHelloWorld(client.GetTransactOpts(), client, input)
     if err != nil {
         log.Fatal(err)
@@ -225,7 +226,27 @@ func main() {
 
     fmt.Println("version :", version) // "HelloWorld deployment 1.0"
 
-    // contract write interface demo
+    ret, err := helloSession.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
+    done := make(chan bool)
+    _, err = helloSession.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+        setValue, err := helloSession.ParseSetValue(logs[0])
+        if err != nil {
+            fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+            panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+        }
+        fmt.Printf("receive setValue: %+v\n", *setValue)
+        done <- true
+    })
+    if err != nil {
+        fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
     fmt.Println("================================")
 
     oldValue, _, receipt, err := helloSession.Set("hello fisco")
@@ -236,13 +257,13 @@ func main() {
 
     fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
-    // read the result
-    result, err := helloSession.Get()
+    ret, err = helloSession.Get()
     if err != nil {
-        log.Fatal(err)
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
     }
-
-    fmt.Println("get item: " + string(result[:])) // "hello fisco"
+    fmt.Printf("Get: %s\n", ret)
+    <-done
 }
 
 ```
