@@ -19,15 +19,15 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
-	"github.com/FISCO-BCOS/crypto/tls"
-	"github.com/FISCO-BCOS/crypto/x509"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -134,10 +134,9 @@ type readOp struct {
 }
 
 type requestOp struct {
-	ids  []json.RawMessage
-	err  error
-	resp chan *jsonrpcMessage // receives up to len(ids) responses
-	//respData     chan *resRpcMessage  // receives up to len(ids) responses
+	ids          []json.RawMessage
+	err          error
+	resp         chan *jsonrpcMessage // receives up to len(ids) responses
 	respChanData *csdk.CallbackChan
 }
 
@@ -161,12 +160,13 @@ type eventLogResp struct {
 func (op *requestOp) waitRpcMessage(ctx context.Context) (*jsonrpcMessage, interface{}, error) {
 	respBody := <-op.respChanData.Data
 	var respData jsonrpcMessage
-	if err := json.Unmarshal(respBody.Result, &respData); err != nil {
-		//log.Println("json unmarshal res body:", respBody)
-		//log.Println("json unmarshal err:", err)
-		return nil, nil, err
+	if respBody.Err == nil {
+		if err := json.Unmarshal(respBody.Result, &respData); err != nil {
+			return nil, nil, err
+		}
+		return &respData, respData.Result, op.err
 	}
-	return &respData, respData.Result, op.err
+	return nil, respBody.Result, respBody.Err
 }
 
 func processEventLogMsg(respBody []byte, handler interface{}) {
@@ -236,24 +236,6 @@ func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method stri
 			}
 		}
 	}
-	return nil
-}
-
-// DialContextChannel creates a new Channel client, just like Dial.
-func DialContextChannel(rawurl string, caRoot, certContext, keyContext []byte, groupID int) (*Connection, error) {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(caRoot)
-	if !ok {
-		return nil, errors.New("failed to parse root certificate")
-	}
-	cer, err := tls.X509KeyPair(certContext, keyContext)
-	if err != nil {
-		return nil, err
-	}
-	config := &tls.Config{RootCAs: roots, Certificates: []tls.Certificate{cer}, MinVersion: tls.VersionTLS12, PreferServerCipherSuites: true,
-		InsecureSkipVerify: true}
-	config.CurvePreferences = append(config.CurvePreferences, tls.CurveSecp256k1, tls.CurveP256)
-	return DialChannelWithClient(rawurl, config, groupID)
 }
 
 // ClientFromContext Connection retrieves the client from the context, if any. This can be used to perform
@@ -306,12 +288,6 @@ func (c *Connection) Close() {
 	c.csdk.Close()
 }
 
-// Close closes the client, aborting any in-flight requests.
-func (c *Connection) ReConn() {
-	hc := c.writeConn.(*channelSession)
-	hc.Reconnection()
-}
-
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
 // result if no error occurred.
 //
@@ -332,7 +308,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
 	switch method {
 	case "call":
-		arg := args[1].(map[string]interface{})
+		arg := args[0].(map[string]interface{})
 		data := arg["data"].(string)
 		to := arg["to"].(string)
 		c.csdk.Call(op.respChanData, to, data)
@@ -343,22 +319,22 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getBlockNumber":
 		c.csdk.GetBlockNumber(op.respChanData)
 	case "getBlockByNumber":
-		blockNumber := args[1].(int64)
-		onlyHeader := args[2].(bool)
-		onlyTxHash := args[3].(bool)
+		blockNumber := args[0].(int64)
+		onlyHeader := args[1].(bool)
+		onlyTxHash := args[2].(bool)
 		c.csdk.GetBlockByNumber(op.respChanData, blockNumber, onlyHeader, onlyTxHash)
 	case "getBlockByHash":
-		blockHash := args[1].(string)
-		onlyHeader := args[2].(bool)
-		onlyTxHash := args[3].(bool)
+		blockHash := args[0].(string)
+		onlyHeader := args[1].(bool)
+		onlyTxHash := args[2].(bool)
 		c.csdk.GetBlockByHash(op.respChanData, blockHash, onlyHeader, onlyTxHash)
 	case "getBlockHashByNumber":
-		blockNumber := args[1].(int64)
+		blockNumber := args[0].(int64)
 		c.csdk.GetBlockHashByNumber(op.respChanData, blockNumber)
 	case "getPbftView":
 		c.csdk.GetPbftView(op.respChanData)
 	case "getCode":
-		address := args[1].(string)
+		address := args[0].(string)
 		c.csdk.GetCode(op.respChanData, address)
 	case "getSyncStatus":
 		c.csdk.GetSyncStatus(op.respChanData)
@@ -369,32 +345,66 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getObserverList":
 		c.csdk.GetObserverList(op.respChanData)
 	case "getTransactionReceipt":
-		txHash := args[1].(string)
-		withProof := args[2].(bool)
+		txHash := args[0].(string)
+		withProof := args[1].(bool)
 		c.csdk.GetTransactionReceipt(op.respChanData, txHash, withProof)
 	case "getTransactionByHash":
-		txHash := args[1].(string)
-		withProof := args[2].(bool)
+		txHash := args[0].(string)
+		withProof := args[1].(bool)
 		c.csdk.GetTransaction(op.respChanData, txHash, withProof)
 	case "getSystemConfigByKey":
-		key := args[1].(string)
+		key := args[0].(string)
 		c.csdk.GetSystemConfigByKey(op.respChanData, key)
 	case "getTotalTransactionCount":
 		c.csdk.GetTotalTransactionCount(op.respChanData)
-	case "getGroupNodeInfo":
-		c.csdk.GetGroupNodeInfo(op.respChanData)
+	case "getNodeInfo":
+		nodeID := args[0].(string)
+		c.csdk.GetNodeInfo(op.respChanData, nodeID)
 	case "getGroupList":
 		c.csdk.GetGroupList(op.respChanData)
 	case "getGroupInfo":
 		c.csdk.GetGroupInfo(op.respChanData)
 	case "getGroupInfoList":
-		c.csdk.GetGroupNodeInfoList(op.respChanData)
+		c.csdk.GetGroupInfoList(op.respChanData)
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
-	case "sendRawTransaction":
-		data := args[1].(string)
-		contractAddress := args[2].(string)
-		c.csdk.SendTransaction(op.respChanData, contractAddress, data, true)
+	case "sendTransaction":
+		data := hexutil.Encode(args[0].([]byte))
+		contractAddress := args[1].(string)
+		var handler func(*types.Receipt, error)
+		if len(args) >= 3 {
+			handler = args[2].(func(*types.Receipt, error))
+		}
+		_, err := c.csdk.SendTransaction(op.respChanData, contractAddress, data, true)
+		if err != nil {
+			return err
+		}
+		// async send transaction
+		if handler != nil {
+			go func() {
+				resp, _, err := op.waitRpcMessage(ctx)
+				if err != nil {
+					handler(nil, err)
+					return
+				}
+				if resp.Error != nil {
+					handler(nil, resp.Error)
+					return
+				}
+				if len(resp.Result) == 0 {
+					handler(nil, errors.New("result is null"))
+					return
+				}
+				var receipt types.Receipt
+				err = json.Unmarshal(resp.Result, &receipt)
+				if err != nil {
+					handler(nil, fmt.Errorf("unmarshal receipt error: %v", err))
+					return
+				}
+				handler(&receipt, nil)
+			}()
+			return nil
+		}
 	default:
 		return ErrNoRpcMehtod
 	}
@@ -442,19 +452,6 @@ func (c *Connection) CallHandlerContext(ctx context.Context, result interface{},
 	}()
 	return err
 }
-
-//func (c *Connection) AsyncSendTransaction(ctx context.Context, handler func(*types.Receipt, error), method string, args ...interface{}) error {
-//	msg, err := c.newMessage(method, args...)
-//	if err != nil {
-//		return err
-//	}
-//	hc := c.writeConn.(*channelSession)
-//	err = hc.asyncSendTransaction(msg, handler)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
 
 //func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
 //	hc := c.writeConn.(*channelSession)
@@ -506,13 +503,4 @@ func (c *Connection) drainRead() {
 			return
 		}
 	}
-}
-
-// GetBlockNumber returns BlockLimit
-func (c *Connection) GetBlockNumber() int64 {
-	hc, ok := c.writeConn.(*channelSession)
-	if !ok {
-		return 0
-	}
-	return hc.nodeInfo.blockNumber
 }
