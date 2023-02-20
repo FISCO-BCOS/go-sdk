@@ -55,7 +55,7 @@ func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transacti
 		fmt.Printf("rlp encode tx error!")
 		return nil, err
 	}
-	msg, err := c.newMessage("sendRawTransaction", c.groupID, hexutil.Encode(data))
+	msg, err := c.newMessage("sendTransaction", c.groupID, hexutil.Encode(data))
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
 		return nil, err

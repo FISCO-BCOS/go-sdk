@@ -60,46 +60,7 @@ const (
 // 	},
 // }
 
-// =========== account ==========
-var newAccountCmd = &cobra.Command{
-	Use:   "newAccount",
-	Short: "Create a new account",
-	Long:  `Create a new account and save the results to ./bin/account/yourAccountName.keystore in encrypted form.`,
-	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		clientVer, err := RPC.GetClientVersion(context.Background())
-		if err != nil {
-			fmt.Printf("client version not found: %v\n", err)
-			return
-		}
-		cv, err := json.MarshalIndent(clientVer, "", indent)
-		if err != nil {
-			fmt.Printf("client version marshalIndent error: %v", err)
-		}
-		fmt.Printf("Client Version: \n%s\n", cv)
-	},
-}
-
 // ======= node =======
-
-var getClientVersionCmd = &cobra.Command{
-	Use:   "getClientVersion",
-	Short: "                                   Get the blockchain version",
-	Long:  `Returns the specific FISCO BCOS version that runs on the node you connected.`,
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		clientVer, err := RPC.GetClientVersion(context.Background())
-		if err != nil {
-			fmt.Printf("client version not found: %v\n", err)
-			return
-		}
-		cv, err := json.MarshalIndent(clientVer, "", indent)
-		if err != nil {
-			fmt.Printf("client version marshalIndent error: %v", err)
-		}
-		fmt.Printf("Client Version: \n%s\n", cv)
-	},
-}
 
 var getGroupIDCmd = &cobra.Command{
 	Use:   "getGroupID",
@@ -298,14 +259,14 @@ var getGroupInfoCmd = &cobra.Command{
 	},
 }
 
-var getGroupNodeInfoCmd = &cobra.Command{
-	Use:   "getGroupNodeInfo",
+var getNodeInfoCmd = &cobra.Command{
+	Use:   "getNodeInfo",
 	Short: "[nodeID] Get ID list of groups that the node belongs",
 	Long:  `Returns an ID list of groups that the node belongs.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		nodeId := args[0]
-		peers, err := RPC.GetGroupNodeInfo(context.Background(), nodeId)
+		peers, err := RPC.GetNodeInfo(context.Background(), nodeId)
 		if err != nil {
 			fmt.Printf("group IDs list not found: %v\n", err)
 			return
@@ -363,6 +324,10 @@ For more information please refer:
 			return
 		}
 		peers, err := json.MarshalIndent(block, "", indent)
+		if err != nil {
+			fmt.Printf("block not found: %v\n", err)
+			return
+		}
 		fmt.Printf("Block: \n%s\n", peers)
 	},
 }
@@ -521,21 +486,6 @@ For more information please refer:
 			return
 		}
 		fmt.Printf("Transaction Receipt: \n%s\n", tx)
-	},
-}
-
-var getPendingTransactionsCmd = &cobra.Command{
-	Use:   "getPendingTransactions",
-	Short: "                                   Get the pending transactions",
-	Long:  `Return the transactions that are pending for packaging.`,
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		tx, err := RPC.GetPendingTransactions(context.Background())
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		fmt.Printf("Pending Transactions: \n%+v\n", *tx)
 	},
 }
 
@@ -707,15 +657,14 @@ $ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
 func init() {
 	// add common command
 	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(newAccountCmd)
 	// add node command
-	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
+	rootCmd.AddCommand(getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
-	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getGroupNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
+	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
 	// add transaction/receipt command
-	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
+	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionReceiptCmd, getPendingTxSizeCmd)
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
 	// add contract command
@@ -739,23 +688,23 @@ func isValidHex(str string) (bool, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
 		if len(str) == 2 {
-			return false, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
 		}
 		// is hex string
 		_, err := hexutil.Decode(str)
 		if err != nil {
-			return false, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
 		}
 		return true, nil
 	}
-	return false, fmt.Errorf("Arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
+	return false, fmt.Errorf("arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
 }
 
 func isBlockNumberOutOfRange(blockNumber int64) (bool, error) {
 	// compare with the current block number
 	currentBlockNumber, err := RPC.GetBlockNumber(context.Background())
 	if err != nil {
-		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
+		return false, fmt.Errorf("client error: cannot get the block number: %v", err)
 	}
 	if currentBlockNumber < blockNumber {
 		return false, fmt.Errorf("BlockNumber does not exist")

@@ -25,10 +25,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
-github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230210082753-3c33f8a75d95 h1:4roji4f1aRlSffytysNCcDloXWggduCjmrdhXTtQT5s=
-github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230210082753-3c33f8a75d95/go.mod h1:7kTVptunvfx0JH/XIuFj0ybRq0MLAsK4daizrE9RvN0=
-github.com/FISCO-BCOS/bcos-c-sdk v3.2.0+incompatible h1:ZVswkB2bjf6d/PYKTuqEti6Ks5wGQ13YnxaCiVYKXok=
-github.com/FISCO-BCOS/bcos-c-sdk v3.2.0+incompatible/go.mod h1:7kTVptunvfx0JH/XIuFj0ybRq0MLAsK4daizrE9RvN0=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230220095228-8ad76b3a3565 h1:AgFX4V51CPZpNNbUdzmw3S9sQqGeQXcmmTffdHxAJLk=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230220095228-8ad76b3a3565/go.mod h1:7kTVptunvfx0JH/XIuFj0ybRq0MLAsK4daizrE9RvN0=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1 h1:ThPht4qK10+cMZC5COIjHPq0INm5HAMVYqrez5zEgFI=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1/go.mod h1:UrLdwsFrjiaCsvdcPLcH6B7s/FUmym3qfM93u2ziR+4=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
@@ -340,6 +338,8 @@ github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFSt
 github.com/opentracing/opentracing-go v1.0.3-0.20180606204148-bd9c31933947/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.1.0 h1:pWlfV3Bxv7k65HYwkikxat0+s3pV4bsqf19k25Ur8rU=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
+github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
+github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/paulbellamy/ratecounter v0.2.0/go.mod h1:Hfx1hDpSGoqxkVVpBi/IlYD7kChlfo5C6hzIHwPqfFE=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterh/liner v1.0.1-0.20180619022028-8c1271fcf47f/go.mod h1:xIteQHvHuaLYG9IFj6mSxM0fCKrs34IrEQUhOYuGPHc=
