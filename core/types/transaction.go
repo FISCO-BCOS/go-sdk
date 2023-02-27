@@ -11,12 +11,9 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/smcrypto/sm3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
-
-//go:generate gencodec -type txdata -field-override txdataMarshaling -out gen_tx_json.go
 
 var (
 	ErrInvalidSig = errors.New("invalid raw transaction v, r, s values")
@@ -51,21 +48,6 @@ type txdata struct {
 
 	// This is only used when marshaling to JSON.
 	Hash *common.Hash `json:"hash" rlp:"-"`
-}
-
-type txdataMarshaling struct {
-	AccountNonce *hexutil.Big
-	Price        *hexutil.Big
-	GasLimit     *hexutil.Big
-	BlockLimit   *hexutil.Big
-	Amount       *hexutil.Big
-	Payload      hexutil.Bytes
-	ChainID      *hexutil.Big
-	GroupID      *hexutil.Big
-	ExtraData    hexutil.Bytes
-	V            *hexutil.Big
-	R            *hexutil.Big
-	S            *hexutil.Big
 }
 
 // NewTransaction returns a new transaction
@@ -149,39 +131,6 @@ func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	}
 
 	return err
-}
-
-// MarshalJSON encodes the web3 RPC transaction format.
-func (tx *Transaction) MarshalJSON() ([]byte, error) {
-	hash := tx.Hash()
-	data := tx.data
-	data.Hash = &hash
-	return data.MarshalJSON()
-}
-
-// UnmarshalJSON decodes the web3 RPC transaction format.
-func (tx *Transaction) UnmarshalJSON(input []byte) error {
-	var dec txdata
-	if err := dec.UnmarshalJSON(input); err != nil {
-		return err
-	}
-
-	withSignature := dec.V.Sign() != 0 || dec.R.Sign() != 0 || dec.S.Sign() != 0
-	if withSignature {
-		var V byte
-		if isProtectedV(dec.V) {
-			chainID := deriveChainID(dec.V).Uint64()
-			V = byte(dec.V.Uint64() - 35 - 2*chainID)
-		} else {
-			V = byte(dec.V.Uint64() - 27)
-		}
-		if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
-			return ErrInvalidSig
-		}
-	}
-
-	*tx = Transaction{data: dec}
-	return nil
 }
 
 func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
