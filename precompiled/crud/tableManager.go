@@ -22,7 +22,6 @@ var (
 	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
-	_ = types.BloomLookup
 )
 
 // TableInfo is an auto generated low-level Go binding around an user-defined struct.

@@ -268,8 +268,7 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 		Addresses: []string{strings.ToLower(c.address.Hex())},
 		Topics:    topics,
 	}
-	ctx, _ := context.WithCancel(context.Background())
-	return c.filterer.SubscribeEventLogs(ctx, eventLogParams, handler)
+	return c.filterer.SubscribeEventLogs(context.Background(), eventLogParams, handler)
 }
 
 // UnpackLog unpacks a retrieved log into the provided output structure.
