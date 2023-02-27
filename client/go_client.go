@@ -22,11 +22,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"os"
 	"strconv"
 	"strings"
 
-	"github.com/FISCO-BCOS/bcos-c-sdk/bindings/go/csdk"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum"
@@ -52,44 +50,27 @@ const (
 
 // Dial connects a client to the given URL and groupID.
 func Dial(configFile, groupID string, privateKey []byte) (*Client, error) {
-	sdk, err := csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
+
+	c, err := NewConnectionByFile(configFile, groupID, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	return newClient(sdk)
+	return newClient(c)
 }
 
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *Config) (*Client, error) {
-	path, _ := os.Getwd()
-	if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
-	} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
-	} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
-	}
-	if config.IsSMCrypto {
-		if _, err := os.Stat(config.TLSSmEnKeyFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnKeyFile, path)
-		} else if _, err := os.Stat(config.TLSSmEnCertFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnCertFile, path)
-		}
-	}
-	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
+	c, err := NewConnection(config)
 	if err != nil {
-		return nil, fmt.Errorf("new csdk failed: %v", err)
+		return nil, err
 	}
-	return newClient(sdk)
+	return newClient(c)
 }
 
-func newClient(sdk *csdk.CSDK) (*Client, error) {
+func newClient(c *Connection) (*Client, error) {
+	sdk := c.GetCSDK()
 	if sdk.WASM() {
 		return nil, errors.New("wasm is not supported for now")
-	}
-	c, err := NewClient(nil, sdk)
-	if err != nil {
-		return nil, fmt.Errorf("new client errors failed: %v", err)
 	}
 	client := Client{conn: c, groupID: sdk.GroupID(), chainID: sdk.ChainID(), smCrypto: sdk.SMCrypto()}
 	if sdk.SMCrypto() {
@@ -311,82 +292,49 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 
 // eventlog
 func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
-	sendData, err := json.Marshal(eventLogParams)
-	if err != nil {
-		return "", err
-	}
-	log.Println("SubscribeEventLogs data:", string(sendData))
-	var raw string
-	err = c.conn.CallHandlerContext(ctx, &raw, "subscribeEventLogs", "", sendData, handler)
-	if err != nil {
-		return "", err
-	}
-	return raw, nil
+	return c.conn.SubscribeEventLogs(eventLogParams, handler)
 }
 
 func (c *Client) UnSubscribeEventLogs(ctx context.Context, taskId string) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "unSubscribeEventLogs", "", []byte(taskId), nil)
-	if err != nil {
-		return err
-	}
+	c.conn.UnsubscribeEventLogs(taskId)
 	return nil
 }
 
 // amop
-func (c *Client) SubscribeTopic(ctx context.Context, topic string, handler func([]byte, *[]byte)) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeTopic", topic, nil, handler)
-	if err != nil {
-		return err
-	}
+func (c *Client) SubscribeAmopTopic(ctx context.Context, topic string, handler func([]byte, *[]byte)) error {
+	return c.conn.SubscribeAmopTopic(topic, handler)
+}
+
+func (c *Client) PublishAmopTopicMessage(ctx context.Context, topic string, data []byte, handler func([]byte, error)) error {
+	return c.conn.PublishAmopTopicMessage(ctx, topic, data, handler)
+}
+
+func (c *Client) SendAmopResponse(peer, seq string, data []byte) error {
+	c.conn.SendAmopResponse(peer, seq, data)
 	return nil
 }
 
-func (c *Client) SendAMOPMsg(ctx context.Context, topic string, data []byte) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "SendAMOPMsg", topic, data, nil)
-	if err != nil {
-		return err
-	}
+func (c *Client) BroadcastAMOPMsg(topic string, data []byte) error {
+	c.conn.BroadcastAmopMsg(topic, data)
 	return nil
 }
 
-func (c *Client) BroadcastAMOPMsg(ctx context.Context, topic string, data []byte) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "broadcastAMOPMsg", topic, data, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Client) UnsubscribeTopic(ctx context.Context, topic string) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "unsubscribeTopic", topic, nil, nil)
-	if err != nil {
-		return err
-	}
+func (c *Client) UnsubscribeAmopTopic(topic string) error {
+	c.conn.UnsubscribeAmopTopic(topic)
 	return nil
 }
 
 func (c *Client) SubscribeBlockNumberNotify(ctx context.Context, handler func(int64)) error {
-	var raw interface{}
-	err := c.conn.CallHandlerContext(ctx, &raw, "subscribeBlockNumberNotify", "", nil, handler)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.conn.SubscribeBlockNumberNotify(handler)
 }
 
-//func (c *Client) UnsubscribeBlockNumberNotify() error {
-//	return nil
-//}
+func (c *Client) UnsubscribeBlockNumberNotify() {
+	c.conn.UnsubscribeBlockNumberNotify()
+}
 
 // GetGroupID returns the groupID of the client
 func (c *Client) GetGroupID() string {
 	return c.groupID
-	//return big.NewInt(int64())
 }
 
 // SetGroupID sets the groupID of the client
@@ -396,9 +344,7 @@ func (c *Client) SetGroupID(newID string) {
 
 // GetChainID returns the Chain ID of the FISCO BCOS running on the nodes.
 func (c *Client) GetChainID(ctx context.Context) (string, error) {
-	//convertor := new(big.Int)
-	chainId := c.chainID
-	return chainId, nil
+	return c.chainID, nil
 }
 
 // GetBlockNumber returns the latest block height(hex format) on a given groupID.
