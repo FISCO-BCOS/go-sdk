@@ -317,7 +317,7 @@ precompiled_test(){
     # TODO: consensus test use getSealer first
     # TODO: cns
     # TODO: permission
-    precompileds=(config crud)
+    precompileds=(config crud auth config)
     for pkg in ${precompileds[*]}; do
         cp -R nodes/127.0.0.1/sdk/* "./precompiled/${pkg}"
         execute_cmd "go test ${ldflags} -v ./precompiled/${pkg}"

@@ -26,7 +26,7 @@ func main() {
 	topic := os.Args[3]
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: host, Port: port}
+		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	var c *client.Client
 	for i := 0; i < 3; i++ {
 		logrus.Printf("%d try to connect\n", i)
@@ -45,7 +45,7 @@ func main() {
 	defer queryTicker.Stop()
 	done := make(chan bool)
 	ctx, cancel := context.WithCancel(context.Background())
-	err = c.SubscribeTopic(ctx, topic, func(data []byte, response *[]byte) {
+	err = c.SubscribeAmopTopic(ctx, topic, func(data []byte, response *[]byte) {
 		logrus.Printf("received: %s\n", string(data))
 		queryTicker.Stop()
 		if strings.Contains(string(data), "Done") {

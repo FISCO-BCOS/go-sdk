@@ -16,11 +16,12 @@ package client
 import "C"
 import (
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -89,8 +90,10 @@ type jsonWriter interface {
 
 // Connection represents a connection to an RPC server.
 type Connection struct {
-	csdk      *csdk.CSDK
-	idCounter uint32
+	csdk              *csdk.CSDK
+	idCounter         uint32
+	blockNumberNotify func(int64)
+	notifyLock        sync.Mutex
 
 	// This function, if non-nil, is called when the connection is lost.
 	reconnectFunc reconnectFunc
@@ -161,7 +164,7 @@ func (op *requestOp) waitRpcMessage(ctx context.Context) (*jsonrpcMessage, inter
 	respBody := <-op.respChanData.Data
 	var respData jsonrpcMessage
 	if respBody.Err == nil {
-		if err := json.Unmarshal(respBody.Result, &respData); err != nil {
+		if err := json.Unmarshal(respBody.Result.([]byte), &respData); err != nil {
 			return nil, nil, err
 		}
 		return &respData, respData.Result, op.err
@@ -201,41 +204,7 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 			Removed: false,
 		})
 	}
-	eventHander := handler.(func(int, []types.Log))
-	go eventHander(eventLogResponse.Status, logs)
-}
-
-func (op *requestOp) waitMessage(ctx context.Context, c *Connection, method string, handler interface{}) error {
-	for {
-		select {
-		case <-ctx.Done():
-			//switch method {
-			//	case "subscribeEventLogs":
-			//		taskId := ctx.Value("taskId").(string)
-			//		c.csdk.UnsubscribeEvent(op.respChanData, taskId)
-			//}
-			return ctx.Err()
-		case respBody := <-op.respChanData.Data:
-			switch method {
-			case "subscribeEventLogs":
-				processEventLogMsg(respBody.Result, handler)
-			case "subscribeTopic":
-				handler.(func([]byte, *[]byte))(respBody.Result, nil)
-			case "SendAMOPMsg":
-				handler.(func([]byte, *[]byte))(respBody.Result, nil)
-			case "broadcastAMOPMsg":
-				handler.(func([]byte, *[]byte))(respBody.Result, nil)
-			case "subscribeBlockNumberNotify":
-				//log.Println("subscribeBlockNumberNotify respBody:",respBody)
-				if respBody.Err == nil {
-					blockNum := int64(binary.LittleEndian.Uint64(respBody.Result))
-					handler.(func(int64))(blockNum)
-				}
-			default:
-				return ErrNoResult
-			}
-		}
-	}
+	handler.(func(int, []types.Log))(int(eventLogResponse.Status), logs)
 }
 
 // ClientFromContext Connection retrieves the client from the context, if any. This can be used to perform
@@ -252,13 +221,43 @@ func NewClient(connect reconnectFunc, csdk *csdk.CSDK) (*Connection, error) {
 	return c, nil
 }
 
-func newConnection(initctx context.Context, connect reconnectFunc) (*Connection, error) {
-	conn, err := connect(initctx)
+func NewConnectionByFile(configFile, groupID string, privateKey []byte) (*Connection, error) {
+	sdk, err := csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	c := initClient(conn)
-	c.reconnectFunc = connect
+	c := initClient(nil)
+	c.reconnectFunc = nil
+	c.csdk = sdk
+	return c, nil
+}
+
+func NewConnection(config *Config) (*Connection, error) {
+	path, _ := os.Getwd()
+	if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
+	} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
+	} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
+	}
+	if config.IsSMCrypto {
+		if _, err := os.Stat(config.TLSSmEnKeyFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnKeyFile, path)
+		} else if _, err := os.Stat(config.TLSSmEnCertFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnCertFile, path)
+		}
+	}
+	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("new csdk failed: %v", err)
+	}
+	if err != nil {
+		return nil, err
+	}
+	c := initClient(nil)
+	c.reconnectFunc = nil
+	c.csdk = sdk
 	return c, nil
 }
 
@@ -278,6 +277,10 @@ func initClient(conn ServerCodec) *Connection {
 	return c
 }
 
+func (c *Connection) GetCSDK() *csdk.CSDK {
+	return c.csdk
+}
+
 func (c *Connection) nextID() json.RawMessage {
 	id := atomic.AddUint32(&c.idCounter, 1)
 	return strconv.AppendUint(nil, uint64(id), 10)
@@ -286,6 +289,87 @@ func (c *Connection) nextID() json.RawMessage {
 // Close closes the client, aborting any in-flight requests.
 func (c *Connection) Close() {
 	c.csdk.Close()
+}
+
+func (c *Connection) SendAmopResponse(peer, seq string, data []byte) {
+	c.csdk.SendAmopResponse(peer, seq, data)
+}
+
+func (c *Connection) UnsubscribeAmopTopic(topic string) {
+	c.csdk.UnsubscribeAmopTopic(topic)
+}
+
+func (c *Connection) BroadcastAmopMsg(topic string, data []byte) {
+	c.csdk.BroadcastAmopMsg(topic, data)
+}
+
+func (c *Connection) SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
+	sendData, err := json.Marshal(eventLogParams)
+	if err != nil {
+		return "", err
+	}
+	var sdkContext csdk.CallbackChan
+	sdkContext.Handler = func(data []byte, err error) {
+		if err != nil {
+			logrus.Errorf("SubscribeEventLogs error:%v", err)
+			return
+		}
+		processEventLogMsg(data, handler)
+	}
+	return c.csdk.SubscribeEvent(&sdkContext, string(sendData)), nil
+}
+
+func (c *Connection) UnsubscribeEventLogs(taskID string) {
+	c.csdk.UnsubscribeEvent(taskID)
+}
+
+func (c *Connection) SubscribeBlockNumberNotify(handler func(int64)) error {
+	var sdkContext csdk.CallbackChan
+	c.blockNumberNotify = handler
+	sdkContext.Handler = func(group string, blockNumber int64) {
+		if group == c.csdk.GroupID() {
+			c.notifyLock.Lock()
+			if c.blockNumberNotify != nil {
+				c.blockNumberNotify(int64(blockNumber))
+			}
+			c.notifyLock.Unlock()
+		}
+	}
+	c.csdk.RegisterBlockNotifier(&sdkContext)
+	return nil
+}
+
+func (c *Connection) UnsubscribeBlockNumberNotify() {
+	c.notifyLock.Lock()
+	defer c.notifyLock.Unlock()
+	c.blockNumberNotify = nil
+}
+
+func (c *Connection) SubscribeAmopTopic(topic string, handler func(data []byte, response *[]byte)) error {
+	var sdkContext csdk.CallbackChan
+	sdkContext.Handler = func(peer, sqe string, data []byte) {
+		var response []byte
+		handler(data, &response)
+		if len(response) > 0 {
+			c.SendAmopResponse(peer, sqe, response)
+		}
+	}
+	c.csdk.SubscribeAmopTopic(&sdkContext, topic)
+	return nil
+}
+
+func (c *Connection) PublishAmopTopicMessage(ctx context.Context, topic string, data []byte, handler func([]byte, error)) error {
+	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
+	c.csdk.PublishAmopTopicMsg(op.respChanData, topic, data, amopTimeout)
+	go func() {
+		select {
+		case respBody := <-op.respChanData.Data:
+			handler(respBody.Result.([]byte), nil)
+		case <-ctx.Done():
+			handler(nil, ctx.Err())
+		}
+	}()
+	return nil
 }
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
@@ -421,36 +505,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	default:
 		return json.Unmarshal(resp.Result, &result)
 	}
-}
-
-func (c *Connection) CallHandlerContext(ctx context.Context, result interface{}, method string, topic string, reqData []byte, handler interface{}) error {
-	//logrus.Infof("CallEventContext method:%s", method)
-	op := &requestOp{respChanData: &csdk.CallbackChan{Data: make(chan csdk.Response, 100)}}
-	switch method {
-	case "subscribeTopic":
-		c.csdk.SubscribeTopicWithCb(op.respChanData, topic)
-	case "unsubscribeTopic":
-		c.csdk.UnsubscribeTopicWithCb(op.respChanData, topic)
-	case "SendAMOPMsg":
-		c.csdk.PublishTopicMsg(op.respChanData, topic, reqData, amopTimeout)
-	case "broadcastAMOPMsg":
-		c.csdk.BroadcastAmopMsg(op.respChanData, topic, reqData)
-	case "subscribeEventLogs":
-		taskId := c.csdk.SubscribeEvent(op.respChanData, string(reqData))
-		*result.(*string) = taskId
-	case "unSubscribeEventLogs":
-		c.csdk.UnsubscribeEvent(op.respChanData, string(reqData))
-	case "subscribeBlockNumberNotify":
-		c.csdk.RegisterBlockNotifier(op.respChanData)
-	default:
-		return ErrNoResult
-	}
-
-	var err error
-	go func() {
-		err = op.waitMessage(ctx, c, method, handler)
-	}()
-	return err
 }
 
 //func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {

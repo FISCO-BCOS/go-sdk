@@ -3,7 +3,7 @@ pragma solidity >=0.6.10 <0.8.20;
 pragma experimental ABIEncoderV2;
 
 
-contract Precompiledbn256 {
+contract EthereumPrecompiled {
     constructor() public {}
 
     function Bn256Add(bytes32 ax, bytes32 ay, bytes32 bx, bytes32 by)
@@ -125,5 +125,10 @@ contract Precompiledbn256 {
         }
 
         return output;
+    }
+
+    function verify(address addr, bytes32 msgHash, uint8 v, bytes32 r, bytes32 s) public pure returns(bool) {
+        // Use ECRECOVER to verify address
+        return (ecrecover(msgHash, v, r, s) == (addr));
     }
 }
