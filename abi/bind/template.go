@@ -105,7 +105,6 @@ var (
 	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
-	_ = types.BloomLookup
 )
 
 {{$structs := .Structs}}

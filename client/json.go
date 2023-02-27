@@ -19,17 +19,11 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 )
 
 const (
-	defaultErrorCode        = -32000
-	vsn                     = "2.0"
-	serviceMethodSeparator  = "_"
-	subscribeMethodSuffix   = "_subscribe"
-	unsubscribeMethodSuffix = "_unsubscribe"
-
+	vsn                 = "2.0"
 	defaultWriteTimeout = 10 * time.Second // used if context has no deadline
 )
 
@@ -43,7 +37,6 @@ type jsonrpcMessage struct {
 	Method  string          `json:"method,omitempty"`
 	Params  json.RawMessage `json:"params,omitempty"`
 	Error   *jsonError      `json:"error,omitempty"`
-	Jsonrpc string          `json:"jsonrpc,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
 }
 
@@ -59,48 +52,9 @@ type jsonrpcMessage struct {
 //	Result  json.RawMessage `json:"result,omitempty"`
 //}
 
-func (msg *jsonrpcMessage) isNotification() bool {
-	return msg.ID == 1 && msg.Method != ""
-}
-
-func (msg *jsonrpcMessage) isCall() bool {
-	return msg.hasValidID() && msg.Method != ""
-}
-
-func (msg *jsonrpcMessage) isResponse() bool {
-	return msg.hasValidID() && msg.Method == "" && msg.Params == nil && (msg.Result != nil || msg.Error != nil)
-}
-
-func (msg *jsonrpcMessage) hasValidID() bool {
-	///return len(msg.ID) > 0 && msg.ID[0] != '{' && msg.ID[0] != '['
-	return true
-}
-
-func (msg *jsonrpcMessage) isSubscribe() bool {
-	return strings.HasSuffix(msg.Method, subscribeMethodSuffix)
-}
-
-func (msg *jsonrpcMessage) isUnsubscribe() bool {
-	return strings.HasSuffix(msg.Method, unsubscribeMethodSuffix)
-}
-
-func (msg *jsonrpcMessage) namespace() string {
-	elem := strings.SplitN(msg.Method, serviceMethodSeparator, 2)
-	return elem[0]
-}
-
 func (msg *jsonrpcMessage) String() string {
 	b, _ := json.Marshal(msg)
 	return string(b)
-}
-
-func (msg *jsonrpcMessage) response(result interface{}) *jsonrpcMessage {
-	//enc, err := json.Marshal(result)
-	//if err != nil {
-	//	// TODO: wrap with 'internal server error'
-	//	return msg.errorResponse(err)
-	//}
-	return &jsonrpcMessage{Version: vsn, ID: msg.ID, Result: nil}
 }
 
 type jsonError struct {

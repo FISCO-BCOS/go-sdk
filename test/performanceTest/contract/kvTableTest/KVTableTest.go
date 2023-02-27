@@ -22,7 +22,6 @@ var (
 	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
-	_ = types.BloomLookup
 )
 
 // KVTableTestABI is the input ABI used to generate the binding from.
