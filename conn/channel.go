@@ -453,17 +453,20 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 		return nil, err
 	}
 	msgBytes := rpcMsg.Encode()
-	if hc.c == nil {
-		return nil, errors.New("connection unavailable")
-	}
-	_, err = hc.c.Write(msgBytes)
-	if err != nil {
-		return nil, err
-	}
+
 	response := &channelResponse{Message: nil, Notify: make(chan interface{})}
 	hc.mu.Lock()
 	hc.responses[rpcMsg.uuid] = response
 	hc.mu.Unlock()
+	if hc.c == nil {
+		hc.responses[rpcMsg.uuid] = nil
+		return nil, errors.New("connection unavailable")
+	}
+	_, err = hc.c.Write(msgBytes)
+	if err != nil {
+		hc.responses[rpcMsg.uuid] = nil
+		return nil, err
+	}
 	<-response.Notify
 	hc.mu.Lock()
 	response = hc.responses[rpcMsg.uuid]
