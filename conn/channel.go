@@ -460,14 +460,14 @@ func (hc *channelSession) doRPCRequest(ctx context.Context, msg interface{}) (io
 	hc.mu.Unlock()
 	if hc.c == nil {
 		hc.mu.Lock()
-		hc.responses[rpcMsg.uuid] = nil
+		delete(hc.responses, rpcMsg.uuid)
 		hc.mu.Unlock()
 		return nil, errors.New("connection unavailable")
 	}
 	_, err = hc.c.Write(msgBytes)
 	if err != nil {
 		hc.mu.Lock()
-		hc.responses[rpcMsg.uuid] = nil
+		delete(hc.responses, rpcMsg.uuid)
 		hc.mu.Unlock()
 		return nil, err
 	}
