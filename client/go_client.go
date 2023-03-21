@@ -346,19 +346,19 @@ func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 	return raw, err
 }
 
-// GetBlockLimit returns the blocklimit for current blocknumber
-func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
-	var blockLimit *big.Int
-	defaultNumber := big.NewInt(BlockLimit)
-	var raw int
-	err := c.conn.CallContext(ctx, &raw, "getBlockNumber")
-	if err != nil {
-		return nil, err
-	}
+// // GetBlockLimit returns the blocklimit for current blocknumber
+// func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
+// 	var blockLimit *big.Int
+// 	defaultNumber := big.NewInt(BlockLimit)
+// 	var raw int
+// 	err := c.conn.CallContext(ctx, &raw, "getBlockNumber")
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	blockLimit = defaultNumber.Add(defaultNumber, big.NewInt(int64(raw)))
-	return blockLimit, nil
-}
+// 	blockLimit = defaultNumber.Add(defaultNumber, big.NewInt(int64(raw)))
+// 	return blockLimit, nil
+// }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
 // if the consensus algorithm is not the PBFT.
