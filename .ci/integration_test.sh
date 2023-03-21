@@ -46,7 +46,7 @@ check_env(){
         macOS="macOS"
     fi
     openssl version
-    export GODEBUG=cgocheck=0
+    # export GODEBUG=cgocheck=0
     go install golang.org/x/tools/cmd/goimports@latest
     # go get golang.org/x/tools/cmd/goimports || true
 }

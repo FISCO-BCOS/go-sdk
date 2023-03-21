@@ -200,8 +200,8 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 			TxHash:      common.HexToHash(eventLog.TransactionHash),
 			TxIndex:     uint(txIndex),
 			//BlockHash:   common.HexToHash(eventLog.BlockHash),
-			Index:   uint(logIndex),
-			Removed: false,
+			Index: uint(logIndex),
+			// Removed: false,
 		})
 	}
 	handler.(func(int, []types.Log))(int(eventLogResponse.Status), logs)
