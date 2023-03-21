@@ -33,14 +33,14 @@ func LoadECPrivateKeyFromPEM(path string) ([]byte, string, error) {
 
 	block, _ := pem.Decode(raw)
 	if block == nil {
-		return nil, "", fmt.Errorf("Failure reading pem from \"%s\": %s", path, err)
+		return nil, "", fmt.Errorf("failure reading pem from \"%s\": %s", path, err)
 	}
 	if block.Type != "PRIVATE KEY" {
-		return nil, "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+		return nil, "", fmt.Errorf("failure reading private key from \"%s\": %s", path, err)
 	}
 	ecPirvateKey, curveName, err := parsePKCS8ECPrivateKey(block.Bytes)
 	if err != nil {
-		return nil, "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+		return nil, "", fmt.Errorf("failure reading private key from \"%s\": %s", path, err)
 	}
 	return ecPirvateKey, curveName, nil
 }
@@ -54,10 +54,10 @@ func LoadECPublicKeyFromPEM(path string) ([]byte, string, error) {
 
 	block, _ := pem.Decode(raw)
 	if block == nil {
-		return nil, "", fmt.Errorf("Failure reading pem from \"%s\": %s", path, err)
+		return nil, "", fmt.Errorf("failure reading pem from \"%s\": %s", path, err)
 	}
 	if block.Type != "PUBLIC KEY" {
-		return nil, "", fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+		return nil, "", fmt.Errorf("failure reading private key from \"%s\": %s", path, err)
 	}
 	return parsePKIXPublicKey(block.Bytes)
 }
