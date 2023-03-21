@@ -120,17 +120,17 @@ func TestPBFTView(t *testing.T) {
 	t.Logf("PBFT view: \n%s", pv)
 }
 
-func TestBlockLimit(t *testing.T) {
-	c := GetClient(t)
-	// cannot use big.NewInt to construct json request
-	// TODO: analysis the ethereum's big.NewInt
-	bl, err := c.GetBlockLimit(context.Background())
-	if err != nil {
-		t.Fatalf("blockLimit not found: %v", err)
-	}
+// func TestBlockLimit(t *testing.T) {
+// 	c := GetClient(t)
+// 	// cannot use big.NewInt to construct json request
+// 	// TODO: analysis the ethereum's big.NewInt
+// 	bl, err := c.GetBlockLimit(context.Background())
+// 	if err != nil {
+// 		t.Fatalf("blockLimit not found: %v", err)
+// 	}
 
-	t.Logf("latest blockLimit: \n%s", bl)
-}
+// 	t.Logf("latest blockLimit: \n%s", bl)
+// }
 
 func TestGroupID(t *testing.T) {
 	c := GetClient(t)

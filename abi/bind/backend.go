@@ -72,8 +72,6 @@ type ContractTransactor interface {
 	// SendTransaction injects the transaction into the pending pool for execution.
 	SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error)
 	AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error
-	// GetBlockLimit returns the blocklimit for current blocknumber
-	GetBlockLimit(ctx context.Context) (*big.Int, error)
 	// GetGroupID returns the groupID of the client
 	GetGroupID() string
 	// GetChainID returns the chainID of the blockchain
