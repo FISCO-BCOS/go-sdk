@@ -1217,7 +1217,8 @@ func (hc *channelSession) processMessages() {
 				go hc.processAuthTopicMessage(msg)
 				// logrus.Printf("response type:%d seq:%s, msg:%s, err:%v", msg.typeN, msg.uuid, string(msg.body), err)
 			case eventLogPush:
-				go hc.processEventLogMessage(msg)
+				// use single goroutine to process event log message, better to use channel
+				hc.processEventLogMessage(msg)
 			default:
 				logrus.Errorf("unknown message type:%d, msg:%+v", msg.typeN, msg)
 			}
