@@ -286,13 +286,16 @@ EOF
 
 get_build_chain()
 {
-    latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    if [ -z "${latest_version}" ];then
-        latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    fi
-    if [ -z "${latest_version}" ];then
-        latest_version="v3.2.0"
-    fi
+    # local latest_release==$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    # if [ -z "${latest_release}" ];then
+    #     latest_release=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases/latest | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
+    # fi
+    # if [[ -z "${latest_release}" ]];then
+    #     latest_version="v3.2.0"
+    # else
+    #     latest_version="${latest_release}"
+    # fi
+    latest_version="v3.2.0"
     echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh"
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh
     chmod u+x build_chain.sh
