@@ -141,6 +141,53 @@ func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error)
 	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
 }
 
+// NewUnsignedTx
+func NewUnsignedTx(opts *TransactOpts, addr common.Address, abi abi.ABI, backend ContractBackend, method string, params ...interface{}) (*types.Transaction, *BoundContract, error) {
+	c := NewBoundContract(addr, abi, backend, backend, backend)
+
+	input, err := c.abi.Pack(method, params...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tx, err := c.generateRawTx(opts, &c.address, input)
+	if err != nil {
+		return nil, nil, err
+	}
+	return tx, c, nil
+}
+
+// NewUnsignedContract
+func NewUnsignedContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *BoundContract, error) {
+	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
+
+	input, err := c.abi.Pack("", params...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tx, err := c.generateRawTx(opts, nil, append(bytecode, input...))
+	if err != nil {
+		return nil, nil, err
+	}
+	return tx, c, nil
+}
+
+func signTx(opts *TransactOpts, rawTx *types.Transaction) (*types.Transaction, error) {
+	if opts.Signer == nil {
+		return nil, errors.New("no signer to authorize the transaction with")
+	}
+	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
+	if err != nil {
+		return nil, err
+	}
+	return signedTx, nil
+}
+
+func (c *BoundContract) GetTransactor() ContractTransactor {
+	return c.transactor
+}
+
 // Call invokes the (constant) contract method with params as input values and
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
@@ -257,6 +304,15 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 }
 
 func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
+	rawTx, err := c.generateRawTx(opts, contract, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return signTx(opts, rawTx)
+}
+
+func (c *BoundContract) generateRawTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
 	// Ensure a valid value field and resolve the account nonce
 	value := opts.Value
@@ -312,7 +368,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 		return nil, fmt.Errorf("failed to get the group ID")
 	}
 
-	// Create the transaction, sign it and schedule it for execution
+	// Create the transaction
 	var rawTx *types.Transaction
 	str := ""
 	extraData := []byte(str)
@@ -321,14 +377,7 @@ func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Ad
 	} else {
 		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
 	}
-	if opts.Signer == nil {
-		return nil, errors.New("no signer to authorize the transaction with")
-	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
-	if err != nil {
-		return nil, err
-	}
-	return signedTx, nil
+	return rawTx, nil
 }
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a

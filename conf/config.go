@@ -23,6 +23,7 @@ type Config struct {
 	Cert           string
 	TLSCertContext []byte
 	IsSMCrypto     bool
+	DynamicKey     bool
 	PrivateKey     []byte
 	GroupID        int
 	NodeURL        string
@@ -90,18 +91,24 @@ func ParseConfig(buffer []byte) ([]Config, error) {
 		return nil, fmt.Errorf("chain has not been set")
 	}
 	if viper.IsSet("Account") {
-		accountKeyFile := viper.GetString("Account.KeyFile")
-		keyBytes, curve, err := LoadECPrivateKeyFromPEM(accountKeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("parse private key failed, err: %v", err)
+		if viper.IsSet("Account.DynamicKey") {
+			config.DynamicKey = viper.GetBool("Account.DynamicKey")
 		}
-		if config.IsSMCrypto && curve != sm2p256v1 {
-			return nil, fmt.Errorf("smcrypto must use sm2p256v1 private key, but found %s", curve)
+
+		if !config.DynamicKey {
+			accountKeyFile := viper.GetString("Account.KeyFile")
+			keyBytes, curve, err := LoadECPrivateKeyFromPEM(accountKeyFile)
+			if err != nil {
+				return nil, fmt.Errorf("parse private key failed, err: %v", err)
+			}
+			if config.IsSMCrypto && curve != sm2p256v1 {
+				return nil, fmt.Errorf("smcrypto must use sm2p256v1 private key, but found %s", curve)
+			}
+			if !config.IsSMCrypto && curve != secp256k1 {
+				return nil, fmt.Errorf("must use secp256k1 private key, but found %s", curve)
+			}
+			config.PrivateKey = keyBytes
 		}
-		if !config.IsSMCrypto && curve != secp256k1 {
-			return nil, fmt.Errorf("must use secp256k1 private key, but found %s", curve)
-		}
-		config.PrivateKey = keyBytes
 	} else {
 		return nil, fmt.Errorf("network has not been set")
 	}
