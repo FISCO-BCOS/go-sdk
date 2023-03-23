@@ -22,11 +22,10 @@ var (
 	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
-	_ = types.BloomLookup
 )
 
 // ConsensusABI is the input ABI used to generate the binding from.
-const ConsensusABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"addObserver\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nodeID\",\"type\":\"string\"}],\"name\":\"addSealer\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const ConsensusABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"}],\"name\":\"addObserver\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"},{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"addSealer\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"},{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"setWeight\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // Consensus is an auto generated Go binding around a Solidity contract.
 type Consensus struct {
@@ -194,22 +193,22 @@ func (_Consensus *ConsensusTransactorSession) AddObserver(nodeID string) (*types
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.contract.Transact(opts, "addSealer", nodeID)
+func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
+	return _Consensus.contract.Transact(opts, "addSealer", nodeID, weight)
 }
 
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) AddSealer(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID)
+func (_Consensus *ConsensusSession) AddSealer(nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID, weight)
 }
 
 // AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
 //
 // Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) AddSealer(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID)
+func (_Consensus *ConsensusTransactorSession) AddSealer(nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID, weight)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.

@@ -1,12 +1,12 @@
 package commandline
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/spf13/cobra"
 )
 
@@ -25,11 +25,11 @@ var ChainID int64
 var URL string
 
 // GetClient is used for test, it will be init by a config file later.
-func getClient(config *conf.Config) *client.Client {
+func getClient(config *client.Config) *client.Client {
 	// RPC API
-	c, err := client.Dial(config) // change to your RPC and groupID
+	c, err := client.DialContext(context.Background(), config) // change to your RPC and groupID
 	if err != nil {
-		fmt.Println("can not dial to FISCO node, please check ./config.toml. error message: ", err)
+		fmt.Println("can not dial to FISCO node, please check config. error message: ", err)
 		os.Exit(1)
 	}
 	return c
@@ -38,9 +38,9 @@ func getClient(config *conf.Config) *client.Client {
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "console",
-	Short:   "console is a command line tool for FISCO BCOS 2.2.0",
+	Short:   "console is a command line tool for FISCO BCOS 3.0.0",
 	Version: "0.10.0",
-	Long: `console is a Golang client for FISCO BCOS 2.2.0 and it supports the JSON-RPC
+	Long: `console is a Golang client for FISCO BCOS 3.0.0 and it supports the JSON-RPC
 service and the contract operations(e.g. deploying && writing contracts).
 
 Also, console can be used as a Go package for FISCO BCOS that just simply adding
@@ -71,9 +71,8 @@ func Execute() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	configs, err := conf.ParseConfigFile("config.toml")
-	if err != nil {
-		log.Fatalf("iniConfig failed, err: %v", err)
-	}
-	RPC = getClient(&configs[0])
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+	RPC = getClient(config)
 }

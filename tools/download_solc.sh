@@ -4,12 +4,12 @@ set -e
 source="https://github.com/FISCO-BCOS/solidity/releases/download"
 cdn_link_header="https://osp-1257653870.cos.ap-guangzhou.myqcloud.com/FISCO-BCOS/solidity/releases"
 install_path="${HOME}/.fisco/solc"
-version="0.4.25"
+version="0.8.11"
 OS="linux"
 crypto=
 extension=
 download_timeout=240
-versions=(0.4.25 0.5.2 0.6.10)
+versions=(0.4.25 0.5.2 0.6.10 0.8.11)
 
 LOG_WARN()
 {
@@ -26,27 +26,30 @@ LOG_INFO()
 help() {
     cat << EOF
 Usage:
-    -v <solc version>           Default 0.4.25, 0.5.2, 0.6.10 is supported
+    -v <solc version>           Default 0.8.11, 0.4.25 and 0.5.2 are optional
     -g <gm version>             if set download solc gm version
     -h Help
 e.g
     $0 -v 0.4.25 -g
 EOF
 
-exit 0
+    exit 0
 }
 
 check_env() {
     if [ "$(uname)" == "Darwin" ];then
         OS="mac"
+        if [[ "$(uname -m)" == "arm64" ]];then
+            OS="mac-aarch64"
+        fi
     elif [ "$(uname -s)" == "Linux" ];then
         OS="linux"
         if [[ "$(uname -p)" == "aarch64" ]];then
             OS="linux-aarch64"
         fi
-    elif [ "$(uname -m)" != "x86_64" ];then
-        LOG_WARN "We only offer x86_64 precompiled solc binary, your OS architecture is not x86_64. Please compile from source."
-        exit 1
+    # elif [ "$(uname -m)" != "x86_64" ];then
+    #     LOG_WARN "We only offer x86_64 precompiled solc binary, your OS architecture is not x86_64. Please compile from source."
+    #     exit 1
     else
         OS="win"
         extension=".exe"
@@ -57,16 +60,16 @@ parse_params()
 {
     while getopts "v:o:gh" option;do
         case $option in
-        v) [ -n "$OPTARG" ] && version="$OPTARG"
-            if ! echo "${versions[*]}" | grep -i "${version}" &>/dev/null; then
-                LOG_WARN "${version} is not supported. Please set one of ${versions[*]}"
-                exit 1;
-            fi
-        ;;
-        o) [ -n "$OPTARG" ] && install_path="$OPTARG";;
-        g) crypto="-gm";;
-        h) help;;
-        *) LOG_WARN "invalid option $option";;
+            v) [ -n "$OPTARG" ] && version="$OPTARG"
+                if ! echo "${versions[*]}" | grep -i "${version}" &>/dev/null; then
+                    LOG_WARN "${version} is not supported. Please set one of ${versions[*]}"
+                    exit 1;
+                fi
+            ;;
+            o) [ -n "$OPTARG" ] && install_path="$OPTARG";;
+            g) crypto="-gm";;
+            h) help;;
+            *) LOG_WARN "invalid option $option";;
         esac
     done
 }
@@ -91,6 +94,11 @@ main()
         rm -rf "${package_name}"
         mkdir -p "${install_path}"
         mv "solc${extension}" "${install_path}/solc-${version}${crypto}${extension}"
+        chmod +x "${install_path}/solc-${version}${crypto}${extension}"
+        if [ "$(uname)" == "Darwin" ];then
+            xattr -d com.apple.quarantine "${install_path}/solc-${version}${crypto}${extension}" || true
+            xattr -d com.apple.macl "${install_path}/solc-${version}${crypto}${extension}" || true
+        fi
     fi
     if [ ! -f "./solc-${version}${crypto}" ];then
         ln -s "${install_path}/solc-${version}${crypto}${extension}" "./solc-${version}${crypto}"

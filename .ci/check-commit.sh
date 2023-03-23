@@ -41,7 +41,7 @@ execute_cmd() {
 function check_codeFormat() {
     go version
     go install golang.org/x/tools/cmd/goimports@latest || true
-    go get golang.org/x/tools/cmd/goimports || true
+    # go get golang.org/x/tools/cmd/goimports || true
     sum=0
     for file in $(git diff-index --name-status HEAD^ | grep -v D | grep -E '\.go' | awk '{print $2}'); do
         checkResult=$(eval "${check_script} ${file}")

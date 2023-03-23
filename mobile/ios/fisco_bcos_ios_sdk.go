@@ -15,14 +15,14 @@ import (
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type BcosSDK struct {
-	config   *conf.Config
+	config   *client.Config
 	backend  *ContractProxy
 	auth     *bind.TransactOpts
 	callOpts *bind.CallOpts
@@ -74,20 +74,16 @@ type ContractParams struct {
 }
 
 type TxReceipt struct {
-	TransactionHash  string `json:"transactionHash"`
-	TransactionIndex string `json:"transactionIndex"`
-	BlockHash        string `json:"blockHash"`
-	BlockNumber      string `json:"blockNumber"`
-	GasUsed          string `json:"gasUsed"`
-	ContractAddress  string `json:"contractAddress"`
-	Root             string `json:"root"`
-	Status           int    `json:"status"`
-	From             string `json:"from"`
-	To               string `json:"to"`
-	Input            string `json:"input"`
-	Output           string `json:"output"`
-	Logs             string `json:"logs"`
-	LogsBloom        string `json:"logsBloom"`
+	TransactionHash string `json:"transactionHash"`
+	BlockNumber     string `json:"blockNumber"`
+	GasUsed         string `json:"gasUsed"`
+	ContractAddress string `json:"contractAddress"`
+	Status          int    `json:"status"`
+	From            string `json:"from"`
+	To              string `json:"to"`
+	Input           string `json:"input"`
+	Output          string `json:"output"`
+	Logs            string `json:"logs"`
 }
 
 type FullTransaction struct {
@@ -115,9 +111,9 @@ type NetworkResponse struct {
 // Connect to the proxy or FISCO BCOS node.
 // Please make sure ca.crt, sdk.crt, sdk.key under path certPath.
 // Please provider full keyFile path
-func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID int, chainID int64, isSMCrypto bool) *BuildSDKResult {
+func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, groupID string, chainID string, isSMCrypto bool) *BuildSDKResult {
 	// init config and callback
-	config, err := conf.ParseConfigOptions("", "", "", keyFile, groupID, "", true, chainID, isSMCrypto)
+	config, err := client.ParseConfigOptions("", "", "", keyFile, groupID, "", 20200, isSMCrypto)
 	if err != nil {
 		return &BuildSDKResult{false, err.Error()}
 	}
@@ -141,7 +137,7 @@ func (sdk *BcosSDK) BuildSDKWithParam(keyFile string, callback PostCallback, gro
 	// Init backend
 	sdk.backend = &ContractProxy{
 		groupID:  groupID,
-		chainID:  big.NewInt(chainID),
+		chainID:  chainID,
 		callback: callback,
 		smCrypto: isSMCrypto,
 	}
@@ -374,12 +370,9 @@ func toReceipt(_r *types.Receipt) (*TxReceipt, error) {
 	}
 	var rec TxReceipt
 	rec.TransactionHash = _r.TransactionHash
-	rec.TransactionIndex = _r.TransactionIndex
-	rec.BlockHash = _r.BlockHash
-	rec.BlockNumber = _r.BlockNumber
+	rec.BlockNumber = strconv.Itoa(_r.BlockNumber)
 	rec.GasUsed = _r.GasUsed
-	rec.ContractAddress = _r.ContractAddress.Hex()
-	rec.Root = _r.Root
+	rec.ContractAddress = _r.ContractAddress
 	rec.Status = _r.Status
 	rec.From = _r.From
 	rec.To = _r.To
@@ -387,7 +380,6 @@ func toReceipt(_r *types.Receipt) (*TxReceipt, error) {
 	rec.Output = _r.Output
 	logs, err := json.Marshal(_r.Logs)
 	rec.Logs = string(logs)
-	rec.LogsBloom = _r.LogsBloom
 	return &rec, err
 }
 

@@ -17,6 +17,7 @@
 package bind
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"io"
@@ -59,6 +60,7 @@ func NewKeyStoreTransactor(keystore *keystore.KeyStore, account accounts.Account
 			}
 			return tx.WithSignature(signer, signature)
 		},
+		Context: context.Background(),
 	}, nil
 }
 
@@ -78,22 +80,9 @@ func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
 			}
 			return tx.WithSignature(signer, signature)
 		},
+		Context: context.Background(),
 	}
 }
-
-// // NewClefTransactor is a utility method to easily create a transaction signer
-// // with a clef backend.
-// func NewClefTransactor(clef *external.ExternalSigner, account accounts.Account) *TransactOpts {
-// 	return &TransactOpts{
-// 		From: account.Address,
-// 		Signer: func(signer types.Signer, address common.Address, transaction *types.Transaction) (*types.Transaction, error) {
-// 			if address != account.Address {
-// 				return nil, errors.New("not authorized to sign this account")
-// 			}
-// 			return clef.SignTx(account, transaction, nil) // Clef enforces its own chain id
-// 		},
-// 	}
-// }
 
 // NewSMCryptoTransactor is a utility method to easily create a transaction signer
 // from a single sm2p256v1 private key.
@@ -111,5 +100,6 @@ func NewSMCryptoTransactor(sm2Key []byte) *TransactOpts {
 			}
 			return tx.WithSM2Signature(signer, signature)
 		},
+		Context: context.Background(),
 	}
 }

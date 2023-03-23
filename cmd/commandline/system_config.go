@@ -24,16 +24,16 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		configMap := make(map[string]struct{})
-		configMap["tx_count_limit"] = struct{}{}
-		configMap["tx_gas_limit"] = struct{}{}
-		configMap["rpbft_epoch_sealer_num"] = struct{}{}
-		configMap["rpbft_epoch_block_num"] = struct{}{}
-		configMap["consensus_timeout"] = struct{}{}
-		if _, ok := configMap[args[0]]; !ok {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
-			return
-		}
+		//configMap := make(map[string]struct{})
+		//configMap["tx_count_limit"] = struct{}{}
+		//configMap["tx_gas_limit"] = struct{}{}
+		//configMap["rpbft_epoch_sealer_num"] = struct{}{}
+		//configMap["rpbft_epoch_block_num"] = struct{}{}
+		//configMap["consensus_timeout"] = struct{}{}
+		//if _, ok := configMap[args[0]]; !ok {
+		//	fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
+		//	return
+		//}
 		key := args[0]
 		value := args[1]
 		sysConfig, err := config.NewSystemConfigService(RPC)
@@ -46,7 +46,7 @@ For more information please refer:
 			fmt.Printf("setSystemConfigByKeyCmd failed, sysConfig.SetValueByKey err: %v\n", err)
 			return
 		}
-		if result != 1 {
+		if result != 0 {
 			fmt.Printf("setSystemConfigByKeyCmd failed, the result is: %v", result)
 			return
 		}

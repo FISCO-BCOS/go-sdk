@@ -1,25 +1,25 @@
 module github.com/FISCO-BCOS/go-sdk
 
-go 1.13
+go 1.16
+
+replace (
+	golang.org/x/net => github.com/golang/net v0.0.0-20190415214537-1da14a5a36f2
+	golang.org/x/sync => github.com/golang/sync v0.0.0-20190412183630-56d357773e84
+)
 
 require (
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230227031738-f12541fe4517
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/aristanetworks/goarista v0.0.0-20210107181124-fad53805024e // indirect
-	github.com/btcsuite/btcd v0.21.0-beta // indirect
-	github.com/ethereum/go-ethereum v1.9.16
+	github.com/ethereum/go-ethereum v1.10.21
+	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/go-ole/go-ole v1.2.5 // indirect
-	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect
-	github.com/google/uuid v1.1.1
-	github.com/holiman/uint256 v1.1.1 // indirect
-	github.com/shirou/gopsutil v3.20.12+incompatible // indirect
-	github.com/sirupsen/logrus v1.8.1
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.6.2
-	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca // indirect
+	github.com/urfave/cli/v2 v2.10.2
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	gopkg.in/urfave/cli.v1 v1.20.0
 )

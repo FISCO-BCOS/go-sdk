@@ -60,46 +60,7 @@ const (
 // 	},
 // }
 
-// =========== account ==========
-var newAccountCmd = &cobra.Command{
-	Use:   "newAccount",
-	Short: "Create a new account",
-	Long:  `Create a new account and save the results to ./bin/account/yourAccountName.keystore in encrypted form.`,
-	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		clientVer, err := RPC.GetClientVersion(context.Background())
-		if err != nil {
-			fmt.Printf("client version not found: %v\n", err)
-			return
-		}
-		cv, err := json.MarshalIndent(clientVer, "", indent)
-		if err != nil {
-			fmt.Printf("client version marshalIndent error: %v", err)
-		}
-		fmt.Printf("Client Version: \n%s\n", cv)
-	},
-}
-
 // ======= node =======
-
-var getClientVersionCmd = &cobra.Command{
-	Use:   "getClientVersion",
-	Short: "                                   Get the blockchain version",
-	Long:  `Returns the specific FISCO BCOS version that runs on the node you connected.`,
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		clientVer, err := RPC.GetClientVersion(context.Background())
-		if err != nil {
-			fmt.Printf("client version not found: %v\n", err)
-			return
-		}
-		cv, err := json.MarshalIndent(clientVer, "", indent)
-		if err != nil {
-			fmt.Printf("client version marshalIndent error: %v", err)
-		}
-		fmt.Printf("Client Version: \n%s\n", cv)
-	},
-}
 
 var getGroupIDCmd = &cobra.Command{
 	Use:   "getGroupID",
@@ -214,14 +175,10 @@ var getPeersCmd = &cobra.Command{
 	Long:  `Returns the information of connected p2p nodes.`,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		nodes, err := RPC.GetPeers(context.Background())
+		peers, err := RPC.GetPeers(context.Background())
 		if err != nil {
 			fmt.Printf("peers not found: %v\n", err)
 			return
-		}
-		peers, err := json.MarshalIndent(nodes, "", indent)
-		if err != nil {
-			fmt.Printf("peers marshalIndent error: %v", err)
 		}
 		fmt.Printf("Peers: \n%s\n", peers)
 	},
@@ -272,6 +229,52 @@ var getGroupListCmd = &cobra.Command{
 	},
 }
 
+var getGroupInfoListCmd = &cobra.Command{
+	Use:   "getGroupInfoList",
+	Short: "                                   Get ID list of nodes",
+	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		peers, err := RPC.GetGroupInfoList(context.Background())
+		if err != nil {
+			fmt.Printf("node ID list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Node ID list: \n%s\n", peers)
+	},
+}
+
+var getGroupInfoCmd = &cobra.Command{
+	Use:   "getGroupInfo",
+	Short: "                                   Get ID list of nodes",
+	Long:  `Returns an ID list of the node itself and the connected p2p nodes.`,
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		peers, err := RPC.GetGroupInfo(context.Background())
+		if err != nil {
+			fmt.Printf("node ID list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Node ID list: \n%s\n", peers)
+	},
+}
+
+var getNodeInfoCmd = &cobra.Command{
+	Use:   "getNodeInfo",
+	Short: "[nodeID] Get ID list of groups that the node belongs",
+	Long:  `Returns an ID list of groups that the node belongs.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		nodeId := args[0]
+		peers, err := RPC.GetNodeInfo(context.Background(), nodeId)
+		if err != nil {
+			fmt.Printf("group IDs list not found: %v\n", err)
+			return
+		}
+		fmt.Printf("Group List: \n%s\n", peers)
+	},
+}
+
 // ========= block access ==========
 
 var getBlockByHashCmd = &cobra.Command{
@@ -291,7 +294,8 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var includeTx bool
+		onlyHeader := true
+		onlyTxHash := true
 
 		_, err := isValidHex(args[0])
 		if err != nil {
@@ -299,24 +303,31 @@ For more information please refer:
 			return
 		}
 
-		if len(args) == 1 {
-			includeTx = true
-		} else {
-			_includeTx, err := strconv.ParseBool(args[1])
+		if len(args) == 2 {
+			onlyHeader, err = strconv.ParseBool(args[1])
 			if err != nil {
 				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
 				return
 			}
-			includeTx = _includeTx
+		} else if len(args) == 3 {
+			onlyTxHash, err = strconv.ParseBool(args[2])
+			if err != nil {
+				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[2], info, err)
+				return
+			}
 		}
 
 		blockHash := common.HexToHash(args[0])
-		block, err := RPC.GetBlockByHash(context.Background(), blockHash, includeTx)
+		block, err := RPC.GetBlockByHash(context.Background(), blockHash, onlyHeader, onlyTxHash)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
 		peers, err := json.MarshalIndent(block, "", indent)
+		if err != nil {
+			fmt.Printf("block not found: %v\n", err)
+			return
+		}
 		fmt.Printf("Block: \n%s\n", peers)
 	},
 }
@@ -338,7 +349,6 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		var includeTx bool
 
 		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
 		if err != nil {
@@ -351,18 +361,17 @@ For more information please refer:
 			return
 		}
 
-		if len(args) == 1 {
-			includeTx = true
-		} else {
-			_includeTx, err := strconv.ParseBool(args[1])
-			if err != nil {
-				fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
-				return
-			}
-			includeTx = _includeTx
-		}
-
-		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, includeTx)
+		// if len(args) == 1 {
+		// 	includeTx = true
+		// } else {
+		// 	_includeTx, err := strconv.ParseBool(args[1])
+		// 	if err != nil {
+		// 		fmt.Printf("Arguments error: please check your input: %s%s: %v\n", args[1], info, err)
+		// 		return
+		// 	}
+		// 	includeTx = _includeTx
+		// }
+		block, err := RPC.GetBlockByNumber(context.Background(), blockNumber, false, false)
 		if err != nil {
 			fmt.Printf("block not found: %v\n", err)
 			return
@@ -434,7 +443,7 @@ For more information please refer:
 		}
 
 		txHash := common.HexToHash(args[0])
-		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash)
+		transaction, err := RPC.GetTransactionByHash(context.Background(), txHash, true)
 		if err != nil {
 			fmt.Printf("transaction not found: %v\n", err)
 			return
@@ -445,96 +454,6 @@ For more information please refer:
 			return
 		}
 		fmt.Printf("Transaction: \n%s\n", tx)
-	},
-}
-
-var getTransactionByBlockHashAndIndexCmd = &cobra.Command{
-	Use:   `getTransactionByBlockHashAndIndex`,
-	Short: "[blockHash]   [transactionIndex]   Query the transaction by block hash and transaction index",
-	Long: `Returns transaction information based on block hash and transaction index inside the block.
-Arguments:
-       [blockHash]: block hash string.
-[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
-
-For example:
-
-    [getTransactionByBlockHashAndIndex] [0x10bfdc1e97901ed22cc18a126d3ebb8125717c2438f61d84602f997959c631fa] [0x0]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		_, err := isValidHex(args[0])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		txIndex, err := strconv.ParseInt(args[1], 0, 0)
-		if err != nil {
-			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
-			return
-		}
-		blockHash := common.HexToHash(args[0])
-		transaction, err := RPC.GetTransactionByBlockHashAndIndex(context.Background(), blockHash, int(txIndex))
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		tx, err := json.MarshalIndent(transaction, "", indent)
-		if err != nil {
-			fmt.Printf("transaction marshalIndent error: %v\n", err)
-			return
-		}
-		fmt.Printf("Transaction: \n%s\n", tx)
-	},
-}
-
-var getTransactionByBlockNumberAndIndexCmd = &cobra.Command{
-	Use:   "getTransactionByBlockNumberAndIndex",
-	Short: "[blockNumber] [transactionIndex]   Query the transaction by block number and transaction index",
-	Long: `Returns transaction information based on block number and transaction index inside the block.
-Arguments:
-     [blockNumber]: block number encoded in decimal format or in hex(prefix with "0x").
-[transactionIndex]: can be input in a decimal or in hex(prefix with "0x").
-
-For example:
-
-    [getTransactionByBlockNumberAndIndex] [0x9] [0x0]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
-	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		blockNumber, err := strconv.ParseInt(args[0], 0, 64)
-		if err != nil {
-			fmt.Printf("parse block number failed, please check your input: %s: %v", args[0], err)
-			return
-		}
-
-		_, err = isBlockNumberOutOfRange(blockNumber)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		txIndex, err := strconv.Atoi(args[1])
-		if err != nil {
-			fmt.Printf("parse txIndex failed, please check your input: %s: %v", args[1], err)
-			return
-		}
-		tx, err := RPC.GetTransactionByBlockNumberAndIndex(context.Background(), blockNumber, txIndex)
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		raw, err := json.MarshalIndent(tx, "", indent)
-		if err != nil {
-			fmt.Printf("transaction marshalIndent error: %v", err)
-		}
-		fmt.Printf("Transaction: \n%s\n", raw)
 	},
 }
 
@@ -561,27 +480,12 @@ For more information please refer:
 		}
 
 		txHash := common.HexToHash(args[0])
-		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash)
+		tx, err := RPC.GetTransactionReceipt(context.Background(), txHash, true)
 		if err != nil {
 			fmt.Printf("transaction receipt not found: %v\n", err)
 			return
 		}
 		fmt.Printf("Transaction Receipt: \n%s\n", tx)
-	},
-}
-
-var getPendingTransactionsCmd = &cobra.Command{
-	Use:   "getPendingTransactions",
-	Short: "                                   Get the pending transactions",
-	Long:  `Return the transactions that are pending for packaging.`,
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		tx, err := RPC.GetPendingTransactions(context.Background())
-		if err != nil {
-			fmt.Printf("transaction not found: %v\n", err)
-			return
-		}
-		fmt.Printf("Pending Transactions: \n%+v\n", *tx)
 	},
 }
 
@@ -675,23 +579,23 @@ For more information please refer:
     https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		configMap := make(map[string]struct{})
-		configMap["tx_count_limit"] = struct{}{}
-		configMap["tx_gas_limit"] = struct{}{}
-		configMap["rpbft_epoch_sealer_num"] = struct{}{}
-		configMap["rpbft_epoch_block_num"] = struct{}{}
-		configMap["consensus_timeout"] = struct{}{}
-		if _, ok := configMap[args[0]]; !ok {
-			fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
-			return
-		}
+		//configMap := make(map[string]struct{})
+		//configMap["tx_count_limit"] = struct{}{}
+		//configMap["tx_gas_limit"] = struct{}{}
+		//configMap["rpbft_epoch_sealer_num"] = struct{}{}
+		//configMap["rpbft_epoch_block_num"] = struct{}{}
+		//configMap["consensus_timeout"] = struct{}{}
+		//if _, ok := configMap[args[0]]; !ok {
+		//	fmt.Println("The key not found: ", args[0], ", currently only support [tx_count_limit], [tx_gas_limit], [rpbft_epoch_sealer_num], [rpbft_epoch_block_num] and [consensus_timeout]")
+		//	return
+		//}
 		key := args[0]
 		value, err := RPC.GetSystemConfigByKey(context.Background(), key)
 		if err != nil {
 			fmt.Printf("information not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Result: \n%s\n", value)
+		fmt.Printf("Result: \n%s\n", []byte(value.GetValue()))
 	},
 }
 
@@ -753,16 +657,14 @@ $ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
 func init() {
 	// add common command
 	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(newAccountCmd)
 	// add node command
-	rootCmd.AddCommand(getClientVersionCmd, getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
+	rootCmd.AddCommand(getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
-	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd)
+	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
 	// add block access command
 	rootCmd.AddCommand(getBlockByHashCmd, getBlockByNumberCmd, getBlockHashByNumberCmd)
-	// add transaction command
-	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionByBlockHashAndIndexCmd, getTransactionByBlockNumberAndIndexCmd)
-	rootCmd.AddCommand(getTransactionReceiptCmd, getPendingTransactionsCmd, getPendingTxSizeCmd)
+	// add transaction/receipt command
+	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionReceiptCmd, getPendingTxSizeCmd)
 	// add contract command
 	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
 	// add contract command
@@ -775,7 +677,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.ini)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -786,23 +688,23 @@ func isValidHex(str string) (bool, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
 		if len(str) == 2 {
-			return false, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
 		}
 		// is hex string
 		_, err := hexutil.Decode(str)
 		if err != nil {
-			return false, fmt.Errorf("Not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
 		}
 		return true, nil
 	}
-	return false, fmt.Errorf("Arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
+	return false, fmt.Errorf("arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
 }
 
 func isBlockNumberOutOfRange(blockNumber int64) (bool, error) {
 	// compare with the current block number
 	currentBlockNumber, err := RPC.GetBlockNumber(context.Background())
 	if err != nil {
-		return false, fmt.Errorf("Client error: cannot get the block number: %v", err)
+		return false, fmt.Errorf("client error: cannot get the block number: %v", err)
 	}
 	if currentBlockNumber < blockNumber {
 		return false, fmt.Errorf("BlockNumber does not exist")

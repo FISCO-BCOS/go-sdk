@@ -70,14 +70,12 @@ type ContractTransactor interface {
 	// PendingCodeAt returns the code of the given account in the pending state.
 	PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error)
 	// SendTransaction injects the transaction into the pending pool for execution.
-	SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error)
-	AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error
-	// GetBlockLimit returns the blocklimit for current blocknumber
-	GetBlockLimit(ctx context.Context) (*big.Int, error)
+	SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error)
+	AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error
 	// GetGroupID returns the groupID of the client
-	GetGroupID() *big.Int
+	GetGroupID() string
 	// GetChainID returns the chainID of the blockchain
-	GetChainID(ctx context.Context) (*big.Int, error)
+	GetChainID(ctx context.Context) (string, error)
 	// GetContractAddress returns the contract address once it was deployed
 	GetContractAddress(ctx context.Context, txHash common.Hash) (common.Address, error)
 	// SMCrypto returns true if use sm crypto
@@ -89,8 +87,8 @@ type ContractTransactor interface {
 type ContractFilterer interface {
 	// SubscribeEventLogs creates a background log filtering operation, returning
 	// a subscription immediately, which can be used to stream the found events.
-	SubscribeEventLogs(eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error)
-	UnSubscribeEventLogs(filterID string) error
+	SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error)
+	UnSubscribeEventLogs(ctx context.Context, filterID string) error
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.

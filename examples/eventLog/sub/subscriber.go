@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -18,12 +20,15 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200 hello", os.Args[0])
+		logrus.Fatalf("parameters are not enough, example \n%s 127.0.0.1:20200", os.Args[0])
 	}
 	endpoint := os.Args[1]
+	nodeUrlSplit := strings.Split(endpoint, ":")
+	host := nodeUrlSplit[0]
+	port, _ := strconv.Atoi(nodeUrlSplit[1])
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &conf.Config{IsHTTP: false, ChainID: 1, CAFile: "ca.crt", Key: "sdk.key", Cert: "sdk.crt",
-		IsSMCrypto: false, GroupID: 1, PrivateKey: privateKey, NodeURL: endpoint}
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	var c *client.Client
 	var err error
 	const (
@@ -31,32 +36,34 @@ func main() {
 	)
 	for i := 0; i < 3; i++ {
 		logrus.Printf("%d try to connect\n", i)
-		c, err = client.Dial(config)
+		c, err = client.DialContext(context.Background(), config)
 		if err != nil {
 			logrus.Printf("init subscriber failed, err: %v, retrying\n", err)
 			continue
 		}
+		defer c.Close()
 		break
 	}
 	if err != nil {
 		logrus.Fatalf("init subscriber failed, err: %v\n", err)
 	}
 	var eventLogParams types.EventLogParams
-	eventLogParams.FromBlock = "1"
-	eventLogParams.ToBlock = "latest"
-	eventLogParams.GroupID = "1"
+	eventLogParams.FromBlock = 1
+	eventLogParams.ToBlock = -1
 	var topics = make([]string, 1)
 	topics[0] = common.BytesToHash(crypto.Keccak256([]byte("TransferEvent(int256,string,string,uint256)"))).Hex()
 	eventLogParams.Topics = topics
 	var addresses = make([]string, 1)
-	addresses[0] = "0xdc82ef3680692b91552288adbf6ce83051d45d40"
+	addresses[0] = "0x610857669da60D63f4c9E30713Bb86A49251Fe2A"
 	eventLogParams.Addresses = addresses
 
-	timeout := 10 * time.Second
+	timeout := 100 * time.Second
 	queryTicker := time.NewTicker(timeout)
 	defer queryTicker.Stop()
 	done := make(chan bool)
-	id, err := c.SubscribeEventLogs(eventLogParams, func(status int, logs []types.Log) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	taskId, err := c.SubscribeEventLogs(ctx, eventLogParams, func(status int, logs []types.Log) {
 		logRes, err := json.MarshalIndent(logs, "", indent)
 		if err != nil {
 			fmt.Printf("logs marshalIndent error: %v", err)
@@ -64,21 +71,22 @@ func main() {
 
 		logrus.Printf("received: %s\n", logRes)
 		logrus.Printf("received status: %d\n", status)
-		queryTicker.Stop()
-		queryTicker = time.NewTicker(timeout)
-		done <- true
+		//queryTicker.Stop()
+		//queryTicker = time.NewTicker(timeout)
+		//done <- true
 	})
 	if err != nil {
 		logrus.Printf("subscribe event failed, err: %v\n", err)
 		return
 	}
+	logrus.Println("SubscribeEventLogs taskId:", taskId)
 
 	killSignal := make(chan os.Signal, 1)
 	signal.Notify(killSignal, os.Interrupt)
 	for {
 		select {
 		case <-done:
-			err := c.UnSubscribeEventLogs(id)
+			err := c.UnSubscribeEventLogs(ctx, taskId)
 			if err != nil {
 				logrus.Println("UnSubscribeEventLogs error!")
 			}

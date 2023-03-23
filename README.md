@@ -1,13 +1,12 @@
-# go-sdk
+# Golang SDK For FISCO BCOS
 
-Golang SDK For FISCO BCOS 2.2.0+
+适配FISCO-BCOS v3 / [适配FISCO-BCOS v2](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/FISCO-BCOS/go-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/FISCO-BCOS/go-sdk)
 [![Code Lines](https://tokei.rs/b1/github/FISCO-BCOS/go-sdk?category=code)](https://github.com/FISCO-BCOS/go-sdk)
 [![version](https://img.shields.io/github/tag/FISCO-BCOS/go-sdk.svg)](https://github.com/FISCO-BCOS/go-sdk/releases/latest)
-
 
 ![FISCO-BCOS Go-SDK GitHub Actions](https://github.com/FISCO-BCOS/go-sdk/workflows/FISCO-BCOS%20Go-SDK%20GitHub%20Actions/badge.svg)
 [![Build Status](https://travis-ci.org/FISCO-BCOS/go-sdk.svg?branch=master)](https://travis-ci.org/FISCO-BCOS/go-sdk)
@@ -16,92 +15,64 @@ ____
 
 FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
-- [FISCO BCOS 2.0 JSON-RPC服务](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html)
+- [FISCO BCOS 3.0 JSON-RPC服务](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/develop/api.html)
 - `Solidity`合约编译为Go文件
 - 部署、查询、写入智能合约
 - 控制台
 
-`go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS。
+`go-sdk`的使用可以当做是一个`package`进行使用，亦可对项目代码进行编译，直接使用**控制台**通过配置文件来进行访问FISCO BCOS，3.0版本的go sdk使用cgo依赖bcos-c-sdk以支持国密等特性，请注意`go build -r /usr/local/lib/`参数。
 
-# 环境准备
+## 环境准备
 
-- [Golang](https://golang.org/), [版本需不低于`1.17`](https://endoflife.date/go)，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)，[环境配置](doc/README.md#环境配置)
-- [FISCO BCOS 2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), **需要提前运行** FISCO BCOS 区块链平台，可参考[安装搭建](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html#fisco-bcos)
+- [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
+- [FISCO BCOS 3.2.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
+- Solidity编译器，默认[0.6.10版本](https://github.com/ethereum/solidity/releases/tag/v0.6.10)
+- 对应[FISCO BCOS v2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
-- Solidity编译器，默认[0.4.25版本](https://github.com/ethereum/solidity/releases/tag/v0.4.25)
+## 配置结构体说明
 
-# 配置文件说明(config.toml)
-
-```toml
-[Network]
-#type rpc or channel
-Type="channel"
-CAFile="ca.crt"
-Cert="sdk.crt"
-Key="sdk.key"
-[[Network.Connection]]
-NodeURL="127.0.0.1:20200"
-GroupID=1
-# [[Network.Connection]]
-# NodeURL="127.0.0.1:20200"
-# GroupID=2
-
-[Account]
-# only support PEM format for now
-KeyFile=".ci/0x83309d045a19c44dc3722d15a6abd472f95866ac.pem"
-
-[Chain]
-ChainID=1
-SMCrypto=false
+```golang
+type Config struct {
+    TLSCaFile       string
+    TLSKeyFile      string
+    TLSCertFile     string
+    TLSSmEnKeyFile  string
+    TLSSmEnCertFile string
+    IsSMCrypto      bool
+    PrivateKey      []byte
+    GroupID         string
+    Host            string
+    Port            int
+}
 ```
 
-## Network
+- `TLSCaFile/TLSKeyFile/TLSCertFile`，建立TLS链接时需要用到的SDK端证书文件路径，如果是国密，其加密私钥和证书使用`TLSSmEnKeyFile/TLSSmEnCertFile`
+- IsSMCrypto：节点使用的签名和TLS算法，true表示使用国密，false表示使用RSA+ECDSA。
+- PrivateKey：节点签名交易时所使用的私钥，支持国密和非国密。(pem文件可使用LoadECPrivateKeyFromPEM方法解析)
+  请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
+  如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#外部账户)。
+- GroupID：账本的`GroupID`
+- Host：节点IP
+- Port：节点RPC端口
 
-**注意**：go-sdk暂不支持国密SSL，请注意在使用国密模式时，将节点的config.ini中`chain.sm_crypto_channel`设置为`false`，详情[请参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/configuration.html#id10)
+## 控制台使用
 
-- Type：支持channel和rpc两种模式，其中`channel`使用ssl链接，需要提供证书。`rpc`使用http访问节点。
-- CAFile：链根证书
-- Cert：SDK建立SSL链接时使用的证书
-- Key：SDK建立SSL链接时使用的证书对应的私钥
-- Network.Connection数组，配置节点信息，可配置多个。
-
-## Account
-
-- KeyFile：节点签发交易时所使用的私钥，PEM格式，支持国密和非国密。
-
-请使用[get_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_account.sh)和[get_gm_account.sh](https://github.com/FISCO-BCOS/console/blob/master/tools/get_gm_account.sh)脚本生成。使用方式[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/account.html)。
-
-如果想使用Go-SDK代码生成，请[参考这里](doc/README.md#环境配置#外部账户)。
-
-## Chain
-
-- ChainID：链ID，与节点config.ini中`chain.id`保持一致。
-- SMCrypto：链使用的签名算法，`ture`表示使用国密SM2，`false`表示使用普通ECDSA。
-
-# 控制台使用
-
-在使用控制台需要先拉取代码或下载代码，然后对配置文件`config.toml`进行更改:
-
-1. 拉取代码并编译
+1. 搭建FISCO BCOS 3.2以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
+1. 请拷贝对应的SDK证书到conf文件夹，证书名为`ca.crt/sdk.key/sdk.crt`，国密时证书名为`sm_ca.crt/sm_sdk.key/sm_sdk.crt/sm_ensdk.key/sm_ensdk.crt`。
+1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases)，需要下载动态库,拷贝到/usr/local/lib/文件夹下。
+1. go-sdk需要使用cgo，**需要设置环境变量**`export GODEBUG=cgocheck=0`。(可以添加到/etc/profile文件中)
+1. 最后，编译控制台程序:
 
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
+git checkout dev-3.0.0
 go mod tidy
-go build cmd/console.go
-```
-
-2. 搭建FISCO BCOS 2.2以上版本节点，请[参考这里](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/installation.html)。
-
-3. config.toml默认使用channel模式，请拷贝对应的SDK证书。
-
-4. 最后，运行控制台查看可用指令:
-
-```bash
+go build -ldflags="-r /usr/local/lib" -o console cmd/console.go
 ./console help
 ```
 
-# Package功能使用
+## Package功能使用
 
 以下的示例是通过`import`的方式来使用`go-sdk`，如引入RPC控制台库:
 
@@ -109,7 +80,7 @@ go build cmd/console.go
 import "github.com/FISCO-BCOS/go-sdk/client"
 ```
 
-## Solidity合约编译为Go文件
+### Solidity合约编译为Go文件
 
 在利用SDK进行项目开发时，对智能合约进行操作时需要将Solidity智能合约利用go-sdk的`abigen`工具转换为`Go`文件代码。整体上主要包含了五个流程：
 
@@ -121,33 +92,41 @@ import "github.com/FISCO-BCOS/go-sdk/client"
 
 下面的内容作为一个示例进行使用介绍。
 
-1.提供一份简单的样例智能合约`Store.sol`如下:
+1.提供一份简单的样例智能合约`HelloWorld.sol`如下:
 
 ```solidity
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity >=0.6.10 <0.8.20;
 
-contract Store {
-  event ItemSet(bytes32 key, bytes32 value);
+contract HelloWorld {
+    string value;
+    event setValue(string v, address indexed from, address indexed to, int256 value);
+    int public version;
 
-  string public version;
-  mapping (bytes32 => bytes32) public items;
+    constructor(string memory initValue) {
+        value = initValue;
+        version = 0;
+    }
 
-  constructor(string _version) public {
-    version = _version;
-  }
+    function get() public view returns (string memory) {
+        return value;
+    }
 
-  function setItem(bytes32 key, bytes32 value) external {
-    items[key] = value;
-    emit ItemSet(key, value);
-  }
+    function set(string calldata v) public returns (string memory) {
+        string memory old = value;
+        value = v;
+        version = version + 1;
+        emit setValue(v, tx.origin, msg.sender, version);
+        return old;
+    }
 }
 ```
 
-2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.4.25)，目前FISCO BCOS默认的`solc`编译器版本为0.4.25。
+2.安装对应版本的[`solc`编译器](https://github.com/ethereum/solidity/releases/tag/v0.8.11)，目前FISCO BCOS默认的`solc`编译器版本为0.8.11。
 
 ```bash
 # 如果是国密则添加-g选项
-bash tools/download_solc.sh -v 0.4.25
+bash tools/download_solc.sh -v 0.8.11
 ```
 
 3.构建`go-sdk`的代码生成工具`abigen`
@@ -157,115 +136,134 @@ bash tools/download_solc.sh -v 0.4.25
 go build ./cmd/abigen
 ```
 
-执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`Store.sol`放置在一个新的目录下：
-
-```
-mkdir ./store
-mv Store.sol ./store
-```
-
-4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`Store.sol`为例：
+执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`HelloWorld.sol`放置在一个新的目录下：
 
 ```bash
-# 国密请使用 ./solc-0.4.25-gm --bin --abi -o ./store ./store/Store.sol
-./solc-0.4.25 --bin --abi -o ./store ./store/Store.sol
+mkdir ./hello
+cp .ci/hello/HelloWorld.sol ./hello
 ```
 
-`Store.sol`目录下会生成`Store.bin`和`Store.abi`。此时利用`abigen`工具将`Store.bin`和`Store.abi`转换成`Store.go`：
+4.编译生成go文件，先利用`solc`将合约文件生成`abi`和`bin`文件，以前面所提供的`HelloWorld.sol`为例：
 
 ```bash
-# 国密请使用 ./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go --smcrypto=true
-./abigen --bin ./store/Store.bin --abi ./store/Store.abi --pkg store --type Store --out ./store/Store.go
+# 国密请使用 ./solc-0.8.11-gm --bin --abi -o ./hello ./hello/HelloWorld.sol
+./solc-0.8.11 --bin --abi -o ./hello ./hello/HelloWorld.sol
 ```
 
-最后store目录下面存在以下文件：
+`HelloWorld.sol`目录下会生成`HelloWorld.bin`和`HelloWorld.abi`。此时利用`abigen`工具将`HelloWorld.bin`和`HelloWorld.abi`转换成`HelloWorld.go`：
 
 ```bash
-Store.abi  Store.bin  Store.go  Store.sol
+# 国密请使用 ./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go --smcrypto=true
+./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go
 ```
 
-5.调用生成的`Store.go`文件进行合约调用
+最后hello目录下面存在以下文件：
+
+```bash
+HelloWorld.abi  HelloWorld.bin  HelloWorld.go  HelloWorld.sol
+```
+
+5.调用生成的`HelloWorld.go`文件进行合约调用
 
 至此，合约已成功转换为go文件，用户可根据此文件在项目中利用SDK进行合约操作。具体的使用可参阅下一节。
 
-## 部署智能合约
+### 部署智能合约
 
-创建main函数，调用Store合约，
+创建main函数，调用合约，
+
 ```bash
-touch store_main.go
+touch hello_main.go
 ```
 
-下面的例子先部署合约，在部署过程中设置的`Store.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
+下面的例子先部署合约，在部署过程中设置的`HelloWorld.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
 
-写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`SetItem`的外部方法，它接受solidity`bytes32`类型的两个参数（key，value）。 这意味着在Go文件中需要传递一个长度为32个字节的字节数组。
+写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`Set`的方法，它接受`string`类型的参数，然后将其设置为`value`，并且将`version`加1。
 
 ```go
 package main
 
 import (
+    "context"
+    "encoding/hex"
     "fmt"
     "log"
 
     "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/conf"
-    "github.com/FISCO-BCOS/go-sdk/store" // import store
+    "github.com/FISCO-BCOS/go-sdk/hello"
 )
 
-func main(){
-	configs, err := conf.ParseConfigFile("config.toml")
-	if err != nil {
-		log.Fatalf("ParseConfigFile failed, err: %v", err)
-	}
-	client, err := client.Dial(&configs[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-	input := "Store deployment 1.0"
-	address, tx, instance, err := store.DeployStore(client.GetTransactOpts(), client, input)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
-	fmt.Println("transaction hash: ", tx.Hash().Hex())
+func main() {
+     privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+    config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+        PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+    client, err := client.DialContext(context.Background(), config)
+    if err != nil {
+        log.Fatal(err)
+    }
+    input := "HelloWorld deployment 1.0"
+    fmt.Println("=================DeployHelloWorld===============")
+    address, receipt, instance, err := hello.DeployHelloWorld(client.GetTransactOpts(), client, input)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
+    fmt.Println("transaction hash: ", receipt.TransactionHash)
 
-	// load the contract
-	// contractAddress := common.HexToAddress("contract address in hex String")
-	// instance, err := store.NewStore(contractAddress, client)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+    // load the contract
+    // contractAddress := common.HexToAddress("contract address in hex String")
+    // instance, err := hello.NewStore(contractAddress, client)
+    // if err != nil {
+    //     log.Fatal(err)
+    // }
 
-	fmt.Println("================================")
-	storeSession := &store.StoreSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+    fmt.Println("================================")
+    helloSession := &hello.HelloWorldSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
-	version, err := storeSession.Version()
-	if err != nil {
-		log.Fatal(err)
-	}
+    version, err := helloSession.Version()
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println("version :", version) // "Store deployment 1.0"
+    fmt.Println("version :", version) // "HelloWorld deployment 1.0"
 
-	// contract write interface demo
-	fmt.Println("================================")
-	key := [32]byte{}
-	value := [32]byte{}
-	copy(key[:], []byte("foo"))
-	copy(value[:], []byte("bar"))
+    ret, err := helloSession.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
+    done := make(chan bool)
+    _, err = helloSession.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+        fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+        setValue, err := helloSession.ParseSetValue(logs[0])
+        if err != nil {
+            fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+            panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+        }
+        fmt.Printf("receive setValue: %+v\n", *setValue)
+        done <- true
+    })
+    if err != nil {
+        fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
+    fmt.Println("================================")
 
-	tx, receipt, err := storeSession.SetItem(key, value)
-	if err != nil {
-		log.Fatal(err)
-	}
+    oldValue, _, receipt, err := helloSession.Set("hello fisco")
+    fmt.Println("old value is: ", oldValue)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Printf("tx sent: %s\n", tx.Hash().Hex())
-	fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
+    fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
-	// read the result
-	result, err := storeSession.Items(key)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("get item: " + string(result[:])) // "bar"
+    ret, err = helloSession.Get()
+    if err != nil {
+        fmt.Printf("hello.Get() failed: %v", err)
+        return
+    }
+    fmt.Printf("Get: %s\n", ret)
+    <-done
 }
+
 ```

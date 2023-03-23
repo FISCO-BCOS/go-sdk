@@ -18,11 +18,9 @@ package bind
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"math/big"
-	"strconv"
+	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -99,13 +97,13 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
-	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Receipt, *BoundContract, error) {
+	_, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
 	addr := common.Address{}
 	if receipt != nil {
-		addr = receipt.ContractAddress
+		addr = common.HexToAddress(receipt.ContractAddress)
 	}
-	return addr, tx, c, err
+	return addr, receipt, c, err
 }
 func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
@@ -114,7 +112,6 @@ func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, 
 
 func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
-
 	input, err := c.abi.Pack("", params...)
 	if err != nil {
 		return nil, nil, nil, err
@@ -126,7 +123,7 @@ func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBa
 	if receipt == nil {
 		return nil, nil, nil, errors.New("deploy failed, receipt is nil")
 	}
-	c.address = receipt.ContractAddress
+	c.address = common.HexToAddress(receipt.ContractAddress)
 	return tx, receipt, c, nil
 }
 
@@ -139,53 +136,6 @@ func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error)
 		return nil, err
 	}
 	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
-}
-
-// NewUnsignedTx generate raw transaction
-func NewUnsignedTx(opts *TransactOpts, addr common.Address, abi abi.ABI, backend ContractBackend, method string, params ...interface{}) (*types.Transaction, *BoundContract, error) {
-	c := NewBoundContract(addr, abi, backend, backend, backend)
-
-	input, err := c.abi.Pack(method, params...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tx, err := c.generateRawTx(opts, &c.address, input)
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, c, nil
-}
-
-// NewUnsignedContract
-func NewUnsignedContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *BoundContract, error) {
-	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
-
-	input, err := c.abi.Pack("", params...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tx, err := c.generateRawTx(opts, nil, append(bytecode, input...))
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, c, nil
-}
-
-func signTx(opts *TransactOpts, rawTx *types.Transaction) (*types.Transaction, error) {
-	if opts.Signer == nil {
-		return nil, errors.New("no signer to authorize the transaction with")
-	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
-	if err != nil {
-		return nil, err
-	}
-	return signedTx, nil
-}
-
-func (c *BoundContract) GetTransactor() ContractTransactor {
-	return c.transactor
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -281,112 +231,29 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
-	signedTx, err := c.generateSignedTx(opts, contract, input)
-	if err != nil {
-		return nil, nil, err
-	}
 	var receipt *types.Receipt
-	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), signedTx); err != nil {
+	var err error
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
 		return nil, nil, err
 	}
-	return signedTx, receipt, nil
+	return nil, receipt, nil
 }
 
 func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
-	signedTx, err := c.generateSignedTx(opts, contract, input)
-	if err != nil {
+	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract, input, handler); err != nil {
 		return nil, err
 	}
-	if err = c.transactor.AsyncSendTransaction(ensureContext(opts.Context), signedTx, handler); err != nil {
-		return nil, err
-	}
-	return signedTx, nil
-}
-
-func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
-	rawTx, err := c.generateRawTx(opts, contract, input)
-	if err != nil {
-		return nil, err
-	}
-
-	return signTx(opts, rawTx)
-}
-
-func (c *BoundContract) generateRawTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
-	var err error
-	// Ensure a valid value field and resolve the account nonce
-	value := opts.Value
-	if value == nil {
-		value = new(big.Int)
-	}
-	// generate random Nonce between 0 - 2^250 - 1
-	max := new(big.Int)
-	max.Exp(big.NewInt(2), big.NewInt(250), nil).Sub(max, big.NewInt(1))
-	//Generate cryptographically strong pseudo-random between 0 - max
-	nonce, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		//error handling
-		return nil, fmt.Errorf("failed to generate nonce: %v", err)
-	}
-
-	// Figure out the gas allowance and gas price values
-	gasPrice := opts.GasPrice
-	if gasPrice == nil {
-		// default value
-		gasPrice = big.NewInt(30000000)
-	}
-
-	gasLimit := opts.GasLimit
-	if gasLimit == nil {
-		// Gas estimation cannot succeed without code for method invocations
-		if contract != nil {
-			if code, err := c.transactor.PendingCodeAt(ensureContext(opts.Context), c.address); err != nil {
-				return nil, err
-			} else if len(code) == 0 {
-				return nil, ErrNoCode
-			}
-		}
-		// If the contract surely has code (or code is not needed), we set a default value to the transaction
-		gasLimit = big.NewInt(30000000)
-	}
-
-	var blockLimit *big.Int
-	blockLimit, err = c.transactor.GetBlockLimit(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var chainID *big.Int
-	chainID, err = c.transactor.GetChainID(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var groupID *big.Int
-	groupID = c.transactor.GetGroupID()
-	if groupID == nil {
-		return nil, fmt.Errorf("failed to get the group ID")
-	}
-
-	// Create the transaction
-	var rawTx *types.Transaction
-	str := ""
-	extraData := []byte(str)
-	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	}
-	return rawTx, nil
+	return nil, nil
 }
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
 func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
-	from := string("latest")
+	from := int64(1)
+	to := int64(-1)
 	// Don't crash on a lazy user
 	if fromBlock != nil {
-		from = strconv.FormatUint(*fromBlock, 10)
+		from = int64(*fromBlock)
 	}
 	// Append the event selector to the query parameters and construct the topic set
 	query = append([]interface{}{c.abi.Events[name].ID()}, query...)
@@ -397,12 +264,11 @@ func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.L
 	}
 	eventLogParams := types.EventLogParams{
 		FromBlock: from,
-		ToBlock:   "latest",
-		Addresses: []string{c.address.Hex()},
+		ToBlock:   to,
+		Addresses: []string{strings.ToLower(c.address.Hex())},
 		Topics:    topics,
-		GroupID:   c.transactor.GetGroupID().Text(16),
 	}
-	return c.filterer.SubscribeEventLogs(eventLogParams, handler)
+	return c.filterer.SubscribeEventLogs(context.Background(), eventLogParams, handler)
 }
 
 // UnpackLog unpacks a retrieved log into the provided output structure.

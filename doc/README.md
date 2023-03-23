@@ -93,12 +93,12 @@ func main() {
 
 本项目使用了`go module`的[特性](https://blog.golang.org/using-go-modules)，可以在旧版本的`$GOPATH`路径之外直接运行`go`命令，如果项目仍然在`$GOPATH`路径之下，则需要显示开启`GO111MODULE`以支持该特性:
 
-```
+```bash
 export GO111MODULE=on
 ```
 
 如果不能访问外网，则可以设置开源代理进行依赖下载(需使用`go module`的特性)：
+
 ```bash
 export GOPROXY=https://goproxy.io
 ```
-

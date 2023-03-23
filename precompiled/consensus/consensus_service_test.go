@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
 )
 
 const (
@@ -22,11 +21,11 @@ var (
 
 func getClient(t *testing.T) *client.Client {
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	config := &conf.Config{IsHTTP: true, ChainID: 1, IsSMCrypto: false, GroupID: 1,
-		PrivateKey: privateKey, NodeURL: "http://localhost:8545"}
-	c, err := client.Dial(config)
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+	c, err := client.DialContext(context.Background(), config)
 	if err != nil {
-		t.Fatalf("Dial to %s failed of %v", config.NodeURL, err)
+		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
 	return c
 }
@@ -90,7 +89,7 @@ func TestAddSealer(t *testing.T) {
 	}
 	t.Logf("Sealer list before excute AddSealer: %s\n", observer)
 
-	result, err := service.AddSealer(nodeID)
+	result, err := service.AddSealer(nodeID, 1)
 	if err != nil {
 		t.Fatalf("ConsensusService AddSealer failed: %+v\n", err)
 	}

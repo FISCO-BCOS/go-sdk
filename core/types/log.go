@@ -45,23 +45,21 @@ type Log struct {
 	TxHash common.Hash `json:"transactionHash" gencodec:"required"`
 	// index of the transaction in the block
 	TxIndex uint `json:"transactionIndex" gencodec:"required"`
-	// hash of the block in which the transaction was included
-	BlockHash common.Hash `json:"blockHash"`
+	// // hash of the block in which the transaction was included
+	// BlockHash common.Hash `json:"blockHash"`
 	// index of the log in the block
 	Index uint `json:"logIndex" gencodec:"required"`
 
-	// The Removed field is true if this log was reverted due to a chain reorganisation.
-	// You must pay attention to this field if you receive logs through a filter query.
-	Removed bool `json:"removed"`
+	// // The Removed field is true if this log was reverted due to a chain reorganisation.
+	// // You must pay attention to this field if you receive logs through a filter query.
+	// Removed bool `json:"removed"`
 }
 
 type EventLogParams struct {
-	FromBlock string   `json:"fromBlock"`
-	ToBlock   string   `json:"toBlock"`
+	FromBlock int64    `json:"fromBlock"`
+	ToBlock   int64    `json:"toBlock"`
 	Addresses []string `json:"addresses"`
 	Topics    []string `json:"topics"`
-	GroupID   string   `json:"groupID"`
-	FilterID  string   `json:"filterID"`
 }
 
 type logMarshaling struct {
@@ -153,6 +151,7 @@ func (l *LogForStorage) DecodeRLP(s *rlp.Stream) error {
 
 // NewLog is used for the receipt
 type NewLog struct {
+	BlockNumber string `json:"blockNumber"`
 	// Consensus fields:
 	// address of the contract that generated the event
 	Address string `json:"address"`
