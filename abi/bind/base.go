@@ -141,7 +141,7 @@ func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error)
 	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
 }
 
-// NewUnsignedTx
+// NewUnsignedTx generate raw transaction
 func NewUnsignedTx(opts *TransactOpts, addr common.Address, abi abi.ABI, backend ContractBackend, method string, params ...interface{}) (*types.Transaction, *BoundContract, error) {
 	c := NewBoundContract(addr, abi, backend, backend, backend)
 
