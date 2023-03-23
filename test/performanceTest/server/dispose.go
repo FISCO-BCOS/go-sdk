@@ -44,5 +44,4 @@ func Dispose(ctx context.Context, concurrency, totalNumber uint64, request *mode
 	close(ch)
 	// The data processing is complete
 	wgReceiving.Wait()
-	return
 }

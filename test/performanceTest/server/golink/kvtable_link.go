@@ -35,8 +35,6 @@ func Intsert(ctx context.Context, chanID uint64, ch chan<- *model.RequestResults
 		requestResults.SetID(chanID, i)
 		ch <- requestResults
 	}
-
-	return
 }
 
 func insertList(chanID uint64, requestList []*model.Request, kVTableTestSession *kvTableTest.KVTableTestSession) (isSucceed bool, errCode int, requestTime uint64,
@@ -55,13 +53,12 @@ func insertList(chanID uint64, requestList []*model.Request, kVTableTestSession 
 			succeed, code, u, length = selectById(chanID, request, kVTableTestSession)
 		default:
 			isSucceed = false
-			break
 		}
 		isSucceed = succeed
 		errCode = code
 		requestTime = requestTime + u
 		contentLength = contentLength + length
-		if succeed == false {
+		if !succeed {
 			break
 		}
 	}

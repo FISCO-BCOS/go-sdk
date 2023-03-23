@@ -1,6 +1,6 @@
 # Golang SDK For FISCO BCOS
 
-适配FISCO-BCOS v3 / [适配FISCO-BCOS v2](https://github.com/FISCO-BCOS/go-sdk/tree/master-2)
+适配FISCO-BCOS v3 / [适配FISCO-BCOS v2](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk/badge)](https://www.codefactor.io/repository/github/fisco-bcos/go-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/afbb696df3a8436a9e446d39251b2158)](https://www.codacy.com/gh/FISCO-BCOS/go-sdk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FISCO-BCOS/go-sdk&amp;utm_campaign=Badge_Grade)
@@ -27,7 +27,7 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 - [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
 - [FISCO BCOS 3.2.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), **需要提前运行** FISCO BCOS 区块链平台(对应2.0版本sdk)，可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
 - Solidity编译器，默认[0.6.10版本](https://github.com/ethereum/solidity/releases/tag/v0.6.10)
-- 对应[FISCO BCOS v2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
+- 对应[FISCO BCOS v2.2.0+](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/), 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
 ## 配置结构体说明
 

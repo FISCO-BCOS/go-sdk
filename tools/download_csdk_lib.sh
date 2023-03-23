@@ -1,11 +1,9 @@
 #!/bin/bash
 set -e
 
-cdn_link_header="https://osp-1257653870.cos.ap-guangzhou.myqcloud.com/FISCO-BCOS/solidity/releases"
 install_path="/usr/local/lib/"
 version="3.2.0"
 OS="linux"
-download_timeout=240
 versions=(3.2.0)
 
 LOG_WARN()
@@ -61,7 +59,7 @@ get_csdk_lib()
         if [[ "$(uname -m)" == "arm64" ]];then
             OS_ARCH="-aarch64"
         fi
-        ldflags="-ldflags=\"-r /usr/local/lib/\""
+        # ldflags="-ldflags=\"-r /usr/local/lib/\""
         OS="macOS"
         suffix="dylib"
     elif [ "$(uname -s)" == "Linux" ];then

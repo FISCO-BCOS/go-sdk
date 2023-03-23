@@ -296,8 +296,8 @@ get_build_chain()
     #     latest_version="${latest_release}"
     # fi
     latest_version="v3.2.0"
-    echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh"
-    curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh
+    echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
+    curl -#LO "https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
     chmod u+x build_chain.sh
 }
 

@@ -73,7 +73,7 @@ func ReceivingResults(concurrent uint64, ch <-chan *model.RequestResults, wg *sy
 			minTime = data.Time
 		}
 		// request success or not
-		if data.IsSucceed == true {
+		if data.IsSucceed {
 			successNum = successNum + 1
 		} else {
 			failureNum = failureNum + 1
@@ -164,7 +164,6 @@ func header() {
 	fmt.Println("─────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────┬────────")
 	fmt.Println(" 耗时│ 并发数│ 成功数│ 失败数│   qps  │最长耗时│最短耗时│平均耗时│下载字节│字节每秒│ 状态码")
 	fmt.Println("─────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────┼────────")
-	return
 }
 
 // table
@@ -198,7 +197,6 @@ func table(successNum, failureNum uint64, errCode *sync.Map,
 		receivedBytesStr, speedStr,
 		printMap(errCode))
 	fmt.Println(result)
-	return
 }
 
 // printMap

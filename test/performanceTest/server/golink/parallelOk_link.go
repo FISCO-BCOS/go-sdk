@@ -37,8 +37,6 @@ func Transfer(ctx context.Context, chanID uint64, ch chan<- *model.RequestResult
 		requestResults.SetID(chanID, i)
 		ch <- requestResults
 	}
-
-	return
 }
 
 // sendList 多个接口分步压测
@@ -51,7 +49,7 @@ func transferList(chanID uint64, requestList []*model.Request, parallelOkSession
 		errCode = code
 		requestTime = requestTime + u
 		contentLength = contentLength + length
-		if succeed == false {
+		if !succeed {
 			break
 		}
 	}

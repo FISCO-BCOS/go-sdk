@@ -3,6 +3,7 @@ package commandline
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -237,23 +238,22 @@ For more information please refer:
 			return
 		}
 
-		num, err := strconv.Atoi(args[1])
+		weight, err := strconv.ParseInt(args[1], 0, 0)
 		if err != nil {
 			fmt.Println("weight should be integer")
 			return
 		}
-		if num < 0 {
+		if weight < 0 || weight > math.MaxInt32 {
 			fmt.Println("weight failed, must be >= 0")
 			return
 		}
-		weight := uint32(num)
 
 		authManagerService, err := auth.NewAuthManagerService(RPC)
 		if err != nil {
 			fmt.Printf("updateGovernor failed,  err:%v\n", err)
 			return
 		}
-		result, err := authManagerService.UpdateGovernor(common.HexToAddress(accountAddress), weight)
+		result, err := authManagerService.UpdateGovernor(common.HexToAddress(accountAddress), uint32(weight))
 		if err != nil {
 			fmt.Printf("updateGovernor failed,  err: %v\n", err)
 			return
@@ -291,23 +291,21 @@ For more information please refer:
 		}
 		participatesRate := uint8(participatesRateStr)
 
-		winRateStr, err := strconv.Atoi(args[1])
+		winRate, err := strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Println("winRate should be integer")
 			return
 		}
-		if winRateStr < 0 || winRateStr > 100 {
+		if winRate < 0 || winRate > 100 {
 			fmt.Println("winRate failed, must be must be in the range of [0, 100]")
 			return
 		}
-		winRate := uint8(winRateStr)
-
 		authManagerService, err := auth.NewAuthManagerService(RPC)
 		if err != nil {
 			fmt.Printf("setRate failed,  err:%v\n", err)
 			return
 		}
-		result, err := authManagerService.SetRate(participatesRate, winRate)
+		result, err := authManagerService.SetRate(participatesRate, uint8(winRate))
 		if err != nil {
 			fmt.Printf("setRate failed,  err: %v\n", err)
 			return

@@ -80,10 +80,10 @@ func newClient(c *Connection) (*Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("new client errors failed: %v", err)
 		}
-		client.auth.GasLimit = big.NewInt(30000000)
-		client.callOpts = &bind.CallOpts{From: client.auth.From}
+		client.auth = bind.NewKeyedTransactor(privateKey)
 	}
-
+	client.auth.GasLimit = big.NewInt(30000000)
+	client.callOpts = &bind.CallOpts{From: client.auth.From}
 	return &client, nil
 }
 

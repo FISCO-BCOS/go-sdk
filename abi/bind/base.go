@@ -138,53 +138,6 @@ func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error)
 	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
 }
 
-// NewUnsignedTx generate raw transaction
-func NewUnsignedTx(opts *TransactOpts, addr common.Address, abi abi.ABI, backend ContractBackend, method string, params ...interface{}) (*types.Transaction, *BoundContract, error) {
-	c := NewBoundContract(addr, abi, backend, backend, backend)
-
-	input, err := c.abi.Pack(method, params...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tx, err := c.generateRawTx(opts, &c.address, input)
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, c, nil
-}
-
-// NewUnsignedContract
-func NewUnsignedContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *BoundContract, error) {
-	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
-
-	input, err := c.abi.Pack("", params...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tx, err := c.generateRawTx(opts, nil, append(bytecode, input...))
-	if err != nil {
-		return nil, nil, err
-	}
-	return tx, c, nil
-}
-
-func signTx(opts *TransactOpts, rawTx *types.Transaction) (*types.Transaction, error) {
-	if opts.Signer == nil {
-		return nil, errors.New("no signer to authorize the transaction with")
-	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
-	if err != nil {
-		return nil, err
-	}
-	return signedTx, nil
-}
-
-func (c *BoundContract) GetTransactor() ContractTransactor {
-	return c.transactor
-}
-
 // Call invokes the (constant) contract method with params as input values and
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
@@ -291,82 +244,6 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 		return nil, err
 	}
 	return nil, nil
-}
-
-func (c *BoundContract) generateSignedTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
-	rawTx, err := c.generateRawTx(opts, contract, input)
-	if err != nil {
-		return nil, err
-	}
-	return signTx(opts, rawTx)
-}
-
-func (c *BoundContract) generateRawTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
-	var err error
-	// Ensure a valid value field and resolve the account nonce
-	value := opts.Value
-	if value == nil {
-		value = new(big.Int)
-	}
-	// generate random Nonce between 0 - 2^250 - 1
-	max := new(big.Int)
-	max.Exp(big.NewInt(2), big.NewInt(250), nil).Sub(max, big.NewInt(1))
-	//Generate cryptographically strong pseudo-random between 0 - max
-	nonce, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		//error handling
-		return nil, fmt.Errorf("failed to generate nonce: %v", err)
-	}
-
-	// Figure out the gas allowance and gas price values
-	gasPrice := opts.GasPrice
-	if gasPrice == nil {
-		// default value
-		gasPrice = big.NewInt(30000000)
-	}
-
-	gasLimit := opts.GasLimit
-	if gasLimit == nil {
-		// Gas estimation cannot succeed without code for method invocations
-		if contract != nil {
-			if code, err := c.transactor.PendingCodeAt(ensureContext(opts.Context), c.address); err != nil {
-				return nil, err
-			} else if len(code) == 0 {
-				return nil, ErrNoCode
-			}
-		}
-		// If the contract surely has code (or code is not needed), we set a default value to the transaction
-		gasLimit = big.NewInt(30000000)
-	}
-
-	var blockLimit *big.Int
-	blockLimit, err = c.transactor.GetBlockLimit(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var chainID *big.Int
-	chainID, err = c.transactor.GetChainID(ensureContext(opts.Context))
-	if err != nil {
-		return nil, err
-	}
-
-	var groupID *big.Int
-	//groupID = c.transactor.GetGroupID()
-	//if groupID == nil {
-	//	return nil, fmt.Errorf("failed to get the group ID")
-	//}
-
-	// Create the transaction
-	var rawTx *types.Transaction
-	str := ""
-	extraData := []byte(str)
-	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, blockLimit, input, chainID, groupID, extraData, c.transactor.SMCrypto())
-	}
-	return rawTx, nil
 }
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
