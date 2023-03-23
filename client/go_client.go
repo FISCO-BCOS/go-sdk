@@ -129,17 +129,20 @@ func DialContext(ctx context.Context, config *conf.Config) (*Client, error) {
 	}
 
 	client := Client{apiHandler: apiHandler, groupID: config.GroupID, compatibleVersion: compatibleVersion, chainID: config.ChainID, smCrypto: config.IsSMCrypto}
-	if config.IsSMCrypto {
-		client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
-	} else {
-		privateKey, err := crypto.ToECDSA(config.PrivateKey)
-		if err != nil {
-			logrus.Fatal(err)
+	if !config.DynamicKey {
+		if config.IsSMCrypto {
+			client.auth = bind.NewSMCryptoTransactor(config.PrivateKey)
+		} else {
+			privateKey, err := crypto.ToECDSA(config.PrivateKey)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			client.auth = bind.NewKeyedTransactor(privateKey)
 		}
-		client.auth = bind.NewKeyedTransactor(privateKey)
+		client.auth.GasLimit = big.NewInt(30000000)
+		client.callOpts = &bind.CallOpts{From: client.auth.From}
 	}
-	client.auth.GasLimit = big.NewInt(30000000)
-	client.callOpts = &bind.CallOpts{From: client.auth.From}
+
 	return &client, nil
 }
 
@@ -157,6 +160,16 @@ func (c *Client) ReConn() {
 // GetTransactOpts return *bind.TransactOpts
 func (c *Client) GetTransactOpts() *bind.TransactOpts {
 	return c.auth
+}
+
+// SetTransactOpts set auth
+func (c *Client) SetTransactOpts(opts *bind.TransactOpts) {
+	c.auth = opts
+}
+
+// SetCallOpts set call opts
+func (c *Client) SetCallOpts(opts *bind.CallOpts) {
+	c.callOpts = opts
 }
 
 // GetCallOpts return *bind.CallOpts

@@ -255,6 +255,21 @@ func rlpHash(x interface{}) (h common.Hash) {
 	return h
 }
 
+func (tx *Transaction) RlpEncodeTxdata() ([]byte, error) {
+	return rlp.EncodeToBytes([]interface{}{
+		tx.data.AccountNonce,
+		tx.data.Price,
+		tx.data.GasLimit,
+		tx.data.BlockLimit,
+		tx.data.Recipient,
+		tx.data.Amount,
+		tx.data.Payload,
+		tx.data.ChainID,
+		tx.data.GroupID,
+		tx.data.ExtraData,
+	})
+}
+
 // Size returns the true RLP encoded storage size of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
