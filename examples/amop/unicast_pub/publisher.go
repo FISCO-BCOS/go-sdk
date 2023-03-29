@@ -37,7 +37,7 @@ func main() {
 	message := "hello, FISCO BCOS, I am unicast publisher!"
 	for i := 0; i < 50; i++ {
 		logrus.Printf("publish message: %s ", message+" "+strconv.Itoa(i))
-		err = c.BroadcastAMOPMsg(topic, []byte(message+" "+strconv.Itoa(i)))
+		_, err = c.SendAMOPMsg(topic, []byte(message+" "+strconv.Itoa(i)))
 		time.Sleep(200 * time.Millisecond)
 		if err != nil {
 			logrus.Printf("PushTopicDataRandom failed, err: %v\n", err)
