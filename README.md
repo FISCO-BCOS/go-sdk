@@ -60,7 +60,7 @@ type Config struct {
 
 1. 搭建FISCO BCOS 3.2以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
 1. 请拷贝对应的SDK证书到conf文件夹，证书名为`ca.crt/sdk.key/sdk.crt`，国密时证书名为`sm_ca.crt/sm_sdk.key/sm_sdk.crt/sm_ensdk.key/sm_ensdk.crt`。
-1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases/tag/v3.2.0)，将动态库放在`/usr/local/lib`目录下。在其他机器使用时也需要通过`export LD_LIBRARY_PATH=${PWD}/lib`设置动态库的搜索路径，其中`${PWD}/lib`需替换为bcos-c-sdk的动态库所在文件夹。如果编译后在其他机器运行，也可以在编译时使用`-ldflags`指定动态库搜索路径，如`go build -ldflags="-r ${PWD}/lib"`。
+1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases/tag/v3.4.0)，将动态库放在`/usr/local/lib`目录下。在其他机器使用时也需要通过`export LD_LIBRARY_PATH=${PWD}/lib`设置动态库的搜索路径，其中`${PWD}/lib`需替换为bcos-c-sdk的动态库所在文件夹。如果编译后在其他机器运行，也可以在编译时使用`-ldflags`指定动态库搜索路径，如`go build -ldflags="-r ${PWD}/lib"`。
 
     ```bash
     # 下面的脚本帮助用户下载bcos-c-sdk的动态库到/usr/local/lib目录下

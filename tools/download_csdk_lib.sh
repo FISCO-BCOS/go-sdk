@@ -2,9 +2,9 @@
 set -e
 
 install_path="/usr/local/lib/"
-version="3.2.0"
+version="3.4.0"
 OS="linux"
-versions=(3.2.0)
+versions=(3.2.0 3.4.0)
 
 LOG_WARN()
 {
@@ -21,7 +21,7 @@ LOG_INFO()
 help() {
     cat << EOF
 Usage:
-    -v <bcos-c-sdk version>           Default v3.2.0
+    -v <bcos-c-sdk version>           Default v3.4.0
     -o <lib install path>             Default /usr/loacl/lib
     -h Help
 e.g
@@ -42,7 +42,7 @@ parse_params()
                 fi
             ;;
             o) [ -n "$OPTARG" ] && install_path="$OPTARG";;
-            h) help;;
+            h) help ;;
             *) LOG_WARN "invalid option $option";;
         esac
     done
@@ -74,7 +74,7 @@ get_csdk_lib()
     local package_name="libbcos-c-sdk${OS_ARCH}.${suffix}"
     LOG_INFO "downloading ${package_name} to ${install_path} on ${OS} ..."
     if [ ! -f "${install_path}/${package_name}" ];then
-        curl -o "${install_path}/${package_name}" -#L "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/${package_name}"
+        curl -o "${install_path}/${package_name}" -#L "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v${version}/${package_name}"
     fi
 }
 

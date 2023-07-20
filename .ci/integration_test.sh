@@ -2,6 +2,7 @@
 
 set -e
 
+c_sdk_version="v3.4.0"
 start_time=15
 macOS=
 ldflags="-ldflags=\"-r /usr/local/lib/\""
@@ -291,11 +292,11 @@ get_build_chain()
     #     latest_release=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases/latest | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     # fi
     # if [[ -z "${latest_release}" ]];then
-    #     latest_version="v3.2.0"
+    #     latest_version="${c_sdk_version}"
     # else
     #     latest_version="${latest_release}"
     # fi
-    latest_version="v3.2.0"
+    latest_version="${c_sdk_version}"
     echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
     curl -#LO "https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
     chmod u+x build_chain.sh
@@ -311,7 +312,7 @@ get_csdk_lib()
         suffix="dylib"
     fi
     if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
-        curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
+        curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/${c_sdk_version}/libbcos-c-sdk.${suffix}"
         sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
     fi
 }
