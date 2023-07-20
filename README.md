@@ -24,10 +24,11 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 ## 环境准备
 
+master分支的go-sdk对应FISCO-BCOS v3版本，如果使用的是FISCO-BCOS v2版本，请切换到[FISCO-BCOS v2分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
+
 - [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
 - [FISCO BCOS 3.2.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), 可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
 - Solidity编译器，默认0.8.11版本
-- 对应FISCO BCOS v2, 请参考[此分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
 ## 配置结构体说明
 
@@ -59,8 +60,14 @@ type Config struct {
 
 1. 搭建FISCO BCOS 3.2以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
 1. 请拷贝对应的SDK证书到conf文件夹，证书名为`ca.crt/sdk.key/sdk.crt`，国密时证书名为`sm_ca.crt/sm_sdk.key/sm_sdk.crt/sm_ensdk.key/sm_ensdk.crt`。
-1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases)，需要下载动态库,拷贝到/usr/local/lib/文件夹下。
-1. go-sdk需要使用cgo，**需要设置环境变量**`export GODEBUG=cgocheck=0`。(可以添加到/etc/profile文件中)
+1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases/tag/v3.2.0)，将动态库放在`/usr/local/lib`目录下。在其他机器使用时也需要通过`export LD_LIBRARY_PATH=${PWD}/lib`设置动态库的搜索路径，其中`${PWD}/lib`需替换为bcos-c-sdk的动态库所在文件夹。如果编译后在其他机器运行，也可以在编译时使用`-ldflags`指定动态库搜索路径，如`go build -ldflags="-r ${PWD}/lib"`。
+
+    ```bash
+    # 下面的脚本帮助用户下载bcos-c-sdk的动态库到/usr/local/lib目录下
+    ./tools/download_csdk_lib.sh
+    ```
+
+1. ~~go-sdk需要使用cgo，需要设置环境变量`export GODEBUG=cgocheck=0`~~。
 1. 最后，编译控制台程序:
 
 ```bash
