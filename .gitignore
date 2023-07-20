@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+log/*
 
 # Test binary, built with `go test -c`
 *.test
@@ -60,3 +61,4 @@ config.toml
 
 # library
 libs
+lib
