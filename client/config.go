@@ -16,6 +16,7 @@ type Config struct {
 	GroupID         string
 	Host            string
 	Port            int
+	DisableSsl      bool
 	// TLSCaContext   []byte
 	// TLSKeyContext  []byte
 	// TLSCertContext []byte

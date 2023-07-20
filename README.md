@@ -44,6 +44,7 @@ type Config struct {
     GroupID         string
     Host            string
     Port            int
+    DisableSsl      bool
 }
 ```
 
@@ -55,6 +56,7 @@ type Config struct {
 - GroupID：账本的`GroupID`
 - Host：节点IP
 - Port：节点RPC端口
+- DisableSsl：使用TLS加密时为`false`，不使用TLS加密时为`true`
 
 ## 控制台使用
 
