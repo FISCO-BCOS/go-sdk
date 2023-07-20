@@ -250,7 +250,7 @@ func NewConnection(config *Config) (*Connection, error) {
 			}
 		}
 	}
-	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
+	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.DisableSsl, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("new csdk failed: %v", err)
 	}
@@ -461,7 +461,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		if len(args) >= 3 {
 			handler = args[2].(func(*types.Receipt, error))
 		}
-		_, err := c.csdk.SendTransaction(op.respChanData, contractAddress, data, true)
+		_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, "", true)
 		if err != nil {
 			return err
 		}
