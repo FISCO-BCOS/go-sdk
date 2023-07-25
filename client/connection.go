@@ -234,21 +234,23 @@ func NewConnectionByFile(configFile, groupID string, privateKey []byte) (*Connec
 
 func NewConnection(config *Config) (*Connection, error) {
 	path, _ := os.Getwd()
-	if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
-	} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
-	} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
-	}
-	if config.IsSMCrypto {
-		if _, err := os.Stat(config.TLSSmEnKeyFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnKeyFile, path)
-		} else if _, err := os.Stat(config.TLSSmEnCertFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnCertFile, path)
+	if !config.DisableSsl {
+		if _, err := os.Stat(config.TLSCaFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCaFile, path)
+		} else if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSKeyFile, path)
+		} else if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSCertFile, path)
+		}
+		if config.IsSMCrypto {
+			if _, err := os.Stat(config.TLSSmEnKeyFile); os.IsNotExist(err) {
+				return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnKeyFile, path)
+			} else if _, err := os.Stat(config.TLSSmEnCertFile); os.IsNotExist(err) {
+				return nil, fmt.Errorf("the file %s does not exist, current working directory is %s", config.TLSSmEnCertFile, path)
+			}
 		}
 	}
-	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
+	sdk, err := csdk.NewSDK(config.GroupID, config.Host, config.Port, config.IsSMCrypto, config.PrivateKey, config.DisableSsl, config.TLSCaFile, config.TLSKeyFile, config.TLSCertFile, config.TLSSmEnKeyFile, config.TLSSmEnCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("new csdk failed: %v", err)
 	}
@@ -459,7 +461,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		if len(args) >= 3 {
 			handler = args[2].(func(*types.Receipt, error))
 		}
-		_, err := c.csdk.SendTransaction(op.respChanData, contractAddress, data, true)
+		_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, "", true)
 		if err != nil {
 			return err
 		}

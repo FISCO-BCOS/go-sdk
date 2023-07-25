@@ -3,6 +3,8 @@ set -e
 
 GOPATH_BIN=$(go env GOPATH)/bin
 
+c_sdk_version="v3.4.0"
+
 LOG_ERROR() {
     content=${1}
     echo -e "\033[31m${content}\033[0m"
@@ -23,7 +25,7 @@ get_csdk_lib()
 		suffix="dylib"
 	fi
 	if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
-		curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/v3.2.0/libbcos-c-sdk.${suffix}"
+		curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/${c_sdk_version}/libbcos-c-sdk.${suffix}"
 		sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
 	fi
     export GODEBUG=cgocheck=0
@@ -33,7 +35,7 @@ calculate_coverage() {
     # start blockchain demo
     # latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     # latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
-    latest_version="v3.2.0"
+    latest_version=${c_sdk_version}
     curl -#LO https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/"${latest_version}"/build_chain.sh && chmod u+x build_chain.sh
     bash build_chain.sh -l 127.0.0.1:4 -o nodes
     get_csdk_lib
