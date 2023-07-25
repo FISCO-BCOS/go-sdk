@@ -197,6 +197,7 @@ import (
     "log"
 
     "github.com/FISCO-BCOS/go-sdk/client"
+    "github.com/FISCO-BCOS/go-sdk/core/types"
     "github.com/FISCO-BCOS/go-sdk/hello"
 )
 
