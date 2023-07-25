@@ -27,6 +27,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230720102808-34f03aa15ebe h1:3QIFR9WIwl2Pp3DHqlssJzGXV5znpsJPkSw0ewMsKTs=
 github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230720102808-34f03aa15ebe/go.mod h1:7kTVptunvfx0JH/XIuFj0ybRq0MLAsK4daizrE9RvN0=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230725031339-eabad8cdbaeb h1:c06WCmpcxNeKR5yVjM6paTPK4fBXNYVjHpmCoC8OfPc=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20230725031339-eabad8cdbaeb/go.mod h1:7kTVptunvfx0JH/XIuFj0ybRq0MLAsK4daizrE9RvN0=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1 h1:ThPht4qK10+cMZC5COIjHPq0INm5HAMVYqrez5zEgFI=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1/go.mod h1:UrLdwsFrjiaCsvdcPLcH6B7s/FUmym3qfM93u2ziR+4=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
