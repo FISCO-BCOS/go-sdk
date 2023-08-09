@@ -308,7 +308,7 @@ func TestAppendColumns(t *testing.T) {
 }
 
 func TestAsyncAppendColumns(t *testing.T) {
-	newColumns := []string{"test0", "test1"}
+	newColumns := []string{"test2", "test3"}
 
 	handler := func(receipt *types.Receipt, err error) {
 		if err != nil {
