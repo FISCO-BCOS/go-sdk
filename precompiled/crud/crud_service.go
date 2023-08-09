@@ -263,3 +263,15 @@ func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	}
 	return errorCode, errorCodeToError(errorCode)
 }
+
+func (service *Service) AppendColumns(path string, newColumns []string) (int64, error) {
+	_, receipt, err := service.tableFactory.AppendColumns(service.crudAuth, path, newColumns)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService AppendColumns failed: %v", err)
+	}
+	return parseReturnValue(receipt, "createTable")
+}
+
+func (service *Service) AsyncAppendColumns(handler func(*types.Receipt, error), path string, newColumns []string) (*types.Transaction, error) {
+	return service.tableFactory.AsyncAppendColumns(handler, service.crudAuth, path, newColumns)
+}
