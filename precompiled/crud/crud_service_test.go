@@ -16,6 +16,7 @@ import (
 const (
 	tableName         = "t_test9"
 	tableNameForAsync = "t_test_async9"
+	tablePath         = "/tables/t_test9"
 	key               = "name"
 	keyAsync          = "name_async"
 	timeout           = 1 * time.Second
@@ -291,4 +292,52 @@ func TestDesc(t *testing.T) {
 	}
 	t.Logf("keyFiled is：%s\n", tableInfo.KeyColumn)
 	t.Logf("valueField is：%s\n", tableInfo.ValueColumns[0])
+}
+
+func TestAppendColumns(t *testing.T) {
+	newColumns := []string{"test0", "test1"}
+
+	result, err := service.AppendColumns(tablePath, newColumns)
+	if err != nil {
+		t.Fatalf("create AppendColumns failed: %v", err)
+	}
+	if result != 0 {
+		t.Fatalf("TestAppendColumns failed, the result \"%v\" is inconsistent with \"0\"", result)
+	}
+	t.Logf("result: %d\n", result)
+}
+
+func TestAsyncAppendColumns(t *testing.T) {
+	newColumns := []string{"test2", "test3"}
+
+	handler := func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("receive receipt failed, %v\n", err)
+		}
+		var bigNum *big.Int
+		bigNum, err = precompiled.ParseBigIntFromOutput(receipt)
+		if err != nil {
+			t.Fatalf("parseReturnValue failed, err: %v\n", err)
+		}
+		result, err := precompiled.BigIntToInt64(bigNum)
+		if err != nil {
+			t.Fatalf("%v\n", err)
+		}
+		if result != 0 {
+			t.Fatalf("TestAsyncAppendColumns failed, the result \"%v\" is inconsistent with \"0\"", result)
+		}
+		t.Logf("result: %d\n", result)
+		channel <- 0
+	}
+
+	_, err := service.AsyncAppendColumns(handler, tablePath, newColumns)
+	if err != nil {
+		t.Fatalf("AsyncAppendColumns failed: %v", err)
+	}
+	select {
+	case <-channel:
+		return
+	case <-time.After(timeout):
+		t.Fatal("timeout")
+	}
 }
