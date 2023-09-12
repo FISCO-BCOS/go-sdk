@@ -382,10 +382,10 @@ func DialChannelWithClient(endpoint string, config *tls.Config, groupID int) (*C
 		if err = ch.handshakeChannel(); err != nil {
 			logrus.Errorf("handshake channel protocol failed, use default protocol version")
 		}
-		ch.topicHandlers[blockNotifyPrefix+strconv.Itoa(groupID)] = nil
-		if err = ch.sendSubscribedTopics(); err != nil {
-			return nil, fmt.Errorf("subscriber block nofity failed")
-		}
+		// ch.topicHandlers[blockNotifyPrefix+strconv.Itoa(groupID)] = nil
+		// if err = ch.sendSubscribedTopics(); err != nil {
+		// 	return nil, fmt.Errorf("subscriber block nofity failed")
+		// }
 		return ch, nil
 	})
 }
