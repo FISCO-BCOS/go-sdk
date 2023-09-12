@@ -8,18 +8,12 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20210107181124-fad53805024e // indirect
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
 	github.com/ethereum/go-ethereum v1.9.16
-	github.com/go-ole/go-ole v1.2.5 // indirect
-	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect
-	github.com/google/uuid v1.1.1
-	github.com/holiman/uint256 v1.1.1 // indirect
-	github.com/shirou/gopsutil v3.20.12+incompatible // indirect
-	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cobra v1.0.0
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.6.2
-	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	github.com/google/uuid v1.3.0
+	github.com/liuxinfeng96/bc-crypto v0.2.12
+	github.com/sirupsen/logrus v1.9.0
+	github.com/spf13/cobra v1.5.0
+	github.com/spf13/viper v1.8.1
+	github.com/stretchr/testify v1.7.0
+	golang.org/x/crypto v0.12.0
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
