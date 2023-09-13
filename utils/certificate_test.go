@@ -71,7 +71,7 @@ func TestCreateCertificate(t *testing.T) {
 	csrBytes, err := GenerateCertificateSigningRequest(sk, "node", "node1")
 	require.Nil(t, err)
 
-	certBytes, err := GenerateCertificate(caBytes, caSk, csrBytes, false, 365)
+	certBytes, err := GenerateCertificate(caBytes, caSk, csrBytes, false, 365*10)
 	require.Nil(t, err)
 
 	fmt.Println(string(certBytes))
