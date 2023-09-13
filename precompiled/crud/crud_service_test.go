@@ -7,8 +7,9 @@ import (
 	"os"
 	"testing"
 	"time"
+
 	// "fmt"
-    "math/rand"
+	"math/rand"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -16,26 +17,28 @@ import (
 )
 
 const (
-	tableName         = "t_test0"
-	tableNameForAsync = "t_test_async0"
-	KVTableName       = "t_test1"
-	KVTableNameForAsync = "t_test_async1"
-	tablePath		  = "/tables/t_test0"
-	key               = "name"
-	timeout           = 1 * time.Second
+	tableName           = "tableName"
+	tableNameForAsync   = "tableName_async"
+	KVTableName         = "kvtableName"
+	KVTableNameForAsync = "kvtableName_async"
+	tablePath           = "/tables/tableName"
+	key                 = "keyName"
+	timeout             = 1 * time.Second
 )
-var valueField  = "item_name"
-var valueFields = []string{"item_name"}
+
+var columnValue = "columnValue"
+var columnName = "columnName"
+var columnNames = []string{"columnName"}
 var condition = Condition{
-	Op:		uint8(4),  //EQ
-	Field:	"item_name",
-	Value:	"item",
+	Op:    uint8(4), //EQ
+	Field: "columnName",
+	Value: "columnValue",
 }
 var limit = Limit{
-	Offset:	uint32(0),
-	Count:	uint32(4),
+	Offset: uint32(0),
+	Count:  uint32(4),
 }
-var valueFields_update = []string{"item_name_update"}
+var columnNames_update = []string{"columnName_update"}
 var conditions = []Condition{condition}
 
 var (
@@ -70,7 +73,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateTable(t *testing.T) {
-	result, err := service.CreateTable(tableName, key, valueFields)
+	result, err := service.CreateTable(tableName, key, columnNames)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
@@ -101,7 +104,7 @@ func TestAsyncCreateTable(t *testing.T) {
 		channel <- 0
 	}
 
-	_, err := service.AsyncCreateTable(handler, tableNameForAsync, key, valueFields)
+	_, err := service.AsyncCreateTable(handler, tableNameForAsync, key, columnNames)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
@@ -114,7 +117,7 @@ func TestAsyncCreateTable(t *testing.T) {
 }
 
 func TestCreateKVTable(t *testing.T) {
-	result, err := service.CreateKVTable(KVTableName, key, valueField)
+	result, err := service.CreateKVTable(KVTableName, key, columnName)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
@@ -145,7 +148,7 @@ func TestAsyncCreateKVTable(t *testing.T) {
 		channel <- 0
 	}
 
-	_, err := service.AsyncCreateKVTable(handler, KVTableNameForAsync, key, valueField)
+	_, err := service.AsyncCreateKVTable(handler, KVTableNameForAsync, key, columnName)
 	if err != nil {
 		t.Fatalf("create table failed: %v", err)
 	}
@@ -158,7 +161,7 @@ func TestAsyncCreateKVTable(t *testing.T) {
 }
 
 func TestAppendColumns(t *testing.T) {
-	newColumns:=[]string{"test0","test1"} 
+	newColumns := []string{"columnName_0", "columnName_1"}
 
 	result, err := service.AppendColumns(tablePath, newColumns)
 	if err != nil {
@@ -171,7 +174,7 @@ func TestAppendColumns(t *testing.T) {
 }
 
 func TestAsyncAppendColumns(t *testing.T) {
-	newColumns:=[]string{"test2","test3"} 
+	newColumns := []string{"columnName_2", "columnName_3"}
 
 	handler := func(receipt *types.Receipt, err error) {
 		if err != nil {
@@ -213,32 +216,32 @@ func TestDescWithKeyOrder(t *testing.T) {
 	if tableInfo.KeyColumn != key {
 		t.Fatalf("TestDesc failed, the keyField \"%v\" is not inconsistent with \"name\"", tableInfo.KeyColumn)
 	}
-	if tableInfo.ValueColumns[0] != valueFields[0] {
-		t.Fatalf("TestDesc failed, the valueField \"%v\" is not inconsistent with \"item_id,item_name\"", tableInfo.ValueColumns[0])
+	if tableInfo.ValueColumns[0] != columnNames[0] {
+		t.Fatalf("TestDesc failed, the columnName \"%v\" is not inconsistent with \"item_id,column_name\"", tableInfo.ValueColumns[0])
 	}
 	t.Logf("keyFiled is：%s\n", tableInfo.KeyColumn)
-	t.Logf("valueField is：%s\n", tableInfo.ValueColumns[0])
+	t.Logf("columnName is：%s\n", tableInfo.ValueColumns[0])
 }
 
 func TestInsert(t *testing.T) {
 	_, err := service.OpenTable(tableName)
-	if err !=nil{
-		service.CreateTable(tableName, key, valueFields)
+	if err != nil {
+		service.CreateTable(tableName, key, columnNames)
 	}
-	// valueFields's length needs to be the same as the number of columns
-	valueFields := []string{}
+	// tempColumnValues's length needs to be the same as the number of columns
+	tempColumnValues := []string{}
 	tableInfo, err := service.DescWithKeyOrder(tableName)
 	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
+		tempColumnValues = append(tempColumnValues, "columnValue")
+	}
 	key := randStringBytes(10)
 	t.Logf("key: %v\n", key)
 	entry := Entry{
 		Key:    key,
-		Fields: valueFields,
+		Fields: tempColumnValues,
 	}
 
-	ret0, err := service.Insert(tableName,entry)
+	ret0, err := service.Insert(tableName, entry)
 	t.Logf("ret0: %v\n", ret0)
 	if err != nil {
 		t.Fatalf("insert table failed: %v", err)
@@ -272,20 +275,20 @@ func TestAsyncInsert(t *testing.T) {
 	}
 
 	_, err := service.OpenTable(tableName)
-	if err !=nil{
-		service.CreateTable(tableName, key, valueFields)
+	if err != nil {
+		service.CreateTable(tableName, key, columnNames)
 	}
-	// valueFields's length needs to be the same as the number of columns
-	valueFields := []string{}
+	// columnNames's length needs to be the same as the number of columns
+	tempColumnValues := []string{}
 	tableInfo, err := service.DescWithKeyOrder(tableName)
 	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
+		tempColumnValues = append(tempColumnValues, "columnValue")
+	}
 	key := randStringBytes(10)
 	t.Logf("key: %v\n", key)
 	entry := Entry{
 		Key:    key,
-		Fields: valueFields,
+		Fields: tempColumnValues,
 	}
 
 	_, err = service.AsyncInsert(handler, tableName, entry)
@@ -301,63 +304,45 @@ func TestAsyncInsert(t *testing.T) {
 }
 
 func TestSelect0(t *testing.T) {
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	key := insertForTest()
 
 	resultSelect, err := service.Select0(tableName, key)
 	if err != nil {
 		t.Fatalf("select table failed: %v", err)
 	}
-	if resultSelect.Fields[0] != valueFields[0] {
+	if resultSelect.Fields[0] != columnValue {
 		t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", resultSelect.Fields[0])
 	}
 	t.Logf("resultSelect :\n")
 
 	for i := 0; i < len(resultSelect.Fields); i++ {
-		t.Logf("resultSelect[%d]'s item_name is：%s\n", i, resultSelect.Fields[i])
+		t.Logf("resultSelect[%d]'s column_name is：%s\n", i, resultSelect.Fields[i])
 	}
 }
 
 func TestSelect(t *testing.T) {
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	insertForTest()
 
 	resultSelects, err := service.Select(tableName, conditions, limit)
 	if err != nil {
 		t.Fatalf("select table failed: %v", err)
 	}
 	for i := 0; i < len(resultSelects); i++ {
-		if resultSelects[i].Fields[0] != valueFields[0] {
+		if resultSelects[i].Fields[0] != columnValue {
 			t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", resultSelects[i].Fields[0])
 		}
 	}
-	t.Logf("resultSelects %v:",resultSelects)
+	t.Logf("resultSelects %v:", resultSelects)
 }
 
 func TestUpdate(t *testing.T) {
+	// insert
+	key := insertForTest()
+
+	// update
 	newValue := randStringBytes(10)
 	updateField := UpdateField{
-		ColumnName: valueFields[0],
+		ColumnName: "columnName",
 		Value:      newValue,
 	}
 	var updateFields []UpdateField
@@ -380,42 +365,42 @@ func TestUpdate(t *testing.T) {
 func TestUpdate0(t *testing.T) {
 	newValue := randStringBytes(10)
 	updateField := UpdateField{
-		ColumnName: valueFields[0],
+		ColumnName: columnNames[0],
 		Value:      newValue,
 	}
 	var updateFields []UpdateField
 	updateFields = append(updateFields, updateField)
 
 	condition := Condition{
-		Op:		uint8(4),  //EQ
-		Field:	valueField,
-		Value:	"item",
+		Op:    uint8(4), //EQ
+		Field: columnName,
+		Value: "columnValue",
 	}
 	conditions := []Condition{}
-	conditions=append(conditions,condition)
+	conditions = append(conditions, condition)
 	limit := Limit{
-		Offset:	uint32(0),
-		Count:	uint32(4),
+		Offset: uint32(0),
+		Count:  uint32(4),
 	}
 
 	newCondition := Condition{
-		Op:		uint8(4),  //EQ
-		Field:	valueField,
-		Value:	newValue,
+		Op:    uint8(4), //EQ
+		Field: columnName,
+		Value: newValue,
 	}
 	newConditions := []Condition{}
-	newConditions=append(newConditions,newCondition)
+	newConditions = append(newConditions, newCondition)
 
 	// key origin results
 	originResultSelects, _ := service.Select(tableName, conditions, limit)
-	t.Logf("originResultSelects %v:",originResultSelects)
+	t.Logf("originResultSelects %v:", originResultSelects)
 
 	// perform update
 	_, err := service.Update0(tableName, conditions, limit, updateFields)
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
-	
+
 	// check update results
 	afterResultSelects := []Entry{}
 	for i := 0; i < len(originResultSelects); i++ {
@@ -424,9 +409,9 @@ func TestUpdate0(t *testing.T) {
 		if tempResultSelect.Fields[0] != newValue {
 			t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", tempResultSelect.Fields[0])
 		}
-		afterResultSelects=append(afterResultSelects,tempResultSelect)
+		afterResultSelects = append(afterResultSelects, tempResultSelect)
 	}
-	t.Logf("afterResultSelects %v:",afterResultSelects)
+	t.Logf("afterResultSelects %v:", afterResultSelects)
 }
 
 func TestAsyncUpdate(t *testing.T) {
@@ -450,10 +435,12 @@ func TestAsyncUpdate(t *testing.T) {
 		channel <- 0
 	}
 
+	key := insertForTest()
+
 	newValue := randStringBytes(10)
 	t.Logf("newValue: %v\n", newValue)
 	updateField := UpdateField{
-		ColumnName: valueFields[0],
+		ColumnName: columnName,
 		Value:      newValue,
 	}
 	var updateFields []UpdateField
@@ -491,10 +478,12 @@ func TestAsyncUpdate0(t *testing.T) {
 		channel <- 0
 	}
 
+	insertForTest()
+
 	newValue := randStringBytes(10)
 	t.Logf("newValue: %v\n", newValue)
 	updateField := UpdateField{
-		ColumnName: valueFields[0],
+		ColumnName: columnName,
 		Value:      newValue,
 	}
 	var updateFields []UpdateField
@@ -512,18 +501,7 @@ func TestAsyncUpdate0(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	key := insertForTest()
 
 	ret0, err := service.Remove(tableName, key)
 	if err != nil {
@@ -536,18 +514,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemove0(t *testing.T) {
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	insertForTest()
 
 	ret0, err := service.Remove0(tableName, conditions, limit)
 	if err != nil {
@@ -580,20 +547,9 @@ func TestAsyncRemove(t *testing.T) {
 		channel <- 0
 	}
 
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	key := insertForTest()
 
-	_, err = service.AsyncRemove(handler, tableName, key)
+	_, err := service.AsyncRemove(handler, tableName, key)
 	if err != nil {
 		t.Fatalf("remove data failed: %v", err)
 	}
@@ -626,20 +582,9 @@ func TestAsyncRemove0(t *testing.T) {
 		channel <- 0
 	}
 
-	valueFields := []string{}
-	tableInfo, err := service.DescWithKeyOrder(tableName)
-	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-        valueFields=append(valueFields,"item")
-    }
-	key := randStringBytes(10)
-	t.Logf("key: %v\n", key)
-	entry := Entry{
-		Key:    key,
-		Fields: valueFields,
-	}
-	service.Insert(tableName,entry)
+	insertForTest()
 
-	_, err = service.AsyncRemove0(handler, tableName, conditions, limit)
+	_, err := service.AsyncRemove0(handler, tableName, conditions, limit)
 	if err != nil {
 		t.Fatalf("remove data failed: %v", err)
 	}
@@ -653,14 +598,14 @@ func TestAsyncRemove0(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	_, err := service.OpenKVTable(KVTableName)
-	if err !=nil{
-		service.CreateKVTable(KVTableName, key, valueField)
+	if err != nil {
+		service.CreateKVTable(KVTableName, key, columnName)
 	}
 
 	key := randStringBytes(10)
 	value := randStringBytes(10)
 
-	ret0, err := service.Set(KVTableName,key,value)
+	ret0, err := service.Set(KVTableName, key, value)
 	if err != nil {
 		t.Fatalf("KVTable set failed: %v", err)
 	}
@@ -668,7 +613,7 @@ func TestSet(t *testing.T) {
 		t.Fatalf("TestSet failed, the ret0 \"%v\" is inconsistent with \"1\"", ret0)
 	}
 
-	_, tempValue, _ := service.Get(KVTableName,key)
+	_, tempValue, _ := service.Get(KVTableName, key)
 	if value != tempValue {
 		t.Fatalf("TestSet failed, the value \"%v\" is inconsistent with the tempValue \"%v\"", value, tempValue)
 	}
@@ -677,12 +622,27 @@ func TestSet(t *testing.T) {
 	t.Logf("value: %v\n", value)
 }
 
+func insertForTest() string {
+	tempColumnValues := []string{}
+	tableInfo, _ := service.DescWithKeyOrder(tableName)
+	for i := 0; i < len(tableInfo.ValueColumns); i++ {
+		tempColumnValues = append(tempColumnValues, "columnValue")
+	}
+	key := randStringBytes(10)
+	entry := Entry{
+		Key:    key,
+		Fields: tempColumnValues,
+	}
+	service.Insert(tableName, entry)
+	return key
+}
+
 func randStringBytes(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    b := make([]byte, n)
-    for i := range b {
-        b[i] = letterBytes[rand.Intn(len(letterBytes))]
-    }
-    return string(b)
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
