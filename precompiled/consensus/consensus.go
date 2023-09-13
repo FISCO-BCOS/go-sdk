@@ -25,7 +25,37 @@ var (
 )
 
 // ConsensusABI is the input ABI used to generate the binding from.
-const ConsensusABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"}],\"name\":\"addObserver\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"},{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"addSealer\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"\",\"type\":\"string\"},{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"setWeight\",\"outputs\":[{\"name\":\"\",\"type\":\"int32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const ConsensusABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"addObserver\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"addSealer\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"setWeight\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+
+// ConsensusBin is the compiled bytecode used for deploying new contracts.
+var ConsensusBin = "0x608060405234801561001057600080fd5b506103d1806100206000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80632800efc014610051578063359168561461008157806380599e4b146100b1578063ce6fa5c5146100e1575b600080fd5b61006b60048036038101906100669190610289565b610111565b60405161007891906102ee565b60405180910390f35b61009b6004803603810190610096919061033f565b610118565b6040516100a891906102ee565b60405180910390f35b6100cb60048036038101906100c69190610289565b610120565b6040516100d891906102ee565b60405180910390f35b6100fb60048036038101906100f6919061033f565b610127565b60405161010891906102ee565b60405180910390f35b6000919050565b600092915050565b6000919050565b600092915050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b6000601f19601f8301169050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6101968261014d565b810181811067ffffffffffffffff821117156101b5576101b461015e565b5b80604052505050565b60006101c861012f565b90506101d4828261018d565b919050565b600067ffffffffffffffff8211156101f4576101f361015e565b5b6101fd8261014d565b9050602081019050919050565b82818337600083830152505050565b600061022c610227846101d9565b6101be565b90508281526020810184848401111561024857610247610148565b5b61025384828561020a565b509392505050565b600082601f8301126102705761026f610143565b5b8135610280848260208601610219565b91505092915050565b60006020828403121561029f5761029e610139565b5b600082013567ffffffffffffffff8111156102bd576102bc61013e565b5b6102c98482850161025b565b91505092915050565b60008160030b9050919050565b6102e8816102d2565b82525050565b600060208201905061030360008301846102df565b92915050565b6000819050919050565b61031c81610309565b811461032757600080fd5b50565b60008135905061033981610313565b92915050565b6000806040838503121561035657610355610139565b5b600083013567ffffffffffffffff8111156103745761037361013e565b5b6103808582860161025b565b92505060206103918582860161032a565b915050925092905056fea2646970667358221220f9bf1c92bf30c11b640bf87ec39377551d33a2375d32f144e87f2bc541dc28ab64736f6c634300080b0033"
+
+// DeployConsensus deploys a new contract, binding an instance of Consensus to it.
+func DeployConsensus(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Receipt, *Consensus, error) {
+	parsed, err := abi.JSON(strings.NewReader(ConsensusABI))
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ConsensusBin), backend)
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	return address, receipt, &Consensus{ConsensusCaller: ConsensusCaller{contract: contract}, ConsensusTransactor: ConsensusTransactor{contract: contract}, ConsensusFilterer: ConsensusFilterer{contract: contract}}, nil
+}
+
+func AsyncDeployConsensus(auth *bind.TransactOpts, handler func(*types.Receipt, error), backend bind.ContractBackend) (*types.Transaction, error) {
+	parsed, err := abi.JSON(strings.NewReader(ConsensusABI))
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ConsensusBin), backend)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
 
 // Consensus is an auto generated Go binding around a Solidity contract.
 type Consensus struct {
@@ -146,8 +176,8 @@ func (_Consensus *ConsensusRaw) Transfer(opts *bind.TransactOpts) (*types.Transa
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Consensus *ConsensusRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.ConsensusTransactor.contract.Transact(opts, method, params...)
+func (_Consensus *ConsensusRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.ConsensusTransactor.contract.TransactWithResult(opts, result, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -165,69 +195,158 @@ func (_Consensus *ConsensusTransactorRaw) Transfer(opts *bind.TransactOpts) (*ty
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Consensus *ConsensusTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.contract.Transact(opts, method, params...)
+func (_Consensus *ConsensusTransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.contract.TransactWithResult(opts, result, method, params...)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
-// Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) AddObserver(opts *bind.TransactOpts, nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.contract.Transact(opts, "addObserver", nodeID)
+// Solidity: function addObserver(string ) returns(int32)
+func (_Consensus *ConsensusTransactor) AddObserver(opts *bind.TransactOpts, arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Consensus.contract.TransactWithResult(opts, out, "addObserver", arg0)
+	return *ret0, transaction, receipt, err
+}
+
+func (_Consensus *ConsensusTransactor) AsyncAddObserver(handler func(*types.Receipt, error), opts *bind.TransactOpts, arg0 string) (*types.Transaction, error) {
+	return _Consensus.contract.AsyncTransact(opts, handler, "addObserver", arg0)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
-// Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) AddObserver(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, nodeID)
+// Solidity: function addObserver(string ) returns(int32)
+func (_Consensus *ConsensusSession) AddObserver(arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, arg0)
+}
+
+func (_Consensus *ConsensusSession) AsyncAddObserver(handler func(*types.Receipt, error), arg0 string) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncAddObserver(handler, &_Consensus.TransactOpts, arg0)
 }
 
 // AddObserver is a paid mutator transaction binding the contract method 0x2800efc0.
 //
-// Solidity: function addObserver(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) AddObserver(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, nodeID)
+// Solidity: function addObserver(string ) returns(int32)
+func (_Consensus *ConsensusTransactorSession) AddObserver(arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddObserver(&_Consensus.TransactOpts, arg0)
 }
 
-// AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
-//
-// Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.contract.Transact(opts, "addSealer", nodeID, weight)
+func (_Consensus *ConsensusTransactorSession) AsyncAddObserver(handler func(*types.Receipt, error), arg0 string) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncAddObserver(handler, &_Consensus.TransactOpts, arg0)
 }
 
-// AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
+// AddSealer is a paid mutator transaction binding the contract method 0x35916856.
 //
-// Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) AddSealer(nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID, weight)
+// Solidity: function addSealer(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusTransactor) AddSealer(opts *bind.TransactOpts, arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Consensus.contract.TransactWithResult(opts, out, "addSealer", arg0, arg1)
+	return *ret0, transaction, receipt, err
 }
 
-// AddSealer is a paid mutator transaction binding the contract method 0x89152d1f.
+func (_Consensus *ConsensusTransactor) AsyncAddSealer(handler func(*types.Receipt, error), opts *bind.TransactOpts, arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.contract.AsyncTransact(opts, handler, "addSealer", arg0, arg1)
+}
+
+// AddSealer is a paid mutator transaction binding the contract method 0x35916856.
 //
-// Solidity: function addSealer(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) AddSealer(nodeID string, weight *big.Int) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, nodeID, weight)
+// Solidity: function addSealer(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusSession) AddSealer(arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, arg0, arg1)
+}
+
+func (_Consensus *ConsensusSession) AsyncAddSealer(handler func(*types.Receipt, error), arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncAddSealer(handler, &_Consensus.TransactOpts, arg0, arg1)
+}
+
+// AddSealer is a paid mutator transaction binding the contract method 0x35916856.
+//
+// Solidity: function addSealer(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusTransactorSession) AddSealer(arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.AddSealer(&_Consensus.TransactOpts, arg0, arg1)
+}
+
+func (_Consensus *ConsensusTransactorSession) AsyncAddSealer(handler func(*types.Receipt, error), arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncAddSealer(handler, &_Consensus.TransactOpts, arg0, arg1)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
-// Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactor) Remove(opts *bind.TransactOpts, nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.contract.Transact(opts, "remove", nodeID)
+// Solidity: function remove(string ) returns(int32)
+func (_Consensus *ConsensusTransactor) Remove(opts *bind.TransactOpts, arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Consensus.contract.TransactWithResult(opts, out, "remove", arg0)
+	return *ret0, transaction, receipt, err
+}
+
+func (_Consensus *ConsensusTransactor) AsyncRemove(handler func(*types.Receipt, error), opts *bind.TransactOpts, arg0 string) (*types.Transaction, error) {
+	return _Consensus.contract.AsyncTransact(opts, handler, "remove", arg0)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
-// Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusSession) Remove(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, nodeID)
+// Solidity: function remove(string ) returns(int32)
+func (_Consensus *ConsensusSession) Remove(arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, arg0)
+}
+
+func (_Consensus *ConsensusSession) AsyncRemove(handler func(*types.Receipt, error), arg0 string) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncRemove(handler, &_Consensus.TransactOpts, arg0)
 }
 
 // Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
-// Solidity: function remove(string nodeID) returns(int256)
-func (_Consensus *ConsensusTransactorSession) Remove(nodeID string) (*types.Transaction, *types.Receipt, error) {
-	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, nodeID)
+// Solidity: function remove(string ) returns(int32)
+func (_Consensus *ConsensusTransactorSession) Remove(arg0 string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.Remove(&_Consensus.TransactOpts, arg0)
+}
+
+func (_Consensus *ConsensusTransactorSession) AsyncRemove(handler func(*types.Receipt, error), arg0 string) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncRemove(handler, &_Consensus.TransactOpts, arg0)
+}
+
+// SetWeight is a paid mutator transaction binding the contract method 0xce6fa5c5.
+//
+// Solidity: function setWeight(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusTransactor) SetWeight(opts *bind.TransactOpts, arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Consensus.contract.TransactWithResult(opts, out, "setWeight", arg0, arg1)
+	return *ret0, transaction, receipt, err
+}
+
+func (_Consensus *ConsensusTransactor) AsyncSetWeight(handler func(*types.Receipt, error), opts *bind.TransactOpts, arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.contract.AsyncTransact(opts, handler, "setWeight", arg0, arg1)
+}
+
+// SetWeight is a paid mutator transaction binding the contract method 0xce6fa5c5.
+//
+// Solidity: function setWeight(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusSession) SetWeight(arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.SetWeight(&_Consensus.TransactOpts, arg0, arg1)
+}
+
+func (_Consensus *ConsensusSession) AsyncSetWeight(handler func(*types.Receipt, error), arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncSetWeight(handler, &_Consensus.TransactOpts, arg0, arg1)
+}
+
+// SetWeight is a paid mutator transaction binding the contract method 0xce6fa5c5.
+//
+// Solidity: function setWeight(string , uint256 ) returns(int32)
+func (_Consensus *ConsensusTransactorSession) SetWeight(arg0 string, arg1 *big.Int) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Consensus.Contract.SetWeight(&_Consensus.TransactOpts, arg0, arg1)
+}
+
+func (_Consensus *ConsensusTransactorSession) AsyncSetWeight(handler func(*types.Receipt, error), arg0 string, arg1 *big.Int) (*types.Transaction, error) {
+	return _Consensus.Contract.AsyncSetWeight(handler, &_Consensus.TransactOpts, arg0, arg1)
 }

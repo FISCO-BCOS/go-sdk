@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	standardOutput = 1
+	standardOutput = 0
 )
 
 var (
 	nodeID  = ""
+	weight	= 100
 	service *Service
 )
 
@@ -41,7 +42,7 @@ func getService(t *testing.T) {
 
 func getNodeID(t *testing.T) {
 	c := getClient(t)
-	sealerList, err := c.GetNodeIDList(context.Background())
+	sealerList, err := c.GetSealerList(context.Background())
 	if err != nil {
 		t.Fatalf("sealer list not found: %v", err)
 	}
@@ -124,4 +125,26 @@ func TestRemove(t *testing.T) {
 		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
 	}
 	t.Logf("Sealer list after excute RemoveNode: %s\n", observer)
+}
+
+func TestSetWeight(t *testing.T) {
+	observer, err := service.client.GetSealerList(context.Background())
+	if err != nil {
+		t.Fatalf("ConsensusService GetSealerList failed: %+v\n", err)
+	}
+	t.Logf("Sealer list before excute RemoveNode: %s\n", observer)
+
+	result, err := service.SetWeight(nodeID, int64(weight))
+	if err != nil {
+		t.Fatalf("ConsensusService Remove failed: %+v\n", err)
+	}
+	if result != standardOutput {
+		t.Fatalf("TestSetWeight failed, the result \"%v\" is inconsistent with \"%v\"", result, standardOutput)
+	}
+
+	observer, err = service.client.GetSealerList(context.Background())
+	if err != nil {
+		t.Fatalf("ConsensusService invoke GetSealerList second time failed: %+v\n", err)
+	}
+	t.Logf("Sealer list after excute SetWeight: %s\n", observer)
 }
