@@ -4,52 +4,65 @@ import (
 	"context"
 	"encoding/hex"
 	"testing"
+	"os"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 )
 
-func testSetValueByKey(t *testing.T, key string, value string) {
-	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+const (
+	standardOutput = 0
+	key            = "tx_count_limit"
+	value          = "30000000"
+)
+
+func getClient(t *testing.T) *client.Client {
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.DialContext(context.Background(), config)
 	if err != nil {
-		t.Fatalf("init client failed: %+v", err)
+		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
-	service, err := NewSystemConfigService(c)
-	if err != nil {
-		t.Fatalf("init SystemConfigService failed: %+v", err)
-	}
+	return c
+}
 
-	num, err := service.SetValueByKey(key, value)
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewSystemConfigService(c)
 	if err != nil {
-		t.Fatalf("SystemConfigService SetValueByKey failed: %+v", err)
+		t.Fatalf("init CnsService failed: %+v", err)
 	}
-	if num != 0 {
-		t.Fatalf("testSetValueByKey failed, the result %v is inconsistent with \"1\"", num)
-	}
+	service = newService
+}
 
-	result, err := c.GetSystemConfigByKey(context.Background(), key)
-	if err != nil {
-		t.Fatalf("GetSystemConfigByKey failed: %v", err)
-	}
-	t.Logf("set %s value: %s, GetSystemConfigByKey: %s", key, value, result.GetValue())
-	//t.Logf("set %s value: %s, GetSystemConfigByKey: %s", key, value, result[1:len(result)-1])
-	if value != result.GetValue() {
-		t.Fatalf("SetValueByKey failed!")
-	}
+var (
+	service *SystemConfigService
+)
+
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }
 
 func TestSetValueByKey(t *testing.T) {
-	// test tx_count_limit
-	testSetValueByKey(t, "tx_count_limit", "30000000")
+	result, err := service.SetValueByKey(key, value)
+	if err != nil {
+		t.Fatalf("Service RegisterCns failed: %+v\n", err)
+	}
+	if result != standardOutput {
+		t.Fatalf("TestRegisterCns failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
+	}
+	t.Logf("TestRegisterCns result: %v", result)
+}
 
-	// test tx_gas_limit
-	testSetValueByKey(t, "tx_gas_limit", "3000000000")
-
-	// test rpbft_epoch_sealer_num
-	//testSetValueByKey(t, "rpbft_epoch_sealer_num", "20")
-
-	// test rpbft_epoch_block_num
-	//testSetValueByKey(t, "rpbft_epoch_block_num", "100")
+func TestGetValueByKey(t *testing.T) {
+	ret0, _, err := service.GetValueByKey(key)
+	if err != nil {
+		t.Fatalf("Service GetValueByKey failed: %+v\n", err)
+	}
+	if ret0 != value {
+		t.Fatalf("TestGetValueByKey failed, the ret0 %v is inconsistent with \"%v\"", ret0, value)
+	}
+	t.Logf("TestGetValueByKey ret0: %v", ret0)
 }

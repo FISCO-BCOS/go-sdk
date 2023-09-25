@@ -26,12 +26,13 @@ var (
 
 // TableInfo is an auto generated low-level Go binding around an user-defined struct.
 type TableInfo struct {
+	KeyOrder     uint8
 	KeyColumn    string
 	ValueColumns []string
 }
 
 // TableManagerABI is the input ABI used to generate the binding from.
-const TableManagerABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"newColumns\",\"type\":\"string[]\"}],\"name\":\"appendColumns\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tableName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"keyField\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"valueField\",\"type\":\"string\"}],\"name\":\"createKVTable\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"keyColumn\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"valueColumns\",\"type\":\"string[]\"}],\"internalType\":\"structTableInfo\",\"name\":\"tableInfo\",\"type\":\"tuple\"}],\"name\":\"createTable\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tableName\",\"type\":\"string\"}],\"name\":\"desc\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"keyColumn\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"valueColumns\",\"type\":\"string[]\"}],\"internalType\":\"structTableInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"}],\"name\":\"openTable\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const TableManagerABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"newColumns\",\"type\":\"string[]\"}],\"name\":\"appendColumns\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tableName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"keyField\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"valueField\",\"type\":\"string\"}],\"name\":\"createKVTable\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"enumKeyOrder\",\"name\":\"keyOrder\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"keyColumn\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"valueColumns\",\"type\":\"string[]\"}],\"internalType\":\"structTableInfo\",\"name\":\"tableInfo\",\"type\":\"tuple\"}],\"name\":\"createTable\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tableName\",\"type\":\"string\"}],\"name\":\"descWithKeyOrder\",\"outputs\":[{\"components\":[{\"internalType\":\"enumKeyOrder\",\"name\":\"keyOrder\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"keyColumn\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"valueColumns\",\"type\":\"string[]\"}],\"internalType\":\"structTableInfo\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"}],\"name\":\"openTable\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // TableManager is an auto generated Go binding around a Solidity contract.
 type TableManager struct {
@@ -152,8 +153,8 @@ func (_TableManager *TableManagerRaw) Transfer(opts *bind.TransactOpts) (*types.
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_TableManager *TableManagerRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _TableManager.Contract.TableManagerTransactor.contract.Transact(opts, method, params...)
+func (_TableManager *TableManagerRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _TableManager.Contract.TableManagerTransactor.contract.TransactWithResult(opts, result, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -171,34 +172,34 @@ func (_TableManager *TableManagerTransactorRaw) Transfer(opts *bind.TransactOpts
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_TableManager *TableManagerTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _TableManager.Contract.contract.Transact(opts, method, params...)
+func (_TableManager *TableManagerTransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _TableManager.Contract.contract.TransactWithResult(opts, result, method, params...)
 }
 
-// Desc is a free data retrieval call binding the contract method 0x5d0d6d54.
+// DescWithKeyOrder is a free data retrieval call binding the contract method 0xb8764d3f.
 //
-// Solidity: function desc(string tableName) constant returns(TableInfo)
-func (_TableManager *TableManagerCaller) Desc(opts *bind.CallOpts, tableName string) (TableInfo, error) {
+// Solidity: function descWithKeyOrder(string tableName) constant returns(TableInfo)
+func (_TableManager *TableManagerCaller) DescWithKeyOrder(opts *bind.CallOpts, tableName string) (TableInfo, error) {
 	var (
 		ret0 = new(TableInfo)
 	)
 	out := ret0
-	err := _TableManager.contract.Call(opts, out, "desc", tableName)
+	err := _TableManager.contract.Call(opts, out, "descWithKeyOrder", tableName)
 	return *ret0, err
 }
 
-// Desc is a free data retrieval call binding the contract method 0x5d0d6d54.
+// DescWithKeyOrder is a free data retrieval call binding the contract method 0xb8764d3f.
 //
-// Solidity: function desc(string tableName) constant returns(TableInfo)
-func (_TableManager *TableManagerSession) Desc(tableName string) (TableInfo, error) {
-	return _TableManager.Contract.Desc(&_TableManager.CallOpts, tableName)
+// Solidity: function descWithKeyOrder(string tableName) constant returns(TableInfo)
+func (_TableManager *TableManagerSession) DescWithKeyOrder(tableName string) (TableInfo, error) {
+	return _TableManager.Contract.DescWithKeyOrder(&_TableManager.CallOpts, tableName)
 }
 
-// Desc is a free data retrieval call binding the contract method 0x5d0d6d54.
+// DescWithKeyOrder is a free data retrieval call binding the contract method 0xb8764d3f.
 //
-// Solidity: function desc(string tableName) constant returns(TableInfo)
-func (_TableManager *TableManagerCallerSession) Desc(tableName string) (TableInfo, error) {
-	return _TableManager.Contract.Desc(&_TableManager.CallOpts, tableName)
+// Solidity: function descWithKeyOrder(string tableName) constant returns(TableInfo)
+func (_TableManager *TableManagerCallerSession) DescWithKeyOrder(tableName string) (TableInfo, error) {
+	return _TableManager.Contract.DescWithKeyOrder(&_TableManager.CallOpts, tableName)
 }
 
 // OpenTable is a free data retrieval call binding the contract method 0xf23f63c9.
@@ -230,8 +231,13 @@ func (_TableManager *TableManagerCallerSession) OpenTable(path string) (common.A
 // AppendColumns is a paid mutator transaction binding the contract method 0x302baee0.
 //
 // Solidity: function appendColumns(string path, string[] newColumns) returns(int32)
-func (_TableManager *TableManagerTransactor) AppendColumns(opts *bind.TransactOpts, path string, newColumns []string) (*types.Transaction, *types.Receipt, error) {
-	return _TableManager.contract.Transact(opts, "appendColumns", path, newColumns)
+func (_TableManager *TableManagerTransactor) AppendColumns(opts *bind.TransactOpts, path string, newColumns []string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _TableManager.contract.TransactWithResult(opts, out, "appendColumns", path, newColumns)
+	return *ret0, transaction, receipt, err
 }
 
 func (_TableManager *TableManagerTransactor) AsyncAppendColumns(handler func(*types.Receipt, error), opts *bind.TransactOpts, path string, newColumns []string) (*types.Transaction, error) {
@@ -241,7 +247,7 @@ func (_TableManager *TableManagerTransactor) AsyncAppendColumns(handler func(*ty
 // AppendColumns is a paid mutator transaction binding the contract method 0x302baee0.
 //
 // Solidity: function appendColumns(string path, string[] newColumns) returns(int32)
-func (_TableManager *TableManagerSession) AppendColumns(path string, newColumns []string) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerSession) AppendColumns(path string, newColumns []string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.AppendColumns(&_TableManager.TransactOpts, path, newColumns)
 }
 
@@ -252,7 +258,7 @@ func (_TableManager *TableManagerSession) AsyncAppendColumns(handler func(*types
 // AppendColumns is a paid mutator transaction binding the contract method 0x302baee0.
 //
 // Solidity: function appendColumns(string path, string[] newColumns) returns(int32)
-func (_TableManager *TableManagerTransactorSession) AppendColumns(path string, newColumns []string) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerTransactorSession) AppendColumns(path string, newColumns []string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.AppendColumns(&_TableManager.TransactOpts, path, newColumns)
 }
 
@@ -263,8 +269,13 @@ func (_TableManager *TableManagerTransactorSession) AsyncAppendColumns(handler f
 // CreateKVTable is a paid mutator transaction binding the contract method 0xb0e89adb.
 //
 // Solidity: function createKVTable(string tableName, string keyField, string valueField) returns(int32)
-func (_TableManager *TableManagerTransactor) CreateKVTable(opts *bind.TransactOpts, tableName string, keyField string, valueField string) (*types.Transaction, *types.Receipt, error) {
-	return _TableManager.contract.Transact(opts, "createKVTable", tableName, keyField, valueField)
+func (_TableManager *TableManagerTransactor) CreateKVTable(opts *bind.TransactOpts, tableName string, keyField string, valueField string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _TableManager.contract.TransactWithResult(opts, out, "createKVTable", tableName, keyField, valueField)
+	return *ret0, transaction, receipt, err
 }
 
 func (_TableManager *TableManagerTransactor) AsyncCreateKVTable(handler func(*types.Receipt, error), opts *bind.TransactOpts, tableName string, keyField string, valueField string) (*types.Transaction, error) {
@@ -274,7 +285,7 @@ func (_TableManager *TableManagerTransactor) AsyncCreateKVTable(handler func(*ty
 // CreateKVTable is a paid mutator transaction binding the contract method 0xb0e89adb.
 //
 // Solidity: function createKVTable(string tableName, string keyField, string valueField) returns(int32)
-func (_TableManager *TableManagerSession) CreateKVTable(tableName string, keyField string, valueField string) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerSession) CreateKVTable(tableName string, keyField string, valueField string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.CreateKVTable(&_TableManager.TransactOpts, tableName, keyField, valueField)
 }
 
@@ -285,7 +296,7 @@ func (_TableManager *TableManagerSession) AsyncCreateKVTable(handler func(*types
 // CreateKVTable is a paid mutator transaction binding the contract method 0xb0e89adb.
 //
 // Solidity: function createKVTable(string tableName, string keyField, string valueField) returns(int32)
-func (_TableManager *TableManagerTransactorSession) CreateKVTable(tableName string, keyField string, valueField string) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerTransactorSession) CreateKVTable(tableName string, keyField string, valueField string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.CreateKVTable(&_TableManager.TransactOpts, tableName, keyField, valueField)
 }
 
@@ -293,21 +304,26 @@ func (_TableManager *TableManagerTransactorSession) AsyncCreateKVTable(handler f
 	return _TableManager.Contract.AsyncCreateKVTable(handler, &_TableManager.TransactOpts, tableName, keyField, valueField)
 }
 
-// CreateTable is a paid mutator transaction binding the contract method 0x31a5a51e.
+// CreateTable is a paid mutator transaction binding the contract method 0x75b14eea.
 //
 // Solidity: function createTable(string path, TableInfo tableInfo) returns(int32)
-func (_TableManager *TableManagerTransactor) CreateTable(opts *bind.TransactOpts, path string, tableInfo TableInfo) (*types.Transaction, *types.Receipt, error) {
-	return _TableManager.contract.Transact(opts, "createTable", path, tableInfo)
+func (_TableManager *TableManagerTransactor) CreateTable(opts *bind.TransactOpts, path string, tableInfo TableInfo) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _TableManager.contract.TransactWithResult(opts, out, "createTable", path, tableInfo)
+	return *ret0, transaction, receipt, err
 }
 
 func (_TableManager *TableManagerTransactor) AsyncCreateTable(handler func(*types.Receipt, error), opts *bind.TransactOpts, path string, tableInfo TableInfo) (*types.Transaction, error) {
 	return _TableManager.contract.AsyncTransact(opts, handler, "createTable", path, tableInfo)
 }
 
-// CreateTable is a paid mutator transaction binding the contract method 0x31a5a51e.
+// CreateTable is a paid mutator transaction binding the contract method 0x75b14eea.
 //
 // Solidity: function createTable(string path, TableInfo tableInfo) returns(int32)
-func (_TableManager *TableManagerSession) CreateTable(path string, tableInfo TableInfo) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerSession) CreateTable(path string, tableInfo TableInfo) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.CreateTable(&_TableManager.TransactOpts, path, tableInfo)
 }
 
@@ -315,10 +331,10 @@ func (_TableManager *TableManagerSession) AsyncCreateTable(handler func(*types.R
 	return _TableManager.Contract.AsyncCreateTable(handler, &_TableManager.TransactOpts, path, tableInfo)
 }
 
-// CreateTable is a paid mutator transaction binding the contract method 0x31a5a51e.
+// CreateTable is a paid mutator transaction binding the contract method 0x75b14eea.
 //
 // Solidity: function createTable(string path, TableInfo tableInfo) returns(int32)
-func (_TableManager *TableManagerTransactorSession) CreateTable(path string, tableInfo TableInfo) (*types.Transaction, *types.Receipt, error) {
+func (_TableManager *TableManagerTransactorSession) CreateTable(path string, tableInfo TableInfo) (int32, *types.Transaction, *types.Receipt, error) {
 	return _TableManager.Contract.CreateTable(&_TableManager.TransactOpts, path, tableInfo)
 }
 

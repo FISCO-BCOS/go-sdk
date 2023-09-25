@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.6.0;
+pragma solidity >=0.6.10 <0.8.20;
 
 contract ConsensusPrecompiled {
     function addSealer(string memory,uint256) public returns (int32){}

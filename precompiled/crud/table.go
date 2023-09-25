@@ -27,6 +27,7 @@ var (
 // Condition is an auto generated low-level Go binding around an user-defined struct.
 type Condition struct {
 	Op    uint8
+	Field string
 	Value string
 }
 
@@ -49,7 +50,7 @@ type UpdateField struct {
 }
 
 // TableABI is the input ABI used to generate the binding from.
-const TableABI = "[{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"}],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry\",\"name\":\"entry\",\"type\":\"tuple\"}],\"name\":\"insert\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"}],\"name\":\"remove\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"}],\"name\":\"select\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"}],\"name\":\"select\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"columnName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structUpdateField[]\",\"name\":\"updateFields\",\"type\":\"tuple[]\"}],\"name\":\"update\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"columnName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structUpdateField[]\",\"name\":\"updateFields\",\"type\":\"tuple[]\"}],\"name\":\"update\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const TableABI = "[{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"field\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"}],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry\",\"name\":\"entry\",\"type\":\"tuple\"}],\"name\":\"insert\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"}],\"name\":\"remove\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"field\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"}],\"name\":\"remove\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"field\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"}],\"name\":\"select\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"}],\"name\":\"select\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"fields\",\"type\":\"string[]\"}],\"internalType\":\"structEntry\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"columnName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structUpdateField[]\",\"name\":\"updateFields\",\"type\":\"tuple[]\"}],\"name\":\"update\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"enumConditionOP\",\"name\":\"op\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"field\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structCondition[]\",\"name\":\"conditions\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"offset\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"count\",\"type\":\"uint32\"}],\"internalType\":\"structLimit\",\"name\":\"limit\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"columnName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"internalType\":\"structUpdateField[]\",\"name\":\"updateFields\",\"type\":\"tuple[]\"}],\"name\":\"update\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // Table is an auto generated Go binding around a Solidity contract.
 type Table struct {
@@ -170,8 +171,8 @@ func (_Table *TableRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, *
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Table *TableRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.TableTransactor.contract.Transact(opts, method, params...)
+func (_Table *TableRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.TableTransactor.contract.TransactWithResult(opts, result, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -189,11 +190,11 @@ func (_Table *TableTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Tran
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Table *TableTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.contract.Transact(opts, method, params...)
+func (_Table *TableTransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.contract.TransactWithResult(opts, result, method, params...)
 }
 
-// Count is a free data retrieval call binding the contract method 0xd8169b27.
+// Count is a free data retrieval call binding the contract method 0xda46335f.
 //
 // Solidity: function count([]Condition conditions) constant returns(uint32)
 func (_Table *TableCaller) Count(opts *bind.CallOpts, conditions []Condition) (uint32, error) {
@@ -205,21 +206,21 @@ func (_Table *TableCaller) Count(opts *bind.CallOpts, conditions []Condition) (u
 	return *ret0, err
 }
 
-// Count is a free data retrieval call binding the contract method 0xd8169b27.
+// Count is a free data retrieval call binding the contract method 0xda46335f.
 //
 // Solidity: function count([]Condition conditions) constant returns(uint32)
 func (_Table *TableSession) Count(conditions []Condition) (uint32, error) {
 	return _Table.Contract.Count(&_Table.CallOpts, conditions)
 }
 
-// Count is a free data retrieval call binding the contract method 0xd8169b27.
+// Count is a free data retrieval call binding the contract method 0xda46335f.
 //
 // Solidity: function count([]Condition conditions) constant returns(uint32)
 func (_Table *TableCallerSession) Count(conditions []Condition) (uint32, error) {
 	return _Table.Contract.Count(&_Table.CallOpts, conditions)
 }
 
-// Select is a free data retrieval call binding the contract method 0x3cd5452e.
+// Select is a free data retrieval call binding the contract method 0x2a922441.
 //
 // Solidity: function select([]Condition conditions, Limit limit) constant returns([]Entry)
 func (_Table *TableCaller) Select(opts *bind.CallOpts, conditions []Condition, limit Limit) ([]Entry, error) {
@@ -231,14 +232,14 @@ func (_Table *TableCaller) Select(opts *bind.CallOpts, conditions []Condition, l
 	return *ret0, err
 }
 
-// Select is a free data retrieval call binding the contract method 0x3cd5452e.
+// Select is a free data retrieval call binding the contract method 0x2a922441.
 //
 // Solidity: function select([]Condition conditions, Limit limit) constant returns([]Entry)
 func (_Table *TableSession) Select(conditions []Condition, limit Limit) ([]Entry, error) {
 	return _Table.Contract.Select(&_Table.CallOpts, conditions, limit)
 }
 
-// Select is a free data retrieval call binding the contract method 0x3cd5452e.
+// Select is a free data retrieval call binding the contract method 0x2a922441.
 //
 // Solidity: function select([]Condition conditions, Limit limit) constant returns([]Entry)
 func (_Table *TableCallerSession) Select(conditions []Condition, limit Limit) ([]Entry, error) {
@@ -274,8 +275,13 @@ func (_Table *TableCallerSession) Select0(key string) (Entry, error) {
 // Insert is a paid mutator transaction binding the contract method 0x5c6e105f.
 //
 // Solidity: function insert(Entry entry) returns(int32)
-func (_Table *TableTransactor) Insert(opts *bind.TransactOpts, entry Entry) (*types.Transaction, *types.Receipt, error) {
-	return _Table.contract.Transact(opts, "insert", entry)
+func (_Table *TableTransactor) Insert(opts *bind.TransactOpts, entry Entry) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Table.contract.TransactWithResult(opts, out, "insert", entry)
+	return *ret0, transaction, receipt, err
 }
 
 func (_Table *TableTransactor) AsyncInsert(handler func(*types.Receipt, error), opts *bind.TransactOpts, entry Entry) (*types.Transaction, error) {
@@ -285,7 +291,7 @@ func (_Table *TableTransactor) AsyncInsert(handler func(*types.Receipt, error), 
 // Insert is a paid mutator transaction binding the contract method 0x5c6e105f.
 //
 // Solidity: function insert(Entry entry) returns(int32)
-func (_Table *TableSession) Insert(entry Entry) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableSession) Insert(entry Entry) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Insert(&_Table.TransactOpts, entry)
 }
 
@@ -296,7 +302,7 @@ func (_Table *TableSession) AsyncInsert(handler func(*types.Receipt, error), ent
 // Insert is a paid mutator transaction binding the contract method 0x5c6e105f.
 //
 // Solidity: function insert(Entry entry) returns(int32)
-func (_Table *TableTransactorSession) Insert(entry Entry) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableTransactorSession) Insert(entry Entry) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Insert(&_Table.TransactOpts, entry)
 }
 
@@ -304,77 +310,92 @@ func (_Table *TableTransactorSession) AsyncInsert(handler func(*types.Receipt, e
 	return _Table.Contract.AsyncInsert(handler, &_Table.TransactOpts, entry)
 }
 
-// Remove is a paid mutator transaction binding the contract method 0x686138ff.
-//
-// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
-func (_Table *TableTransactor) Remove(opts *bind.TransactOpts, conditions []Condition, limit Limit) (*types.Transaction, *types.Receipt, error) {
-	return _Table.contract.Transact(opts, "remove", conditions, limit)
-}
-
-func (_Table *TableTransactor) AsyncRemove(handler func(*types.Receipt, error), opts *bind.TransactOpts, conditions []Condition, limit Limit) (*types.Transaction, error) {
-	return _Table.contract.AsyncTransact(opts, handler, "remove", conditions, limit)
-}
-
-// Remove is a paid mutator transaction binding the contract method 0x686138ff.
-//
-// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
-func (_Table *TableSession) Remove(conditions []Condition, limit Limit) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.Remove(&_Table.TransactOpts, conditions, limit)
-}
-
-func (_Table *TableSession) AsyncRemove(handler func(*types.Receipt, error), conditions []Condition, limit Limit) (*types.Transaction, error) {
-	return _Table.Contract.AsyncRemove(handler, &_Table.TransactOpts, conditions, limit)
-}
-
-// Remove is a paid mutator transaction binding the contract method 0x686138ff.
-//
-// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
-func (_Table *TableTransactorSession) Remove(conditions []Condition, limit Limit) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.Remove(&_Table.TransactOpts, conditions, limit)
-}
-
-func (_Table *TableTransactorSession) AsyncRemove(handler func(*types.Receipt, error), conditions []Condition, limit Limit) (*types.Transaction, error) {
-	return _Table.Contract.AsyncRemove(handler, &_Table.TransactOpts, conditions, limit)
-}
-
-// Remove0 is a paid mutator transaction binding the contract method 0x80599e4b.
+// Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string key) returns(int32)
-func (_Table *TableTransactor) Remove0(opts *bind.TransactOpts, key string) (*types.Transaction, *types.Receipt, error) {
-	return _Table.contract.Transact(opts, "remove0", key)
+func (_Table *TableTransactor) Remove(opts *bind.TransactOpts, key string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Table.contract.TransactWithResult(opts, out, "remove", key)
+	return *ret0, transaction, receipt, err
 }
 
-func (_Table *TableTransactor) AsyncRemove0(handler func(*types.Receipt, error), opts *bind.TransactOpts, key string) (*types.Transaction, error) {
-	return _Table.contract.AsyncTransact(opts, handler, "remove0", key)
+func (_Table *TableTransactor) AsyncRemove(handler func(*types.Receipt, error), opts *bind.TransactOpts, key string) (*types.Transaction, error) {
+	return _Table.contract.AsyncTransact(opts, handler, "remove", key)
 }
 
-// Remove0 is a paid mutator transaction binding the contract method 0x80599e4b.
+// Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string key) returns(int32)
-func (_Table *TableSession) Remove0(key string) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.Remove0(&_Table.TransactOpts, key)
+func (_Table *TableSession) Remove(key string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.Remove(&_Table.TransactOpts, key)
 }
 
-func (_Table *TableSession) AsyncRemove0(handler func(*types.Receipt, error), key string) (*types.Transaction, error) {
-	return _Table.Contract.AsyncRemove0(handler, &_Table.TransactOpts, key)
+func (_Table *TableSession) AsyncRemove(handler func(*types.Receipt, error), key string) (*types.Transaction, error) {
+	return _Table.Contract.AsyncRemove(handler, &_Table.TransactOpts, key)
 }
 
-// Remove0 is a paid mutator transaction binding the contract method 0x80599e4b.
+// Remove is a paid mutator transaction binding the contract method 0x80599e4b.
 //
 // Solidity: function remove(string key) returns(int32)
-func (_Table *TableTransactorSession) Remove0(key string) (*types.Transaction, *types.Receipt, error) {
-	return _Table.Contract.Remove0(&_Table.TransactOpts, key)
+func (_Table *TableTransactorSession) Remove(key string) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.Remove(&_Table.TransactOpts, key)
 }
 
-func (_Table *TableTransactorSession) AsyncRemove0(handler func(*types.Receipt, error), key string) (*types.Transaction, error) {
-	return _Table.Contract.AsyncRemove0(handler, &_Table.TransactOpts, key)
+func (_Table *TableTransactorSession) AsyncRemove(handler func(*types.Receipt, error), key string) (*types.Transaction, error) {
+	return _Table.Contract.AsyncRemove(handler, &_Table.TransactOpts, key)
+}
+
+// Remove0 is a paid mutator transaction binding the contract method 0xa7260717.
+//
+// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
+func (_Table *TableTransactor) Remove0(opts *bind.TransactOpts, conditions []Condition, limit Limit) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Table.contract.TransactWithResult(opts, out, "remove0", conditions, limit)
+	return *ret0, transaction, receipt, err
+}
+
+func (_Table *TableTransactor) AsyncRemove0(handler func(*types.Receipt, error), opts *bind.TransactOpts, conditions []Condition, limit Limit) (*types.Transaction, error) {
+	return _Table.contract.AsyncTransact(opts, handler, "remove0", conditions, limit)
+}
+
+// Remove0 is a paid mutator transaction binding the contract method 0xa7260717.
+//
+// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
+func (_Table *TableSession) Remove0(conditions []Condition, limit Limit) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.Remove0(&_Table.TransactOpts, conditions, limit)
+}
+
+func (_Table *TableSession) AsyncRemove0(handler func(*types.Receipt, error), conditions []Condition, limit Limit) (*types.Transaction, error) {
+	return _Table.Contract.AsyncRemove0(handler, &_Table.TransactOpts, conditions, limit)
+}
+
+// Remove0 is a paid mutator transaction binding the contract method 0xa7260717.
+//
+// Solidity: function remove([]Condition conditions, Limit limit) returns(int32)
+func (_Table *TableTransactorSession) Remove0(conditions []Condition, limit Limit) (int32, *types.Transaction, *types.Receipt, error) {
+	return _Table.Contract.Remove0(&_Table.TransactOpts, conditions, limit)
+}
+
+func (_Table *TableTransactorSession) AsyncRemove0(handler func(*types.Receipt, error), conditions []Condition, limit Limit) (*types.Transaction, error) {
+	return _Table.Contract.AsyncRemove0(handler, &_Table.TransactOpts, conditions, limit)
 }
 
 // Update is a paid mutator transaction binding the contract method 0x41ffd75f.
 //
 // Solidity: function update(string key, []UpdateField updateFields) returns(int32)
-func (_Table *TableTransactor) Update(opts *bind.TransactOpts, key string, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
-	return _Table.contract.Transact(opts, "update", key, updateFields)
+func (_Table *TableTransactor) Update(opts *bind.TransactOpts, key string, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Table.contract.TransactWithResult(opts, out, "update", key, updateFields)
+	return *ret0, transaction, receipt, err
 }
 
 func (_Table *TableTransactor) AsyncUpdate(handler func(*types.Receipt, error), opts *bind.TransactOpts, key string, updateFields []UpdateField) (*types.Transaction, error) {
@@ -384,7 +405,7 @@ func (_Table *TableTransactor) AsyncUpdate(handler func(*types.Receipt, error), 
 // Update is a paid mutator transaction binding the contract method 0x41ffd75f.
 //
 // Solidity: function update(string key, []UpdateField updateFields) returns(int32)
-func (_Table *TableSession) Update(key string, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableSession) Update(key string, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Update(&_Table.TransactOpts, key, updateFields)
 }
 
@@ -395,7 +416,7 @@ func (_Table *TableSession) AsyncUpdate(handler func(*types.Receipt, error), key
 // Update is a paid mutator transaction binding the contract method 0x41ffd75f.
 //
 // Solidity: function update(string key, []UpdateField updateFields) returns(int32)
-func (_Table *TableTransactorSession) Update(key string, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableTransactorSession) Update(key string, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Update(&_Table.TransactOpts, key, updateFields)
 }
 
@@ -403,21 +424,26 @@ func (_Table *TableTransactorSession) AsyncUpdate(handler func(*types.Receipt, e
 	return _Table.Contract.AsyncUpdate(handler, &_Table.TransactOpts, key, updateFields)
 }
 
-// Update0 is a paid mutator transaction binding the contract method 0x9953df92.
+// Update0 is a paid mutator transaction binding the contract method 0x9924c17e.
 //
 // Solidity: function update([]Condition conditions, Limit limit, []UpdateField updateFields) returns(int32)
-func (_Table *TableTransactor) Update0(opts *bind.TransactOpts, conditions []Condition, limit Limit, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
-	return _Table.contract.Transact(opts, "update0", conditions, limit, updateFields)
+func (_Table *TableTransactor) Update0(opts *bind.TransactOpts, conditions []Condition, limit Limit, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Table.contract.TransactWithResult(opts, out, "update0", conditions, limit, updateFields)
+	return *ret0, transaction, receipt, err
 }
 
 func (_Table *TableTransactor) AsyncUpdate0(handler func(*types.Receipt, error), opts *bind.TransactOpts, conditions []Condition, limit Limit, updateFields []UpdateField) (*types.Transaction, error) {
 	return _Table.contract.AsyncTransact(opts, handler, "update0", conditions, limit, updateFields)
 }
 
-// Update0 is a paid mutator transaction binding the contract method 0x9953df92.
+// Update0 is a paid mutator transaction binding the contract method 0x9924c17e.
 //
 // Solidity: function update([]Condition conditions, Limit limit, []UpdateField updateFields) returns(int32)
-func (_Table *TableSession) Update0(conditions []Condition, limit Limit, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableSession) Update0(conditions []Condition, limit Limit, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Update0(&_Table.TransactOpts, conditions, limit, updateFields)
 }
 
@@ -425,10 +451,10 @@ func (_Table *TableSession) AsyncUpdate0(handler func(*types.Receipt, error), co
 	return _Table.Contract.AsyncUpdate0(handler, &_Table.TransactOpts, conditions, limit, updateFields)
 }
 
-// Update0 is a paid mutator transaction binding the contract method 0x9953df92.
+// Update0 is a paid mutator transaction binding the contract method 0x9924c17e.
 //
 // Solidity: function update([]Condition conditions, Limit limit, []UpdateField updateFields) returns(int32)
-func (_Table *TableTransactorSession) Update0(conditions []Condition, limit Limit, updateFields []UpdateField) (*types.Transaction, *types.Receipt, error) {
+func (_Table *TableTransactorSession) Update0(conditions []Condition, limit Limit, updateFields []UpdateField) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Table.Contract.Update0(&_Table.TransactOpts, conditions, limit, updateFields)
 }
 
