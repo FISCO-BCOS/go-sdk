@@ -752,7 +752,7 @@ func (hc *channelSession) subscribeTopic(topic string, handler func([]byte, *[]b
 	if handler == nil {
 		return errors.New("handler is nil")
 	}
-	if _, ok := hc.topicHandlers[topic]; ok {
+	if oldHandler, ok := hc.topicHandlers[topic]; ok && oldHandler != nil {
 		return errors.New("already subscribed to topic " + topic)
 	}
 	hc.topicMu.Lock()
