@@ -55,6 +55,7 @@ func errorCodeToError(errorCode int64) error {
 type Service struct {
 	crud         *Table
 	tableFactory *TableManager
+	KVTable		 *KVTable
 	crudAuth     *bind.TransactOpts
 	CallOpts     *bind.CallOpts
 	client       *client.Client
@@ -66,6 +67,8 @@ var TableFactoryPrecompileAddress = common.HexToAddress("0x1002")
 // CRUDPrecompileAddress is the contract address of CRUD
 var CRUDPrecompileAddress = common.HexToAddress("0x1002")
 
+var KVTablePrecompileAddress = common.HexToAddress("0x1002")
+
 // NewCRUDService returns ptr of CRUDService
 func NewCRUDService(client *client.Client) (*Service, error) {
 	crudInstance, err := NewTable(CRUDPrecompileAddress, client)
@@ -76,17 +79,22 @@ func NewCRUDService(client *client.Client) (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("construct TableFactor failed: %+v", err)
 	}
+	KVTableInstance, err := NewKVTable(KVTablePrecompileAddress, client)
+	if err != nil {
+		return nil, fmt.Errorf("construct KVTable failed: %+v", err)
+	}
 	auth := client.GetTransactOpts()
 	callOpts := client.GetCallOpts()
-	return &Service{crud: crudInstance, tableFactory: tableInstance, crudAuth: auth, CallOpts: callOpts, client: client}, nil
+	return &Service{crud: crudInstance, tableFactory: tableInstance, KVTable:KVTableInstance, crudAuth: auth, CallOpts: callOpts, client: client}, nil
 }
 
+// TableManager
 func (service *Service) CreateTable(tableName string, key string, valueFields []string) (int64, error) {
 	tableInfo := TableInfo{
 		KeyColumn:    key,
 		ValueColumns: valueFields,
 	}
-	_, receipt, err := service.tableFactory.CreateTable(service.crudAuth, tableName, tableInfo)
+	_, _, receipt, err := service.tableFactory.CreateTable(service.crudAuth, tableName, tableInfo)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService CreateTable failed: %v", err)
 	}
@@ -112,6 +120,29 @@ func (service *Service) AsyncCreateTable(handler func(*types.Receipt, error), ta
 	return service.tableFactory.AsyncCreateTable(handler, service.crudAuth, tableName, tableInfo)
 }
 
+func (service *Service) CreateKVTable(tableName string, keyField string, valueField string) (int64, error) {
+	_, _, receipt, err := service.tableFactory.CreateKVTable(service.crudAuth, tableName, keyField, valueField)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService CreateKVTable failed: %v", err)
+	}
+
+	address, err := service.tableFactory.OpenTable(service.CallOpts, tableName)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService OpenTable failed: %v", err)
+	}
+	fmt.Println("CreateKVTable address:", address)
+	crudInstance, err := NewTable(address, service.client)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("construct TableFactor failed: %+v", err)
+	}
+	service.crud = crudInstance
+	return parseReturnValue(receipt, "createKVTable")
+}
+
+func (service *Service) AsyncCreateKVTable(handler func(*types.Receipt, error), tableName string, keyField string, valueField string) (*types.Transaction, error) {
+	return service.tableFactory.AsyncCreateKVTable(handler, service.crudAuth, tableName, keyField, valueField)
+}
+
 func (service *Service) OpenTable(tableName string) (int64, error) {
 	address, err := service.tableFactory.OpenTable(service.CallOpts, tableName)
 	if err != nil {
@@ -126,121 +157,211 @@ func (service *Service) OpenTable(tableName string) (int64, error) {
 	return 0, nil
 }
 
-// Insert entry
-func (service *Service) Insert(entry *Entry) (int64, error) {
+func (service *Service) OpenKVTable(tableName string) (int64, error) {
+	address, err := service.tableFactory.OpenTable(service.CallOpts, tableName)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService OpenTable failed: %v", err)
+	}
+	fmt.Println("OpenTable address:", address)
+	KVTableInstance, err := NewKVTable(address, service.client)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("construct TableFactor failed: %+v", err)
+	}
+	service.KVTable = KVTableInstance
+	return 0, nil
+}
+
+func (service *Service) AppendColumns(path string, newColumns []string) (int64, error) {
+	_, _, receipt, err := service.tableFactory.AppendColumns(service.crudAuth, path, newColumns)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService AppendColumns failed: %v", err)
+	}
+	return parseReturnValue(receipt, "createTable")
+}
+
+func (service *Service) AsyncAppendColumns(handler func(*types.Receipt, error), path string, newColumns []string) (*types.Transaction, error) {
+	return service.tableFactory.AsyncAppendColumns(handler, service.crudAuth, path, newColumns)
+}
+
+func (service *Service) DescWithKeyOrder(tableName string) (TableInfo, error) {
+	opts := &bind.CallOpts{From: service.crudAuth.From}
+	ret0, err := service.tableFactory.DescWithKeyOrder(opts, tableName)
+	if err != nil {
+		return *new(TableInfo), fmt.Errorf("CRUDService DescWithKeyOrder failed: %v", err)
+	}
+	return ret0, err
+}
+
+// Table
+func (service *Service) Insert(tableName string, entry Entry) (int64, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
 	if len(entry.Key) > TableKeyMaxLength {
 		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
-
-	_, receipt, err := service.crud.Insert(service.crudAuth, *entry)
+	_, _, receipt, err := service.crud.Insert(service.crudAuth, entry)
 	if err != nil {
 		return -1, fmt.Errorf("CRUDService Insert failed: %v", err)
 	}
 	return parseReturnValue(receipt, "insert")
 }
 
-//
-//func (service *Service) AsyncInsert(handler func(*types.Receipt, error), tableName string, key string, entry *Entry) (*types.Transaction, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	// change to string
-//	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
-//	if err != nil {
-//		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
-//	}
-//	return service.crud.AsyncInsert(handler, service.crudAuth, tableName, key, string(entryJSON[:]), "")
-//}
-//
-//// Update entry
-//func (service *Service) Update(tableName string, key string, entry *Entry, condition *Condition) (int64, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	// change to string
-//	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
-//	if err != nil {
-//		return -1, fmt.Errorf("change entry to json struct failed: %v", err)
-//	}
-//	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
-//	if err != nil {
-//		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
-//	}
-//
-//	_, receipt, err := service.crud.Update(service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
-//	if err != nil {
-//		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
-//	}
-//	return parseReturnValue(receipt, "update")
-//}
-//
-//func (service *Service) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, entry *Entry, condition *Condition) (*types.Transaction, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	// change to string
-//	entryJSON, err := json.MarshalIndent(entry.GetFields(), "", "\t")
-//	if err != nil {
-//		return nil, fmt.Errorf("change entry to json struct failed: %v", err)
-//	}
-//	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
-//	if err != nil {
-//		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
-//	}
-//
-//	return service.crud.AsyncUpdate(handler, service.crudAuth, tableName, key, string(entryJSON[:]), string(conditionJSON[:]), "")
-//
-//}
-//
-//func (service *Service) Remove(tableName string, key string, condition *Condition) (int64, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
-//	if err != nil {
-//		return -1, fmt.Errorf("change condition to json struct failed: %v", err)
-//	}
-//
-//	_, receipt, err := service.crud.Remove(service.crudAuth, tableName, key, string(conditionJSON[:]), "")
-//	if err != nil {
-//		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
-//	}
-//	return parseReturnValue(receipt, "remove")
-//}
-//
-//func (service *Service) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string, condition *Condition) (*types.Transaction, error) {
-//	if len(key) > TableKeyMaxLength {
-//		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
-//	}
-//	conditionJSON, err := json.MarshalIndent(condition.GetConditions(), "", "\t")
-//	if err != nil {
-//		return nil, fmt.Errorf("change condition to json struct failed: %v", err)
-//	}
-//
-//	return service.crud.AsyncRemove(handler, service.crudAuth, tableName, key, string(conditionJSON[:]), "")
-//}
-
-// Select entry
-func (service *Service) Select(key string) (*Entry, error) {
-	if len(key) > TableKeyMaxLength {
+func (service *Service) AsyncInsert(handler func(*types.Receipt, error), tableName string, entry Entry) (*types.Transaction, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	if len(entry.Key) > TableKeyMaxLength {
 		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	return service.crud.AsyncInsert(handler, service.crudAuth, entry)
+}
+
+func (service *Service) Select0(tableName string, key string) (Entry, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return Entry{}, fmt.Errorf("the table does not exist")
+	}
+	if len(key) > TableKeyMaxLength {
+		return Entry{}, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
 	}
 	entry, err := service.crud.Select0(service.CallOpts, key)
 	if err != nil {
-		return nil, fmt.Errorf("CRUDService Select failed: %v", err)
+		return Entry{}, fmt.Errorf("CRUDService Select failed: %v", err)
 	}
-	return &entry, nil
+	return entry, nil
 }
 
-//// Desc is used for Table
-//func (service *Service) Desc(userTableName string) (string, string, error) {
-//	opts := &bind.CallOpts{From: service.crudAuth.From}
-//	keyField, valueField, err := service.crud.desc(opts, userTableName)
-//	if err != nil {
-//		return "", "", fmt.Errorf("desc failed, select table error: %v", err)
-//	}
-//	return keyField, valueField, nil
-//}
+func (service *Service) Select(tableName string, conditions []Condition, limit Limit) ([]Entry, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	entries, err := service.crud.Select(service.CallOpts, conditions, limit)
+	if err != nil {
+		return nil, fmt.Errorf("CRUDService Select failed: %v", err)
+	}
+	return entries, nil
+}
+
+func (service *Service) Update(tableName string, key string, updateFields []UpdateField) (int64, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
+	if len(key) > TableKeyMaxLength {
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	_, _, receipt, err := service.crud.Update(service.crudAuth, key, updateFields)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
+	}
+	return parseReturnValue(receipt, "update")
+}
+
+func (service *Service) Update0(tableName string, conditions []Condition, limit Limit, updateFields []UpdateField) (int64, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
+	_, _, receipt, err := service.crud.Update0(service.crudAuth, conditions, limit, updateFields)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Update failed: %v", err)
+	}
+	return parseReturnValue(receipt, "update0")
+}
+
+func (service *Service) AsyncUpdate(handler func(*types.Receipt, error), tableName string, key string, updateFields []UpdateField) (*types.Transaction, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	return service.crud.AsyncUpdate(handler, service.crudAuth, key, updateFields)
+}
+
+func (service *Service) AsyncUpdate0(handler func(*types.Receipt, error), tableName string, conditions []Condition, limit Limit, updateFields []UpdateField) (*types.Transaction, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	return service.crud.AsyncUpdate0(handler, service.crudAuth, conditions, limit, updateFields)
+}
+
+func (service *Service) Remove(tableName string, key string) (int64, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
+	if len(key) > TableKeyMaxLength {
+		return -1, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	_, _, receipt, err := service.crud.Remove(service.crudAuth, key)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
+	}
+	return parseReturnValue(receipt, "remove")
+}
+
+func (service *Service) Remove0(tableName string, conditions []Condition, limit Limit) (int64, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
+	_, _, receipt, err := service.crud.Remove0(service.crudAuth, conditions, limit)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Remove failed: %v", err)
+	}
+	return parseReturnValue(receipt, "remove0")
+}
+
+func (service *Service) AsyncRemove(handler func(*types.Receipt, error), tableName string, key string) (*types.Transaction, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	if len(key) > TableKeyMaxLength {
+		return nil, fmt.Errorf("the value of the table key exceeds the maximum limit( %d )", TableKeyMaxLength)
+	}
+	return service.crud.AsyncRemove(handler, service.crudAuth, key)
+}
+
+func (service *Service) AsyncRemove0(handler func(*types.Receipt, error), tableName string, conditions []Condition, limit Limit) (*types.Transaction, error) {
+	_, err := service.OpenTable(tableName)
+	if err !=nil{
+		return nil, fmt.Errorf("the table does not exist")
+	}
+	return service.crud.AsyncRemove0(handler, service.crudAuth, conditions, limit)
+}
+
+// KVTable
+func (service *Service) Set(tableName string, key string, value string) (int64, error) {
+	_, err := service.OpenKVTable(tableName)
+	if err !=nil{
+		return -1, fmt.Errorf("the table does not exist")
+	}
+	_, _, receipt, err := service.KVTable.Set(service.crudAuth, key, value)
+	if err != nil {
+		return -1, fmt.Errorf("CRUDService Set failed: %v", err)
+	}
+	return parseReturnValue(receipt, "set")
+}
+
+func (service *Service) Get(tableName string, key string) (bool, string, error) {
+	_, err := service.OpenKVTable(tableName)
+	if err !=nil{
+		return false, "", fmt.Errorf("the table does not exist")
+	}
+	ret0, ret1, err := service.KVTable.Get(service.CallOpts, key)
+	if err != nil {
+		return false, "", fmt.Errorf("KVTable Get failed: %v", err)
+	}
+	return ret0, ret1, err
+}
 
 func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 	errorMessage := receipt.GetErrorMessage()
@@ -262,16 +383,4 @@ func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
 		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
-}
-
-func (service *Service) AppendColumns(path string, newColumns []string) (int64, error) {
-	_, receipt, err := service.tableFactory.AppendColumns(service.crudAuth, path, newColumns)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("CRUDService AppendColumns failed: %v", err)
-	}
-	return parseReturnValue(receipt, "createTable")
-}
-
-func (service *Service) AsyncAppendColumns(handler func(*types.Receipt, error), path string, newColumns []string) (*types.Transaction, error) {
-	return service.tableFactory.AsyncAppendColumns(handler, service.crudAuth, path, newColumns)
 }
