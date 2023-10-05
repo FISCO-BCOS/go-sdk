@@ -81,12 +81,7 @@ For more information please refer:
 			fmt.Printf("set failed, crud.NewCRUDService err: %v\n", err)
 			return
 		}
-		_, err = crudService.OpenTable(tableName)
-		if err != nil {
-			fmt.Printf("set failed,crudService.OpenTable  err: %v\n", err)
-			return
-		}
-		result, err := crudService.Insert(&entry)
+		result, err := crudService.Insert(tableName, entry)
 		if err != nil {
 			fmt.Printf("set failed, crudService.Insert err: %v\n", err)
 			return
@@ -123,12 +118,7 @@ For more information please refer:
 			fmt.Printf("get failed, consensus.NewConsensusService err: %v\n", err)
 			return
 		}
-		_, err = crudService.OpenTable(tableName)
-		if err != nil {
-			fmt.Printf("get failed,crudService.OpenTable  err: %v\n", err)
-			return
-		}
-		result, err := crudService.Select(key)
+		result, err := crudService.Select0(tableName, key)
 		if err != nil {
 			fmt.Printf("get failed, consensusService.AddObserver err: %v\n", err)
 			return
