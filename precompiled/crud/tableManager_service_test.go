@@ -1,4 +1,4 @@
-package crud
+package tableManager
 
 import (
 	"context"
@@ -7,9 +7,8 @@ import (
 	"os"
 	"testing"
 	"time"
-
 	// "fmt"
-	"math/rand"
+    "math/rand"
 
 	"github.com/FISCO-BCOS/go-sdk/client"
 	"github.com/FISCO-BCOS/go-sdk/core/types"
@@ -17,26 +16,25 @@ import (
 )
 
 const (
-	tableName           = "tableName"
-	tableNameForAsync   = "tableName_async"
-	KVTableName         = "kvtableName"
+	tableName         = "tableName"
+	tableNameForAsync = "tableName_async"
+	KVTableName       = "kvtableName"
 	KVTableNameForAsync = "kvtableName_async"
-	tablePath           = "/tables/tableName"
-	key                 = "keyName"
-	timeout             = 1 * time.Second
+	tablePath		  = "/tables/tableName"
+	key               = "keyName"
+	timeout           = 1 * time.Second
 )
-
 var columnValue = "columnValue"
-var columnName = "columnName"
+var columnName  = "columnName"
 var columnNames = []string{"columnName"}
 var condition = Condition{
-	Op:    uint8(4), //EQ
-	Field: "columnName",
-	Value: "columnValue",
+	Op:		uint8(4),  //EQ
+	Field:	"columnName",
+	Value:	"columnValue",
 }
 var limit = Limit{
-	Offset: uint32(0),
-	Count:  uint32(4),
+	Offset:	uint32(0),
+	Count:	uint32(4),
 }
 var columnNames_update = []string{"columnName_update"}
 var conditions = []Condition{condition}
@@ -59,7 +57,7 @@ func getClient(t *testing.T) *client.Client {
 
 func getService(t *testing.T) {
 	c := getClient(t)
-	newService, err := NewCRUDService(c)
+	newService, err := NewTableManagerService(c)
 	if err != nil {
 		t.Fatalf("init CrudService failed: %+v", err)
 	}
@@ -161,7 +159,7 @@ func TestAsyncCreateKVTable(t *testing.T) {
 }
 
 func TestAppendColumns(t *testing.T) {
-	newColumns := []string{"columnName_0", "columnName_1"}
+	newColumns:=[]string{"columnName_0","columnName_1"} 
 
 	result, err := service.AppendColumns(tablePath, newColumns)
 	if err != nil {
@@ -174,7 +172,7 @@ func TestAppendColumns(t *testing.T) {
 }
 
 func TestAsyncAppendColumns(t *testing.T) {
-	newColumns := []string{"columnName_2", "columnName_3"}
+	newColumns:=[]string{"columnName_2","columnName_3"} 
 
 	handler := func(receipt *types.Receipt, err error) {
 		if err != nil {
@@ -225,15 +223,15 @@ func TestDescWithKeyOrder(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	_, err := service.OpenTable(tableName)
-	if err != nil {
+	if err !=nil{
 		service.CreateTable(tableName, key, columnNames)
 	}
 	// tempColumnValues's length needs to be the same as the number of columns
 	tempColumnValues := []string{}
 	tableInfo, err := service.DescWithKeyOrder(tableName)
 	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-		tempColumnValues = append(tempColumnValues, "columnValue")
-	}
+        tempColumnValues=append(tempColumnValues,"columnValue")
+    }
 	key := randStringBytes(10)
 	t.Logf("key: %v\n", key)
 	entry := Entry{
@@ -241,7 +239,7 @@ func TestInsert(t *testing.T) {
 		Fields: tempColumnValues,
 	}
 
-	ret0, err := service.Insert(tableName, entry)
+	ret0, err := service.Insert(tableName,entry)
 	t.Logf("ret0: %v\n", ret0)
 	if err != nil {
 		t.Fatalf("insert table failed: %v", err)
@@ -275,15 +273,15 @@ func TestAsyncInsert(t *testing.T) {
 	}
 
 	_, err := service.OpenTable(tableName)
-	if err != nil {
+	if err !=nil{
 		service.CreateTable(tableName, key, columnNames)
 	}
 	// columnNames's length needs to be the same as the number of columns
 	tempColumnValues := []string{}
 	tableInfo, err := service.DescWithKeyOrder(tableName)
 	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-		tempColumnValues = append(tempColumnValues, "columnValue")
-	}
+        tempColumnValues=append(tempColumnValues,"columnValue")
+    }
 	key := randStringBytes(10)
 	t.Logf("key: %v\n", key)
 	entry := Entry{
@@ -332,7 +330,7 @@ func TestSelect(t *testing.T) {
 			t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", resultSelects[i].Fields[0])
 		}
 	}
-	t.Logf("resultSelects %v:", resultSelects)
+	t.Logf("resultSelects %v:",resultSelects)
 }
 
 func TestUpdate(t *testing.T) {
@@ -372,35 +370,35 @@ func TestUpdate0(t *testing.T) {
 	updateFields = append(updateFields, updateField)
 
 	condition := Condition{
-		Op:    uint8(4), //EQ
-		Field: columnName,
-		Value: "columnValue",
+		Op:		uint8(4),  //EQ
+		Field:	columnName,
+		Value:	"columnValue",
 	}
 	conditions := []Condition{}
-	conditions = append(conditions, condition)
+	conditions=append(conditions,condition)
 	limit := Limit{
-		Offset: uint32(0),
-		Count:  uint32(4),
+		Offset:	uint32(0),
+		Count:	uint32(4),
 	}
 
 	newCondition := Condition{
-		Op:    uint8(4), //EQ
-		Field: columnName,
-		Value: newValue,
+		Op:		uint8(4),  //EQ
+		Field:	columnName,
+		Value:	newValue,
 	}
 	newConditions := []Condition{}
-	newConditions = append(newConditions, newCondition)
+	newConditions=append(newConditions,newCondition)
 
 	// key origin results
 	originResultSelects, _ := service.Select(tableName, conditions, limit)
-	t.Logf("originResultSelects %v:", originResultSelects)
+	t.Logf("originResultSelects %v:",originResultSelects)
 
 	// perform update
 	_, err := service.Update0(tableName, conditions, limit, updateFields)
 	if err != nil {
 		t.Fatalf("update table failed: %v", err)
 	}
-
+	
 	// check update results
 	afterResultSelects := []Entry{}
 	for i := 0; i < len(originResultSelects); i++ {
@@ -409,9 +407,9 @@ func TestUpdate0(t *testing.T) {
 		if tempResultSelect.Fields[0] != newValue {
 			t.Fatalf("TestSelect failed, the result of resultSelect \"%v\" is not inconsistent", tempResultSelect.Fields[0])
 		}
-		afterResultSelects = append(afterResultSelects, tempResultSelect)
+		afterResultSelects=append(afterResultSelects,tempResultSelect)
 	}
-	t.Logf("afterResultSelects %v:", afterResultSelects)
+	t.Logf("afterResultSelects %v:",afterResultSelects)
 }
 
 func TestAsyncUpdate(t *testing.T) {
@@ -598,14 +596,14 @@ func TestAsyncRemove0(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	_, err := service.OpenKVTable(KVTableName)
-	if err != nil {
+	if err !=nil{
 		service.CreateKVTable(KVTableName, key, columnName)
 	}
 
 	key := randStringBytes(10)
 	value := randStringBytes(10)
 
-	ret0, err := service.Set(KVTableName, key, value)
+	ret0, err := service.Set(KVTableName,key,value)
 	if err != nil {
 		t.Fatalf("KVTable set failed: %v", err)
 	}
@@ -613,7 +611,7 @@ func TestSet(t *testing.T) {
 		t.Fatalf("TestSet failed, the ret0 \"%v\" is inconsistent with \"1\"", ret0)
 	}
 
-	_, tempValue, _ := service.Get(KVTableName, key)
+	_, tempValue, _ := service.Get(KVTableName,key)
 	if value != tempValue {
 		t.Fatalf("TestSet failed, the value \"%v\" is inconsistent with the tempValue \"%v\"", value, tempValue)
 	}
@@ -626,23 +624,23 @@ func insertForTest() string {
 	tempColumnValues := []string{}
 	tableInfo, _ := service.DescWithKeyOrder(tableName)
 	for i := 0; i < len(tableInfo.ValueColumns); i++ {
-		tempColumnValues = append(tempColumnValues, "columnValue")
-	}
+        tempColumnValues=append(tempColumnValues,"columnValue")
+    }
 	key := randStringBytes(10)
 	entry := Entry{
 		Key:    key,
 		Fields: tempColumnValues,
 	}
-	service.Insert(tableName, entry)
+	service.Insert(tableName,entry)
 	return key
 }
 
 func randStringBytes(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
+    b := make([]byte, n)
+    for i := range b {
+        b[i] = letterBytes[rand.Intn(len(letterBytes))]
+    }
+    return string(b)
 }
