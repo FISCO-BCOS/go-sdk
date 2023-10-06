@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	// "encoding/hex"
+	"encoding/hex"
 	"strconv"
 	"fmt"
 	"os"
@@ -23,8 +23,8 @@ const (
 	authType = uint8(1)	// 1:white_list. 2:black_list
 	isOpen = false
 	weight = 5
-	participatesRate = uint8(60)
-	winRate	= uint8(40)
+	participatesRate = uint8(50)
+	winRate	= uint8(60)
 	openFlag = false
 )
 
@@ -34,9 +34,11 @@ var (
 )
 
 func getClient(t *testing.T) *client.Client {
-	// privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	privateKey, _, err := client.LoadECPrivateKeyFromPEM("/mnt/e/FISCO-BCOS/blockchainv2/console/account/ecdsa/0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5.pem")
-	// privateKey, _, err := client.LoadECPrivateKeyFromPEM("/mnt/e/FISCO-BCOS/blockchainv2/console/account/ecdsa/0x00d65a6910c0936badefe29514cb947eed661ca3.pem")
+	// privatekey of 0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5
+	privateKey, _ := hex.DecodeString("71453c1eb0148f6c4e65782039931b313646be035e2a4d87437c33f81e6e2c7b")
+	// privateKey, _, err := client.LoadECPrivateKeyFromPEM("/mnt/e/FISCO-BCOS/blockchainv2/console/account/ecdsa/0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5.pem")
+	// dst := hex.EncodeToString(privateKey)
+	// fmt.Println("dst",dst)
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
@@ -394,8 +396,9 @@ func TestResetAdmin(t *testing.T) {
 }
 
 func TestRevokeProposal(t *testing.T) {
-	accountAddress_common := common.HexToAddress(accountAddress_string)
-	service.UpdateGovernor(accountAddress_common, weight)
+	// accountAddress_common := common.HexToAddress(accountAddress_string)
+	// service.UpdateGovernor(accountAddress_common, weight)
+	// service.SetRate(participatesRate, winRate)
 
 	lastProposalNum, _ := service.ProposalCount()
 	lastProposalStatus, _:= service.GetProposalStatus(lastProposalNum)
