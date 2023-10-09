@@ -1,4 +1,4 @@
-package tableManager
+package crud
 
 import (
 	//"encoding/json"
