@@ -16,11 +16,10 @@ import (
 
 const (
 	accountAddress_string = "0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5"	//治理委员，contractAddress的管理员
-	contractAddress_string = "0xa6cdc4fed96bbf8c9c013cc19200b3c8ba95c93e"
 	normalAccountAddress_string = "0x4fdc7f1e05e48b4b252df0e815dbe107935c8618"
 	funcSelector_string = "4ed3885e" //set(string)
 	status = uint8(1)
-	authType = uint8(1)	// 1:white_list. 2:black_list
+	authType = uint8(2)	// 1:white_list. 2:black_list
 	isOpen = false
 	weight = 5
 	participatesRate = uint8(50)
@@ -31,14 +30,12 @@ const (
 var (
 	service *AuthManagerService
 	channel = make(chan int)
+	helloWorldAddress_string string
 )
 
 func getClient(t *testing.T) *client.Client {
-	// privatekey of 0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5
-	privateKey, _ := hex.DecodeString("71453c1eb0148f6c4e65782039931b313646be035e2a4d87437c33f81e6e2c7b")
-	// privateKey, _, err := client.LoadECPrivateKeyFromPEM("/mnt/e/FISCO-BCOS/blockchainv2/console/account/ecdsa/0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5.pem")
-	// dst := hex.EncodeToString(privateKey)
-	// fmt.Println("dst",dst)
+	// privatekey of 0x83309d045a19c44dc3722d15a6abd472f95866ac
+	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
@@ -46,6 +43,11 @@ func getClient(t *testing.T) *client.Client {
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
+
+	// deploy helloWorld contract
+	address, _, _, _ := DeployHelloWorld(c.GetTransactOpts(), c)
+	helloWorldAddress_string = address.String()
+
 	return c
 }
 
@@ -75,6 +77,8 @@ func TestMain(m *testing.M) {
  * 无需权限的查询接口
  * *************************************************
 **/
+
+
 
 func TestGetAccountStatus(t *testing.T) {
 	address_common := common.HexToAddress(accountAddress_string)
@@ -189,7 +193,7 @@ func TestCheckDeployAuth(t *testing.T) {
 
 func TestCheckMethodAuth(t *testing.T) {
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(contractAddress_string)
+	contractAddress_common := common.HexToAddress(helloWorldAddress_string)
 	funcSelector := StringToByteList_FuncSelector(funcSelector_string)
 
 	ret0, err := service.CheckMethodAuth(contractAddress_common,funcSelector,accountAddress_common)
@@ -201,7 +205,7 @@ func TestCheckMethodAuth(t *testing.T) {
 }
 
 func TestGetAdmin(t *testing.T) {
-	contractAddress_common := common.HexToAddress(contractAddress_string)
+	contractAddress_common := common.HexToAddress(helloWorldAddress_string)
 	ret0, err := service.GetAdmin(contractAddress_common)
 	if err != nil {
 		t.Fatalf("TestGetAdmin failed: %v", err)
@@ -220,14 +224,12 @@ func TestGetAdmin(t *testing.T) {
 func TestSetMethodAuthType(t *testing.T) {
 	// funcSelector_string: "4ed3885e"
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(contractAddress_string)
+	contractAddress_common := common.HexToAddress(helloWorldAddress_string)
+	fmt.Println("helloWorldAddress_string",helloWorldAddress_string)
 
-	stringBytes := []byte(funcSelector_string)
-	var funcSelector_temp [4]byte
-	copy(funcSelector_temp[:],stringBytes)
-	fmt.Println("funcSelector_temp",funcSelector_temp)
-
-	funcSelector := StringToByteList_FuncSelector(funcSelector_string)
+	tempByte, err := hex.DecodeString(funcSelector_string)
+	var funcSelector [4]byte
+	copy(funcSelector[:],tempByte)
 	fmt.Println("funcSelector",funcSelector)
 
 	ret0, err := service.SetMethodAuthType(contractAddress_common, funcSelector, authType)
@@ -255,8 +257,12 @@ func TestSetMethodAuthType(t *testing.T) {
 
 func TestSetMethodAuth(t *testing.T) {
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(contractAddress_string)
-	funcSelector := StringToByteList_FuncSelector(funcSelector_string)
+	contractAddress_common := common.HexToAddress(helloWorldAddress_string)
+
+	tempByte, err := hex.DecodeString(funcSelector_string)
+	var funcSelector [4]byte
+	copy(funcSelector[:],tempByte)
+	fmt.Println("funcSelector",funcSelector)
 
 	ret0, err := service.SetMethodAuth(contractAddress_common, funcSelector, accountAddress_common, isOpen)
 	
@@ -382,7 +388,7 @@ func TestModifyDeployAuth(t *testing.T) {
 
 func TestResetAdmin(t *testing.T) {
 	newAdmin_common := common.HexToAddress(normalAccountAddress_string)
-	contractAddress_common := common.HexToAddress(contractAddress_string)
+	contractAddress_common := common.HexToAddress(helloWorldAddress_string)
 	ret0, err := service.ResetAdmin(newAdmin_common, contractAddress_common)
 	
 	if err != nil {
