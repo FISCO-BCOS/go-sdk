@@ -3,7 +3,7 @@ package commandline
 import (
 	"fmt"
 
-	"github.com/FISCO-BCOS/go-sdk/precompiled/tableManager"
+	"github.com/FISCO-BCOS/go-sdk/precompiled/crud"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +30,9 @@ For more information please refer:
 		value := args[2]
 		var valueFields = []string{}
 		valueFields = append(valueFields, value)
-		tableManagerService, err := tableManager.NewTableManagerService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
-			fmt.Printf("set failed, tableManager.NewTableManagerService err: %v\n", err)
+			fmt.Printf("set failed, crud.NewTableManagerService err: %v\n", err)
 			return
 		}
 		result, err := tableManagerService.CreateTable(tableName, key, valueFields)
@@ -72,13 +72,13 @@ For more information please refer:
 		value := args[2]
 		var valueFields = []string{}
 		valueFields = append(valueFields, value)
-		entry := tableManager.Entry{
+		entry := crud.Entry{
 			Key:    key,
 			Fields: valueFields,
 		}
-		tableManagerService, err := tableManager.NewTableManagerService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
-			fmt.Printf("set failed, tableManager.NewTableManagerService err: %v\n", err)
+			fmt.Printf("set failed, crud.NewTableManagerService err: %v\n", err)
 			return
 		}
 		result, err := tableManagerService.Insert(tableName, entry)
@@ -113,7 +113,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
 		key := args[1]
-		tableManagerService, err := tableManager.NewTableManagerService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
 			fmt.Printf("get failed, consensus.NewConsensusService err: %v\n", err)
 			return
