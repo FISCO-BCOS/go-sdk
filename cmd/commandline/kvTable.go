@@ -30,14 +30,14 @@ For more information please refer:
 		value := args[2]
 		var valueFields = []string{}
 		valueFields = append(valueFields, value)
-		crudService, err := crud.NewCRUDService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
-			fmt.Printf("set failed, crud.NewCRUDService err: %v\n", err)
+			fmt.Printf("set failed, crud.NewTableManagerService err: %v\n", err)
 			return
 		}
-		result, err := crudService.CreateTable(tableName, key, valueFields)
+		result, err := tableManagerService.CreateTable(tableName, key, valueFields)
 		if err != nil {
-			fmt.Printf("set failed, crudService.CreateTable err: %v\n", err)
+			fmt.Printf("set failed, tableManagerService.CreateTable err: %v\n", err)
 			return
 		}
 		if result != 0 {
@@ -76,14 +76,14 @@ For more information please refer:
 			Key:    key,
 			Fields: valueFields,
 		}
-		crudService, err := crud.NewCRUDService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
-			fmt.Printf("set failed, crud.NewCRUDService err: %v\n", err)
+			fmt.Printf("set failed, crud.NewTableManagerService err: %v\n", err)
 			return
 		}
-		result, err := crudService.Insert(tableName, entry)
+		result, err := tableManagerService.Insert(tableName, entry)
 		if err != nil {
-			fmt.Printf("set failed, crudService.Insert err: %v\n", err)
+			fmt.Printf("set failed, tableManagerService.Insert err: %v\n", err)
 			return
 		}
 		if result != 1 {
@@ -113,12 +113,12 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
 		key := args[1]
-		crudService, err := crud.NewCRUDService(RPC)
+		tableManagerService, err := crud.NewTableManagerService(RPC)
 		if err != nil {
 			fmt.Printf("get failed, consensus.NewConsensusService err: %v\n", err)
 			return
 		}
-		result, err := crudService.Select0(tableName, key)
+		result, err := tableManagerService.Select0(tableName, key)
 		if err != nil {
 			fmt.Printf("get failed, consensusService.AddObserver err: %v\n", err)
 			return
