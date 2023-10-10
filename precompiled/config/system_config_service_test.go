@@ -45,24 +45,24 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-// func TestSetValueByKey(t *testing.T) {
-// 	result, err := service.SetValueByKey(key, value)
-// 	if err != nil {
-// 		t.Fatalf("Service RegisterCns failed: %+v\n", err)
-// 	}
-// 	if result != standardOutput {
-// 		t.Fatalf("TestRegisterCns failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
-// 	}
-// 	t.Logf("TestRegisterCns result: %v", result)
-// }
+func TestSetValueByKey(t *testing.T) {
+	result, err := service.SetValueByKey(key, value)
+	if err != nil {
+		t.Fatalf("Service RegisterCns failed: %+v\n", err)
+	}
+	if result != standardOutput {
+		t.Fatalf("TestRegisterCns failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
+	}
+	t.Logf("TestRegisterCns result: %v", result)
+}
 
-// func TestGetValueByKey(t *testing.T) {
-// 	ret0, _, err := service.GetValueByKey(key)
-// 	if err != nil {
-// 		t.Fatalf("Service GetValueByKey failed: %+v\n", err)
-// 	}
-// 	if ret0 != value {
-// 		t.Fatalf("TestGetValueByKey failed, the ret0 %v is inconsistent with \"%v\"", ret0, value)
-// 	}
-// 	t.Logf("TestGetValueByKey ret0: %v", ret0)
-// }
+func TestGetValueByKey(t *testing.T) {
+	ret0, _, err := service.GetValueByKey(key)
+	if err != nil {
+		t.Fatalf("Service GetValueByKey failed: %+v\n", err)
+	}
+	if ret0 != value {
+		t.Fatalf("TestGetValueByKey failed, the ret0 %v is inconsistent with \"%v\"", ret0, value)
+	}
+	t.Logf("TestGetValueByKey ret0: %v", ret0)
+}
