@@ -16,7 +16,7 @@ const (
 )
 
 func getClient(t *testing.T) *client.Client {
-	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.DialContext(context.Background(), config)
