@@ -7,12 +7,14 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/abi/bind"
 )
 
 // SystemConfigService is a precompile contract service.
 type SystemConfigService struct {
-	systemConfig *Config
-	client       *client.Client
+	systemConfig     *Config
+	systemConfigAuth *bind.TransactOpts
+	client           *client.Client
 }
 
 // systemConfig precompiled contract error code
@@ -55,12 +57,13 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 	if err != nil {
 		return nil, fmt.Errorf("construct SystemConfigService failed: %+v", err)
 	}
-	return &SystemConfigService{systemConfig: instance, client: client}, nil
+	auth := client.GetTransactOpts()
+	return &SystemConfigService{systemConfig: instance, systemConfigAuth:auth, client: client}, nil
 }
 
 // SetValueByKey returns nil if there is no error occurred.
 func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, error) {
-	_, receipt, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
+	_, _, receipt, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
 	if err != nil {
 		return types.PrecompiledError, fmt.Errorf("client.WaitMined failed, err: %v", err)
 	}
@@ -77,4 +80,14 @@ func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, er
 		return precompiled.DefaultErrorCode, fmt.Errorf("parseReturnValue failed, err: %v", err)
 	}
 	return errorCode, errorCodeToError(errorCode)
+}
+
+func (s *SystemConfigService) GetValueByKey(key string) (string, int64, error) {
+	opts := &bind.CallOpts{From: s.systemConfigAuth.From}
+	fmt.Println("opts",opts)
+	ret0, ret1, err := s.systemConfig.GetValueByKey(opts, key)
+	if err != nil {
+		return "", precompiled.DefaultErrorCode, fmt.Errorf("systemConfigService getValueByKey failed: %+v", err)
+	}
+	return ret0, ret1.Int64(), nil
 }

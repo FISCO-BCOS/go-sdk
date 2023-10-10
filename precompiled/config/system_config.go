@@ -25,7 +25,10 @@ var (
 )
 
 // ConfigABI is the input ABI used to generate the binding from.
-const ConfigABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"setValueByKey\",\"outputs\":[{\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const ConfigABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"}],\"name\":\"getValueByKey\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"name\":\"setValueByKey\",\"outputs\":[{\"internalType\":\"int32\",\"name\":\"\",\"type\":\"int32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+
+// ConfigBin is the compiled bytecode used for deploying new contracts.
+var ConfigBin = "0x608060405234801561001057600080fd5b50610406806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631258a93a1461003b578063bd291aef1461006c575b600080fd5b61005560048036038101906100509190610207565b61009c565b6040516100639291906102f1565b60405180910390f35b61008660048036038101906100819190610321565b6100a5565b60405161009391906103b5565b60405180910390f35b60606000915091565b600092915050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b6000601f19601f8301169050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b610114826100cb565b810181811067ffffffffffffffff82111715610133576101326100dc565b5b80604052505050565b60006101466100ad565b9050610152828261010b565b919050565b600067ffffffffffffffff821115610172576101716100dc565b5b61017b826100cb565b9050602081019050919050565b82818337600083830152505050565b60006101aa6101a584610157565b61013c565b9050828152602081018484840111156101c6576101c56100c6565b5b6101d1848285610188565b509392505050565b600082601f8301126101ee576101ed6100c1565b5b81356101fe848260208601610197565b91505092915050565b60006020828403121561021d5761021c6100b7565b5b600082013567ffffffffffffffff81111561023b5761023a6100bc565b5b610247848285016101d9565b91505092915050565b600081519050919050565b600082825260208201905092915050565b60005b8381101561028a57808201518184015260208101905061026f565b83811115610299576000848401525b50505050565b60006102aa82610250565b6102b4818561025b565b93506102c481856020860161026c565b6102cd816100cb565b840191505092915050565b6000819050919050565b6102eb816102d8565b82525050565b6000604082019050818103600083015261030b818561029f565b905061031a60208301846102e2565b9392505050565b60008060408385031215610338576103376100b7565b5b600083013567ffffffffffffffff811115610356576103556100bc565b5b610362858286016101d9565b925050602083013567ffffffffffffffff811115610383576103826100bc565b5b61038f858286016101d9565b9150509250929050565b60008160030b9050919050565b6103af81610399565b82525050565b60006020820190506103ca60008301846103a6565b9291505056fea26469706673582212207bb572c2d45fbfc66c4f7051acb78da418cfff1f4aaf059601a3c6d758a1c22c64736f6c634300080b0033"
 
 // Config is an auto generated Go binding around a Solidity contract.
 type Config struct {
@@ -146,8 +149,8 @@ func (_Config *ConfigRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction,
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Config *ConfigRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Config.Contract.ConfigTransactor.contract.Transact(opts, method, params...)
+func (_Config *ConfigRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Config.Contract.ConfigTransactor.contract.TransactWithResult(opts, result, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -165,27 +168,74 @@ func (_Config *ConfigTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Tr
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_Config *ConfigTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
-	return _Config.Contract.contract.Transact(opts, method, params...)
+func (_Config *ConfigTransactorRaw) TransactWithResult(opts *bind.TransactOpts, result interface{}, method string, params ...interface{}) (*types.Transaction, *types.Receipt, error) {
+	return _Config.Contract.contract.TransactWithResult(opts, result, method, params...)
+}
+
+// GetValueByKey is a free data retrieval call binding the contract method 0x1258a93a.
+//
+// Solidity: function getValueByKey(string key) constant returns(string, int256)
+func (_Config *ConfigCaller) GetValueByKey(opts *bind.CallOpts, key string) (string, *big.Int, error) {
+	var (
+		ret0 = new(string)
+		ret1 = new(*big.Int)
+	)
+	out := &[]interface{}{
+		ret0,
+		ret1,
+	}
+	err := _Config.contract.Call(opts, out, "getValueByKey", key)
+	return *ret0, *ret1, err
+}
+
+// GetValueByKey is a free data retrieval call binding the contract method 0x1258a93a.
+//
+// Solidity: function getValueByKey(string key) constant returns(string, int256)
+func (_Config *ConfigSession) GetValueByKey(key string) (string, *big.Int, error) {
+	return _Config.Contract.GetValueByKey(&_Config.CallOpts, key)
+}
+
+// GetValueByKey is a free data retrieval call binding the contract method 0x1258a93a.
+//
+// Solidity: function getValueByKey(string key) constant returns(string, int256)
+func (_Config *ConfigCallerSession) GetValueByKey(key string) (string, *big.Int, error) {
+	return _Config.Contract.GetValueByKey(&_Config.CallOpts, key)
 }
 
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
-// Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigTransactor) SetValueByKey(opts *bind.TransactOpts, key string, value string) (*types.Transaction, *types.Receipt, error) {
-	return _Config.contract.Transact(opts, "setValueByKey", key, value)
+// Solidity: function setValueByKey(string key, string value) returns(int32)
+func (_Config *ConfigTransactor) SetValueByKey(opts *bind.TransactOpts, key string, value string) (int32, *types.Transaction, *types.Receipt, error) {
+	var (
+		ret0 = new(int32)
+	)
+	out := ret0
+	transaction, receipt, err := _Config.contract.TransactWithResult(opts, out, "setValueByKey", key, value)
+	return *ret0, transaction, receipt, err
+}
+
+func (_Config *ConfigTransactor) AsyncSetValueByKey(handler func(*types.Receipt, error), opts *bind.TransactOpts, key string, value string) (*types.Transaction, error) {
+	return _Config.contract.AsyncTransact(opts, handler, "setValueByKey", key, value)
 }
 
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
-// Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigSession) SetValueByKey(key string, value string) (*types.Transaction, *types.Receipt, error) {
+// Solidity: function setValueByKey(string key, string value) returns(int32)
+func (_Config *ConfigSession) SetValueByKey(key string, value string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
 }
 
+func (_Config *ConfigSession) AsyncSetValueByKey(handler func(*types.Receipt, error), key string, value string) (*types.Transaction, error) {
+	return _Config.Contract.AsyncSetValueByKey(handler, &_Config.TransactOpts, key, value)
+}
+
 // SetValueByKey is a paid mutator transaction binding the contract method 0xbd291aef.
 //
-// Solidity: function setValueByKey(string key, string value) returns(int256)
-func (_Config *ConfigTransactorSession) SetValueByKey(key string, value string) (*types.Transaction, *types.Receipt, error) {
+// Solidity: function setValueByKey(string key, string value) returns(int32)
+func (_Config *ConfigTransactorSession) SetValueByKey(key string, value string) (int32, *types.Transaction, *types.Receipt, error) {
 	return _Config.Contract.SetValueByKey(&_Config.TransactOpts, key, value)
+}
+
+func (_Config *ConfigTransactorSession) AsyncSetValueByKey(handler func(*types.Receipt, error), key string, value string) (*types.Transaction, error) {
+	return _Config.Contract.AsyncSetValueByKey(handler, &_Config.TransactOpts, key, value)
 }
