@@ -98,7 +98,7 @@ func (service *Service) AddObserver(nodeID string) (int64, error) {
 			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the observer list")
 		}
 	}
-	_, receipt, err := service.consensus.AddObserver(service.consensusAuth, nodeID)
+	_, _, receipt, err := service.consensus.AddObserver(service.consensusAuth, nodeID)
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addObserver failed: %+v", err)
 	}
@@ -132,11 +132,10 @@ func (service *Service) AddSealer(nodeID string, weight int64) (int64, error) {
 		}
 	}
 
-	tx, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID, big.NewInt(weight))
+	_, _, receipt, err := service.consensus.AddSealer(service.consensusAuth, nodeID, big.NewInt(weight))
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService addSealer failed: %+v", err)
 	}
-	_ = tx
 	return parseReturnValue(receipt, "addSealer")
 }
 
@@ -164,7 +163,7 @@ func (service *Service) RemoveNode(nodeID string) (int64, error) {
 		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not a group peer")
 	}
 
-	_, receipt, err := service.consensus.Remove(service.consensusAuth, nodeID)
+	_, _, receipt, err := service.consensus.Remove(service.consensusAuth, nodeID)
 	// maybe will occur something wrong
 	// when request the receipt from the SDK since the connected node of SDK is removed
 	//TODO: how to handle the problem that can't get the tx receipt when remove the connected node of SDK
@@ -192,6 +191,25 @@ func (service *Service) isValidNodeID(nodeID string) (bool, error) {
 		}
 	}
 	return flag, nil
+}
+
+func (service *Service) SetWeight(nodeID string, weight int64) (int64, error) {
+	sealerRaw, err := service.client.GetSealerList(context.Background())
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("get the sealer list failed: %v", err)
+	}
+
+	var nodeIDs []nodeIdList
+	err = json.Unmarshal(sealerRaw, &nodeIDs)
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the sealer list failed: %v", err)
+	}
+
+	_, _, receipt, err := service.consensus.SetWeight(service.consensusAuth, nodeID, big.NewInt(weight))
+	if err != nil {
+		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService setWeight failed: %+v", err)
+	}
+	return parseReturnValue(receipt, "setWeight")
 }
 
 func parseReturnValue(receipt *types.Receipt, name string) (int64, error) {
