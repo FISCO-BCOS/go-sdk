@@ -12,6 +12,7 @@ import (
 	// "github.com/FISCO-BCOS/go-sdk/core/types"
 	// "github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/hello"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 var (
 	service *AuthManagerService
 	channel = make(chan int)
-	proposalManager_string string
+	deployedContract_string string
 )
 
 func getClient(t *testing.T) *client.Client {
@@ -45,10 +46,9 @@ func getClient(t *testing.T) *client.Client {
 	}
 
 	// deploy helloWorld contract
-	address_common := common.HexToAddress(accountAddress_string)
-	address, _, _, _ := DeployProposalManager(c.GetTransactOpts(), c, address_common, address_common)
-	proposalManager_string = address.String()
-	fmt.Println("proposalManager_string",proposalManager_string)
+	address, _, _, _ := hello.DeployHelloWorld(c.GetTransactOpts(), c, "hello")
+	deployedContract_string = address.String()
+	fmt.Println("deployedContract_string",deployedContract_string)
 
 	return c
 }
@@ -195,7 +195,7 @@ func TestCheckDeployAuth(t *testing.T) {
 
 func TestCheckMethodAuth(t *testing.T) {
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(proposalManager_string)
+	contractAddress_common := common.HexToAddress(deployedContract_string)
 	funcSelector := StringToByteList_FuncSelector(funcSelector_string)
 
 	ret0, err := service.CheckMethodAuth(contractAddress_common,funcSelector,accountAddress_common)
@@ -207,7 +207,7 @@ func TestCheckMethodAuth(t *testing.T) {
 }
 
 func TestGetAdmin(t *testing.T) {
-	contractAddress_common := common.HexToAddress(proposalManager_string)
+	contractAddress_common := common.HexToAddress(deployedContract_string)
 	ret0, err := service.GetAdmin(contractAddress_common)
 	if err != nil {
 		t.Fatalf("TestGetAdmin failed: %v", err)
@@ -226,8 +226,8 @@ func TestGetAdmin(t *testing.T) {
 func TestSetMethodAuthType(t *testing.T) {
 	// funcSelector_string: "4ed3885e"
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(proposalManager_string)
-	fmt.Println("proposalManager_string",proposalManager_string)
+	contractAddress_common := common.HexToAddress(deployedContract_string)
+	fmt.Println("deployedContract_string",deployedContract_string)
 
 	tempByte, err := hex.DecodeString(funcSelector_string)
 	var funcSelector [4]byte
@@ -259,7 +259,7 @@ func TestSetMethodAuthType(t *testing.T) {
 
 func TestSetMethodAuth(t *testing.T) {
 	accountAddress_common := common.HexToAddress(accountAddress_string)
-	contractAddress_common := common.HexToAddress(proposalManager_string)
+	contractAddress_common := common.HexToAddress(deployedContract_string)
 
 	tempByte, err := hex.DecodeString(funcSelector_string)
 	var funcSelector [4]byte
@@ -390,7 +390,7 @@ func TestModifyDeployAuth(t *testing.T) {
 
 func TestResetAdmin(t *testing.T) {
 	newAdmin_common := common.HexToAddress(normalAccountAddress_string)
-	contractAddress_common := common.HexToAddress(proposalManager_string)
+	contractAddress_common := common.HexToAddress(deployedContract_string)
 	ret0, err := service.ResetAdmin(newAdmin_common, contractAddress_common)
 	
 	if err != nil {
