@@ -12,6 +12,7 @@ import (
 	// "github.com/FISCO-BCOS/go-sdk/core/types"
 	// "github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/FISCO-BCOS/go-sdk/hello"
 )
 
 const (
@@ -45,7 +46,7 @@ func getClient(t *testing.T) *client.Client {
 	}
 
 	// deploy helloWorld contract
-	address, _, _, _ := DeployHelloWorld(c.GetTransactOpts(), c)
+	address, _, _, _ := hello.DeployHelloWorld(c.GetTransactOpts(), c, "hello")
 	helloWorldAddress_string = address.String()
 
 	return c
