@@ -48,6 +48,7 @@ func getClient(t *testing.T) *client.Client {
 	address_common := common.HexToAddress(accountAddress_string)
 	address, _, _, _ := DeployProposalManager(c.GetTransactOpts(), c, address_common, address_common)
 	proposalManager_string = address.String()
+	fmt.Println("proposalManager_string",proposalManager_string)
 
 	return c
 }
