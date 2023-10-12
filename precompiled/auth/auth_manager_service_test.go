@@ -12,13 +12,12 @@ import (
 	// "github.com/FISCO-BCOS/go-sdk/core/types"
 	// "github.com/FISCO-BCOS/go-sdk/precompiled"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/FISCO-BCOS/go-sdk/hello"
 )
 
 const (
 	accountAddress_string = "0xfe5625acd8b8effbf87ef65f9ed9ddc3390114f5"	//治理委员，contractAddress的管理员
 	normalAccountAddress_string = "0x4fdc7f1e05e48b4b252df0e815dbe107935c8618"
-	funcSelector_string = "4ed3885e" //set(string)
+	funcSelector_string = "4ed3885e" //setWeight(address,uint32)
 	status = uint8(1)
 	authType = uint8(2)	// 1:white_list. 2:black_list
 	isOpen = false
@@ -45,8 +44,10 @@ func getClient(t *testing.T) *client.Client {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
 	}
 
-	// deploy helloWorld contract
-	address, _, _, _ := hello.DeployHelloWorld(c.GetTransactOpts(), c, "hello")
+	governor_common := common.HexToAddress(accountAddress_string)
+	governorList := []common.Address{governor_common}
+	weightList := []uint32{uint32(2)}
+	address, _, _, err := DeployCommittee(c.GetTransactOpts(), c, governorList, weightList, participatesRate, winRate)
 	deployedContract_string = address.String()
 	fmt.Println("deployedContract_string",deployedContract_string)
 
