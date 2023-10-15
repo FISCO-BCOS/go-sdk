@@ -334,7 +334,7 @@ integration_std()
     execute_cmd "bash tools/download_solc.sh -v 0.8.11"
 
     head build_chain.sh
-    bash build_chain.sh -l 127.0.0.1:2 -o nodes
+    bash build_chain.sh -l 127.0.0.1:2 -o nodes -a 0x83309d045a19c44dc3722d15a6abd472f95866ac
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
     cp nodes/127.0.0.1/sdk/* ./
     cp nodes/127.0.0.1/sdk/* ./client/
@@ -373,7 +373,7 @@ integration_gm()
     LOG_INFO "integration_gm testing..."
     execute_cmd "bash tools/download_solc.sh -v 0.8.11 -g"
 
-    bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm
+    bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm -a 0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
     cp nodes/127.0.0.1/sdk/* ./
