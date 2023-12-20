@@ -2,9 +2,9 @@
 set -e
 
 install_path="/usr/local/lib/"
-version="3.4.0"
+version="3.5.0"
 OS="linux"
-versions=(3.2.0 3.4.0)
+versions=(3.2.0 3.4.0 3.5.0)
 
 LOG_WARN()
 {
@@ -21,7 +21,7 @@ LOG_INFO()
 help() {
     cat << EOF
 Usage:
-    -v <bcos-c-sdk version>           Default v3.4.0
+    -v <bcos-c-sdk version>           Default v3.5.0
     -o <lib install path>             Default /usr/loacl/lib
     -h Help
 e.g
@@ -35,7 +35,7 @@ parse_params()
 {
     while getopts "v:o:h" option;do
         case $option in
-            v) [ -n "$OPTARG" ] && version="$OPTARG"
+            v) [ -n "$OPTARG" ] && version="${OPTARG//[vV]/}"
                 if ! echo "${versions[*]}" | grep -i "${version}" &>/dev/null; then
                     LOG_WARN "${version} is not supported. Please set one of ${versions[*]}"
                     exit 1;

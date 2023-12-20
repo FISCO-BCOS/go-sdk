@@ -104,15 +104,8 @@ type Connection struct {
 	writeConn jsonWriter
 
 	// for dispatch
-	close       chan struct{}
-	closing     chan struct{}    // closed when client is quitting
 	didClose    chan struct{}    // closed when client quits
 	reconnected chan ServerCodec // where write/reconnect sends the new connection
-	readOp      chan readOp      // read messages
-	readErr     chan error       // errors from read
-	reqInit     chan *requestOp  // register response IDs, takes write lock
-	reqSent     chan error       // signals write completion, releases write lock
-	reqTimeout  chan *requestOp  // removes response IDs when call timeout expires
 }
 
 type reconnectFunc func(ctx context.Context) (ServerCodec, error)
@@ -129,11 +122,6 @@ func (c *Connection) newClientConn(conn ServerCodec) *clientConn {
 
 func (cc *clientConn) close(err error, inflightReq *requestOp) {
 	cc.codec.Close()
-}
-
-type readOp struct {
-	msgs  []*jsonrpcMessage
-	batch bool
 }
 
 type requestOp struct {
@@ -266,15 +254,8 @@ func NewConnection(config *Config) (*Connection, error) {
 func initClient(conn ServerCodec) *Connection {
 	c := &Connection{
 		writeConn:   conn,
-		close:       make(chan struct{}),
-		closing:     make(chan struct{}),
 		didClose:    make(chan struct{}),
 		reconnected: make(chan ServerCodec),
-		readOp:      make(chan readOp),
-		readErr:     make(chan error),
-		reqInit:     make(chan *requestOp),
-		reqSent:     make(chan error, 1),
-		reqTimeout:  make(chan *requestOp),
 	}
 	return c
 }
@@ -455,15 +436,29 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
 	case "sendTransaction":
-		data := hexutil.Encode(args[0].([]byte))
-		contractAddress := args[1].(string)
+		fallthrough
+	case "SendEncodedTransaction":
 		var handler func(*types.Receipt, error)
-		if len(args) >= 3 {
-			handler = args[2].(func(*types.Receipt, error))
-		}
-		_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, "", true)
-		if err != nil {
-			return err
+		if method == "sendTransaction" {
+			data := hexutil.Encode(args[0].([]byte))
+			contractAddress := args[1].(string)
+			if len(args) >= 3 {
+				handler = args[2].(func(*types.Receipt, error))
+			}
+			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, "", true)
+			if err != nil {
+				return err
+			}
+		} else { // SendEncodedTransaction
+			encodedTransaction := args[0].([]byte)
+			withProof := args[1].(bool)
+			if len(args) >= 3 {
+				handler = args[2].(func(*types.Receipt, error))
+			}
+			err := c.csdk.SendEncodedTransaction(op.respChanData, encodedTransaction, withProof)
+			if err != nil {
+				return err
+			}
 		}
 		// async send transaction
 		if handler != nil {
@@ -509,22 +504,6 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
-//func (c *Connection) UnsubscribeBlockNumberNotify(groupID uint64) error {
-//	hc := c.writeConn.(*channelSession)
-//	return hc.unSubscribeBlockNumberNotify(groupID)
-//}
-
-//func (c *Connection) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
-//	msg := &jsonrpcMessage{Version: vsn, ID: c.nextID(), Method: method}
-//	if paramsIn != nil { // prevent sending "params":null
-//		var err error
-//		if msg.Params, err = json.Marshal(paramsIn); err != nil {
-//			return nil, err
-//		}
-//	}
-//	return msg, nil
-//}
-
 func (c *Connection) reconnect(ctx context.Context) error {
 	if c.reconnectFunc == nil {
 		return errDead
@@ -547,16 +526,5 @@ func (c *Connection) reconnect(ctx context.Context) error {
 	case <-c.didClose:
 		newconn.Close()
 		return ErrClientQuit
-	}
-}
-
-// drainRead drops read messages until an error occurs.
-func (c *Connection) drainRead() {
-	for {
-		select {
-		case <-c.readOp:
-		case <-c.readErr:
-			return
-		}
 	}
 }

@@ -5,11 +5,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/abi"
 	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/FISCO-BCOS/go-sdk/core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -25,7 +28,7 @@ func GetClient(t *testing.T) *Client {
 		t.Fatalf("decode hex failed of %v", err)
 	}
 	config := &Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt", DisableSsl: false}
 	c, err := DialContext(context.Background(), config)
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
@@ -33,7 +36,7 @@ func GetClient(t *testing.T) *Client {
 	return c
 }
 
-// Get contractAddress、transactionHash、blockHash by this test
+// Get contractAddress, transactionHash, blockHash by this test
 func TestBlockHashByNumber(t *testing.T) {
 	deployedAddress, txHash := deployHelloWorld(t)
 	c := GetClient(t)
@@ -333,4 +336,288 @@ func TestSystemConfigByKey(t *testing.T) {
 	}
 
 	t.Logf("the value got by the key:\n%s", raw.GetValue())
+}
+
+func TestCreateEncodedTransactionAndSend(t *testing.T) {
+	c := GetClient(t)
+	// deploy helloworld contract
+	currentNumber, err := c.GetBlockNumber(context.Background())
+	if err != nil {
+		t.Fatalf("GetBlockNumber error: %v", err)
+	}
+	blockLimit := currentNumber + 500
+	// 1. create txData
+	txData, txHash, err := c.CreateEncodedTransactionDataV1(nil, common.FromHex(HelloWorldBin), blockLimit, HelloWorldABI)
+	if err != nil {
+		t.Fatalf("CreateEncodedTransactionDataV1 error: %v", err)
+	}
+	t.Logf("txHash: %x", txHash)
+	// 2. sign txData
+	signature, err := c.CreateEncodedSignature(txHash)
+	if err != nil {
+		t.Fatalf("CreateEncodedSignature error: %v", err)
+	}
+	// 3. create tx, tx include txData, txHash, signature, arrtibute, extraData
+	tx, err := c.CreateEncodedTransaction(txData, txHash, signature, 0, "")
+	if err != nil {
+		t.Fatalf("CreateEncodedTransaction error: %v", err)
+	}
+	// 4. send tx
+	receipt, err := c.SendEncodedTransaction(context.Background(), tx, true)
+	if err != nil {
+		t.Fatalf("SendEncodedTransaction error: %v", err)
+	}
+	t.Logf("receipt: %v", receipt)
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	// call helloworld set
+	address := common.HexToAddress(receipt.ContractAddress)
+	parsed, err := abi.JSON(strings.NewReader(HelloWorldABI))
+	if err != nil {
+		t.Fatalf("abi.JSON error: %v", err)
+	}
+	input, err := parsed.Pack("set", "hello, world")
+	if err != nil {
+		t.Fatalf("parsed.Pack error: %v", err)
+	}
+	txData, txHash, err = c.CreateEncodedTransactionDataV1(&address, input, blockLimit, "")
+	if err != nil {
+		t.Fatalf("CreateEncodedTransactionDataV1 error: %v", err)
+	}
+	t.Logf("txHash: %x", txHash)
+	signature, err = c.CreateEncodedSignature(txHash)
+	if err != nil {
+		t.Fatalf("CreateEncodedSignature error: %v", err)
+	}
+	tx, err = c.CreateEncodedTransaction(txData, txHash, signature, 0, "")
+	if err != nil {
+		t.Fatalf("CreateEncodedTransaction error: %v", err)
+	}
+	receipt, err = c.SendEncodedTransaction(context.Background(), tx, true)
+	if err != nil {
+		t.Fatalf("SendEncodedTransaction error: %v", err)
+	}
+	t.Logf("receipt: %v", receipt)
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+
+	// call helloworld set async
+	input, err = parsed.Pack("set", "hello, world async")
+	if err != nil {
+		t.Fatalf("parsed.Pack error: %v", err)
+	}
+	txData, txHash, err = c.CreateEncodedTransactionDataV1(&address, input, blockLimit, "")
+	if err != nil {
+		t.Fatalf("CreateEncodedTransactionDataV1 error: %v", err)
+	}
+	t.Logf("txHash: %x", txHash)
+	signature, err = c.CreateEncodedSignature(txHash)
+	if err != nil {
+		t.Fatalf("CreateEncodedSignature error: %v", err)
+	}
+	tx, err = c.CreateEncodedTransaction(txData, txHash, signature, 0, "")
+	if err != nil {
+		t.Fatalf("CreateEncodedTransaction error: %v", err)
+	}
+	var wg sync.WaitGroup
+
+	err = c.AsyncSendEncodedTransaction(context.Background(), tx, true, func(receipt *types.Receipt, err error) {
+		if err != nil {
+			t.Fatalf("AsyncSendEncodedTransaction error: %v", err)
+		}
+		if receipt.Status != 0 {
+			t.Fatalf("receipt status error: %v", receipt.Status)
+		}
+		wg.Done()
+	})
+	if err != nil {
+		t.Fatalf("SendEncodedTransaction error: %v", err)
+	}
+	wg.Add(1)
+	wg.Wait()
+}
+
+func TestAsnycHelloWorldSet(t *testing.T) {
+	c := GetClient(t)
+	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	if err != nil {
+		t.Fatalf("DeployHelloWorld failed: %v", err)
+	}
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	input, err := parsed.Pack("set", "hello, world")
+	if err != nil {
+		t.Fatalf("parsed.Pack error: %v", err)
+	}
+	var wg sync.WaitGroup
+	count := 100
+	for i := 0; i < count; i++ {
+		err = c.AsyncSendTransaction(context.Background(), nil, &address, input, func(receipt *types.Receipt, err error) {
+			wg.Done()
+			if err != nil {
+				t.Fatalf("SendTransaction error: %v", err)
+			}
+			if receipt.Status != 0 {
+				t.Fatalf("receipt status error: %v", receipt.Status)
+			}
+		})
+		if err != nil {
+			t.Fatalf("SendTransaction error: %v", err)
+		}
+		wg.Add(1)
+	}
+	wg.Wait()
+}
+
+func TestHelloWorldSet(t *testing.T) {
+	c := GetClient(t)
+	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	if err != nil {
+		t.Fatalf("DeployHelloWorld failed: %v", err)
+	}
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	input, err := parsed.Pack("set", "hello, world")
+	if err != nil {
+		t.Fatalf("parsed.Pack error: %v", err)
+	}
+	count := 5
+	for i := 0; i < count; i++ {
+		receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+		if err != nil {
+			t.Fatalf("SendTransaction error: %v", err)
+		}
+		if receipt.Status != 0 {
+			t.Fatalf("receipt status error: %v", receipt.Status)
+		}
+	}
+}
+
+func TestSetPrivateKey(t *testing.T) {
+	c := GetClient(t)
+	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	if err != nil {
+		t.Fatalf("DeployHelloWorld failed: %v", err)
+	}
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	tx, err := c.GetTransactionByHash(context.Background(), common.HexToHash(receipt.TransactionHash), true)
+	if err != nil {
+		t.Fatalf("GetTransactionByHash failed: %v", err)
+	}
+	t.Logf("tx: %v", tx)
+	from := receipt.From
+	input, err := parsed.Pack("set", "hello, world")
+	if err != nil {
+		t.Fatalf("parsed.Pack error: %v", err)
+	}
+	receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+	if err != nil {
+		t.Fatalf("SendTransaction error: %v", err)
+	}
+	from2 := receipt.From
+	if from != from2 {
+		t.Fatalf("from not equal")
+	}
+	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b57")
+	if err != nil {
+		t.Fatalf("decode hex failed of %v", err)
+	}
+	err = c.SetPrivateKey(privateKey)
+	if err != nil {
+		t.Fatalf("SetPrivateKey failed of %v", err)
+	}
+	receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+	if err != nil {
+		t.Fatalf("SendTransaction error: %v", err)
+	}
+	if receipt.Status != 0 {
+		t.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	from3 := receipt.From
+	if from == from3 {
+		t.Fatalf("from not change")
+	}
+}
+
+func GetClientForBench(b *testing.B) *Client {
+	privateKey, err := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	if err != nil {
+		b.Fatalf("decode hex failed of %v", err)
+	}
+	config := &Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt", DisableSsl: false}
+	c, err := DialContext(context.Background(), config)
+	if err != nil {
+		b.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
+	}
+	return c
+}
+
+func BenchmarkHelloWorldSet(b *testing.B) {
+	c := GetClientForBench(b)
+	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	if err != nil {
+		b.Fatalf("DeployHelloWorld failed: %v", err)
+	}
+	if receipt.Status != 0 {
+		b.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	input, err := parsed.Pack("set", "hello, world")
+	if err != nil {
+		b.Fatalf("parsed.Pack error: %v", err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+		if err != nil {
+			b.Fatalf("SendTransaction error: %v", err)
+		}
+		if receipt.Status != 0 {
+			b.Fatalf("receipt status error: %v", receipt.Status)
+		}
+	}
+}
+
+func BenchmarkAsyncHelloWorldSet(b *testing.B) {
+	c := GetClientForBench(b)
+	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	if err != nil {
+		b.Fatalf("DeployHelloWorld failed: %v", err)
+	}
+	if receipt.Status != 0 {
+		b.Fatalf("receipt status error: %v", receipt.Status)
+	}
+	b.ResetTimer()
+	var wg sync.WaitGroup
+	for i := 0; i < b.N; i++ {
+		input, err := parsed.Pack("set", "hello, world"+strconv.Itoa(i))
+		if err != nil {
+			b.Fatalf("parsed.Pack error: %v", err)
+		}
+		err = c.AsyncSendTransaction(context.Background(), nil, &address, input, func(receipt *types.Receipt, err error) {
+			wg.Done()
+			if err != nil {
+				b.Fatalf("SendTransaction error: %v", err)
+			}
+			if receipt.Status != 0 {
+				b.Fatalf("receipt status error: %v", receipt.Status)
+			}
+		})
+		if err != nil {
+			b.Fatalf("SendTransaction error: %v", err)
+		}
+		wg.Add(1)
+	}
+	wg.Wait()
 }

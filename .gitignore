@@ -33,6 +33,8 @@ conf
 sdk.crt
 sdk.key
 ca.crt
+*.nodeid
+*.cnf
 
 # Test binary, built with `go test -c`
 *.test
@@ -62,3 +64,10 @@ config.toml
 # library
 libs
 lib
+
+# csdk log
+*.log
+
+# solc output
+*.bin
+*.abi

@@ -149,7 +149,7 @@ func (c *Client) WaitMined(tx *types.Transaction) (*types.Receipt, error) {
 
 // SMCrypto returns true if use sm crypto
 func (c *Client) SMCrypto() bool {
-	return c.smCrypto
+	return c.conn.GetCSDK().SMCrypto()
 }
 
 // CodeAt returns the contract code of the given account.
@@ -194,10 +194,7 @@ func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNu
 	if cr.Status != 0 {
 		var errorMessage string
 		if len(cr.Output) >= 138 {
-			outputBytes, err := hex.DecodeString(cr.Output[2:])
-			if err != nil {
-				return nil, fmt.Errorf("call error of status %d, hex.DecodeString failed", cr.Status)
-			}
+			outputBytes := common.FromHex(cr.Output)
 			errorMessage = string(outputBytes[68:])
 		}
 		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
@@ -271,6 +268,56 @@ func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction
 	}
 	// handler(&anonymityReceipt.Receipt, nil)
 	return nil
+}
+
+func (c *Client) CreateEncodedTransactionDataV1(to *common.Address, input []byte, blockLimit int64, abi string) ([]byte, []byte, error) {
+	addressHex := ""
+	if to != nil {
+		addressHex = strings.ToLower(to.String()[2:])
+	}
+	return c.conn.GetCSDK().CreateEncodedTransactionDataV1(blockLimit, addressHex, input, abi)
+}
+
+func (c *Client) CreateEncodedSignature(hash []byte) ([]byte, error) {
+	return c.conn.GetCSDK().CreateEncodedSignature(hash)
+}
+
+func (c *Client) CreateEncodedTransaction(transactionData, transactionDataHash, signature []byte, attribute int32, extraData string) ([]byte, error) {
+	return c.conn.GetCSDK().CreateEncodedTransaction(transactionData, transactionDataHash, signature, attribute, extraData)
+}
+
+func (c *Client) SendEncodedTransaction(ctx context.Context, encodedTransaction []byte, withProof bool) (*types.Receipt, error) {
+	var err error
+	var anonymityReceipt = &struct {
+		types.Receipt
+	}{}
+	err = c.conn.CallContext(ctx, anonymityReceipt, "SendEncodedTransaction", encodedTransaction, withProof)
+	if err != nil {
+		errorStr := fmt.Sprintf("%s", err)
+		if strings.Contains(errorStr, "connection refused") {
+			log.Println("connection refused err:", err)
+			return nil, err
+		}
+		return nil, err
+	}
+	return &anonymityReceipt.Receipt, nil
+}
+
+func (c *Client) AsyncSendEncodedTransaction(ctx context.Context, encodedTransaction []byte, withProof bool, handler func(*types.Receipt, error)) error {
+	err := c.conn.CallContext(ctx, nil, "SendEncodedTransaction", encodedTransaction, withProof, handler)
+	if err != nil {
+		errorStr := fmt.Sprintf("%s", err)
+		if strings.Contains(errorStr, "connection refused") {
+			log.Println("connection refused err:", err)
+			return err
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *Client) SetPrivateKey(privateKey []byte) error {
+	return c.conn.GetCSDK().SetPrivateKey(privateKey)
 }
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.

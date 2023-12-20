@@ -2,7 +2,7 @@
 
 set -e
 
-c_sdk_version="v3.4.0"
+c_sdk_version="v3.5.0"
 start_time=15
 macOS=
 ldflags="-ldflags=\"-r /usr/local/lib/\""
@@ -336,7 +336,9 @@ integration_std()
     head build_chain.sh
     bash build_chain.sh -l 127.0.0.1:2 -o nodes -a 0x83309d045a19c44dc3722d15a6abd472f95866ac
     bash nodes/127.0.0.1/start_all.sh && sleep "${start_time}"
+    mkdir -p conf
     cp nodes/127.0.0.1/sdk/* ./
+    cp nodes/127.0.0.1/sdk/* ./conf/
     cp nodes/127.0.0.1/sdk/* ./client/
 
     # abigen std
@@ -364,6 +366,7 @@ integration_std()
     if [[ "${check_amop}" == "true" ]];then
         integration_amop
     fi
+    integration_examples
     bash nodes/127.0.0.1/stop_all.sh
     LOG_INFO "integration_std testing pass."
 }
@@ -376,6 +379,8 @@ integration_gm()
     bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm -a 0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
     bash nodes_gm/127.0.0.1/start_all.sh && sleep "${start_time}"
+    mkdir -p conf
+    cp nodes/127.0.0.1/sdk/* ./conf
     cp nodes/127.0.0.1/sdk/* ./
     cp nodes/127.0.0.1/sdk/* ./client/
 
@@ -399,18 +404,26 @@ integration_gm()
 integration_amop() {
     # nodes should be started
     LOG_INFO "amop unicast testing..."
-    execute_cmd "go build ${ldflags} -o subscriber examples/amop/sub/subscriber.go"
-    execute_cmd "go build ${ldflags} -o unicast_publisher examples/amop/unicast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o subscriber ./examples/amop/sub/subscriber.go"
+    execute_cmd "go build ${ldflags} -o unicast_publisher ./examples/amop/unicast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello &
     sleep 2
     ./unicast_publisher 127.0.0.1:20200 hello
 
     LOG_INFO "amop broadcast testing..."
-    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
-    execute_cmd "go build ${ldflags} -o broadcast_publisher examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher ./examples/amop/broadcast_pub/publisher.go"
+    execute_cmd "go build ${ldflags} -o broadcast_publisher ./examples/amop/broadcast_pub/publisher.go"
     ./subscriber 127.0.0.1:20201 hello1 &
     sleep 2
     ./broadcast_publisher 127.0.0.1:20200 hello1
+}
+
+integration_examples() {
+    # nodes should be started
+    execute_cmd "go build ${ldflags} -o hello ./examples/hello_world/wrapper/"
+    ./hello
+    execute_cmd "go build ${ldflags} -o hello ./examples/hello_world/manual/"
+    ./hello
 }
 
 parse_params()
