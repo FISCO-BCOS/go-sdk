@@ -26,7 +26,7 @@ FISCO BCOS Go语言版本的SDK，主要实现的功能有：
 
 master分支的go-sdk对应FISCO-BCOS v3版本，如果使用的是FISCO-BCOS v2版本，请切换到[FISCO-BCOS v2分支](https://github.com/FISCO-BCOS/go-sdk/tree/master-FISCO-BCOS-v2)，[对应文档](https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/sdk/go_sdk/index.html)
 
-- [Golang](https://golang.org/), 版本需不低于`1.17`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
+- [Golang](https://golang.org/), 版本需不低于`1.21`，本项目采用`go module`进行包管理。具体可查阅[Using Go Modules](https://blog.golang.org/using-go-modules)
 - [FISCO BCOS 3.2.0+](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/index.html), 可参考[安装搭建](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)
 - Solidity编译器，默认0.8.11版本
 
@@ -56,13 +56,13 @@ type Config struct {
 - GroupID：账本的`GroupID`
 - Host：节点IP
 - Port：节点RPC端口
-- DisableSsl：使用TLS加密时为`false`，不使用TLS加密时为`true`
+- DisableSsl：使用TLS加密时为`false`，不使用TLS加密时为`true`，此配置项需与节点config.ini中的`rpc.disable_ssl`保持一致
 
 ## 控制台使用
 
 1. 搭建FISCO BCOS 3.2以上版本节点，请[参考这里](https://fisco-bcos-doc.readthedocs.io/zh_CN/latest/docs/quick_start/air_installation.html)。
 1. 请拷贝对应的SDK证书到conf文件夹，证书名为`ca.crt/sdk.key/sdk.crt`，国密时证书名为`sm_ca.crt/sm_sdk.key/sm_sdk.crt/sm_ensdk.key/sm_ensdk.crt`。
-1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases/tag/v3.4.0)，将动态库放在`/usr/local/lib`目录下。在其他机器使用时也需要通过`export LD_LIBRARY_PATH=${PWD}/lib`设置动态库的搜索路径，其中`${PWD}/lib`需替换为bcos-c-sdk的动态库所在文件夹。如果编译后在其他机器运行，也可以在编译时使用`-ldflags`指定动态库搜索路径，如`go build -ldflags="-r ${PWD}/lib"`。
+1. go-sdk需要依赖csdk的动态库，[下载地址](https://github.com/FISCO-BCOS/bcos-c-sdk/releases/tag/v3.5.0)，将动态库放在`/usr/local/lib`目录下。在其他机器使用时也需要通过`export LD_LIBRARY_PATH=${PWD}/lib`设置动态库的搜索路径，其中`${PWD}/lib`需替换为bcos-c-sdk的动态库所在文件夹。如果编译后在其他机器运行，也可以在编译时使用`-ldflags`指定动态库搜索路径，如`go build -ldflags="-r ${PWD}/lib"`。
 
     ```bash
     # 下面的脚本帮助用户下载bcos-c-sdk的动态库到/usr/local/lib目录下
@@ -76,7 +76,8 @@ type Config struct {
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
 go mod tidy
-go build -ldflags="-r /usr/local/lib" -o console cmd/console.go
+cd v3
+go build -ldflags="-r /usr/local/lib" -o console ./cmd/console.go
 ./console help
 ```
 
@@ -85,7 +86,7 @@ go build -ldflags="-r /usr/local/lib" -o console cmd/console.go
 以下的示例是通过`import`的方式来使用`go-sdk`，如引入RPC控制台库:
 
 ```go
-import "github.com/FISCO-BCOS/go-sdk/client"
+import "github.com/FISCO-BCOS/go-sdk/v3/client"
 ```
 
 ### Solidity合约编译为Go文件
@@ -141,6 +142,7 @@ bash tools/download_solc.sh -v 0.8.11
 
 ```bash
 # 下面指令在go-sdk目录下操作，编译生成abigen工具
+cd v3
 go build ./cmd/abigen
 ```
 
@@ -196,8 +198,8 @@ import (
     "fmt"
     "log"
 
-    "github.com/FISCO-BCOS/go-sdk/client"
-    "github.com/FISCO-BCOS/go-sdk/core/types"
+    "github.com/FISCO-BCOS/go-sdk/v3/client"
+    "github.com/FISCO-BCOS/go-sdk/v3/types"
     "github.com/FISCO-BCOS/go-sdk/hello"
 )
 

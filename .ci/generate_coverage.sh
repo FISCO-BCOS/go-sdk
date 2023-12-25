@@ -3,7 +3,7 @@ set -e
 
 GOPATH_BIN=$(go env GOPATH)/bin
 
-c_sdk_version="v3.4.0"
+c_sdk_version="v3.5.0"
 
 LOG_ERROR() {
     content=${1}
@@ -32,6 +32,7 @@ get_csdk_lib()
 }
 
 calculate_coverage() {
+    cd ./v3
     # start blockchain demo
     # latest_version=$(curl -sS https://gitee.com/api/v5/repos/FISCO-BCOS/FISCO-BCOS/tags | grep -oe "\"name\":\"v[3-9]*\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
     # latest_version=$(curl --insecure -s https://api.github.com/repos/FISCO-BCOS/FISCO-BCOS/releases | grep "tag_name" | grep "\"v3\.[0-9]*\.[0-9]*\"" | cut -d \" -f 4 | sort -V | tail -n 1)
