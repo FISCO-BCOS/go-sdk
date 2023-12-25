@@ -1,0 +1,68 @@
+package config
+
+import (
+	"context"
+	"encoding/hex"
+	"os"
+	"testing"
+
+	"github.com/FISCO-BCOS/go-sdk/v3/client"
+)
+
+const (
+	standardOutput = 0
+	key            = "tx_count_limit"
+	value          = "30000000"
+)
+
+func getClient(t *testing.T) *client.Client {
+	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+	c, err := client.DialContext(context.Background(), config)
+	if err != nil {
+		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
+	}
+	return c
+}
+
+func getService(t *testing.T) {
+	c := getClient(t)
+	newService, err := NewSystemConfigService(c)
+	if err != nil {
+		t.Fatalf("init CnsService failed: %+v", err)
+	}
+	service = newService
+}
+
+var (
+	service *SystemConfigService
+)
+
+func TestMain(m *testing.M) {
+	getService(&testing.T{})
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
+
+// func TestSetValueByKey(t *testing.T) {
+// 	result, err := service.SetValueByKey(key, value)
+// 	if err != nil {
+// 		t.Fatalf("Service RegisterCns failed: %+v\n", err)
+// 	}
+// 	if result != standardOutput {
+// 		t.Fatalf("TestRegisterCns failed, the result %v is inconsistent with \"%v\"", result, standardOutput)
+// 	}
+// 	t.Logf("TestRegisterCns result: %v", result)
+// }
+
+// func TestGetValueByKey(t *testing.T) {
+// 	ret0, _, err := service.GetValueByKey(key)
+// 	if err != nil {
+// 		t.Fatalf("Service GetValueByKey failed: %+v\n", err)
+// 	}
+// 	if ret0 != value {
+// 		t.Fatalf("TestGetValueByKey failed, the ret0 %v is inconsistent with \"%v\"", ret0, value)
+// 	}
+// 	t.Logf("TestGetValueByKey ret0: %v", ret0)
+// }

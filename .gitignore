@@ -8,6 +8,7 @@
 *.so
 *.dylib
 log/*
+clog.ini
 
 # Test binary, built with `go test -c`
 *.test
@@ -20,6 +21,7 @@ log/*
 
 # Go workspace file
 go.work
+go.work.sum
 
 # cmd
 main

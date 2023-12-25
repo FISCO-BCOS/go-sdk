@@ -56,9 +56,9 @@ compile_and_ut()
 {
     export GO111MODULE="on"
     # execute_cmd "go get github.com/sirupsen/logrus@v1.8.1"
-    execute_cmd "go build cmd/console.go"
+    execute_cmd "go build ./cmd/console.go"
+    pwd
     execute_cmd "go build -o abigen ./cmd/abigen/main.go"
-
     execute_cmd "go test -v ./smcrypto"
 }
 
@@ -331,7 +331,7 @@ precompiled_test(){
 integration_std()
 {
     LOG_INFO "integration_std testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.8.11"
+    execute_cmd "bash ../tools/download_solc.sh -v 0.8.11"
 
     head build_chain.sh
     bash build_chain.sh -l 127.0.0.1:2 -o nodes -a 0x83309d045a19c44dc3722d15a6abd472f95866ac
@@ -342,11 +342,11 @@ integration_std()
     cp nodes/127.0.0.1/sdk/* ./client/
 
     # abigen std
-    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o .ci/hello .ci/hello/HelloWorld.sol"
-    execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
+    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o ../.ci/hello ../.ci/hello/HelloWorld.sol"
+    execute_cmd "./abigen --bin ../.ci/hello/HelloWorld.bin --abi ../.ci/hello/HelloWorld.abi  --type Hello --pkg main --out=hello.go"
     generate_hello Hello hello.go
     execute_cmd "go build ${ldflags} -o hello hello.go"
-    execute_cmd "go build ${ldflags} -o bn256 .ci/ethPrecompiled/bn256.go"
+    execute_cmd "go build ${ldflags} -o bn256 ../.ci/ethPrecompiled/bn256.go"
     LOG_INFO "generate hello.go and build hello done."
 
     precompiled_test
@@ -357,8 +357,8 @@ integration_std()
     if [ ! -z "$(cat hello.out | grep failed)" ];then LOG_ERROR "call hello failed." && cat hello.out && exit 1;fi
     # if [ ! -z "$(./bn256 | grep failed)" ];then ./bn256 && LOG_ERROR "call bn256 failed." && exit 1;fi
 
-    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o .ci/counter .ci/counter/Counter.sol"
-    execute_cmd "./abigen --bin .ci/counter/Counter.bin --abi .ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
+    execute_cmd "./solc-0.8.11 --bin --abi --optimize -o ../.ci/counter ../.ci/counter/Counter.sol"
+    execute_cmd "./abigen --bin ../.ci/counter/Counter.bin --abi ../.ci/counter/Counter.abi  --type Counter --pkg main --out=counter.go"
     generate_counter Counter counter.go
     execute_cmd "go build ${ldflags} -o counter counter.go"
     if [ -z "$(./counter | grep address)" ];then LOG_ERROR "std deploy contract failed." && exit 1;fi
@@ -374,7 +374,7 @@ integration_std()
 integration_gm()
 {
     LOG_INFO "integration_gm testing..."
-    execute_cmd "bash tools/download_solc.sh -v 0.8.11 -g"
+    execute_cmd "bash ../tools/download_solc.sh -v 0.8.11 -g"
 
     bash build_chain.sh -l 127.0.0.1:2 -s -o nodes_gm -a 0x791a0073e6dfd9dc5e5061aebc43ab4f7aa4ae8b
     cp -r nodes_gm/127.0.0.1/sdk/* ./conf/
@@ -385,11 +385,11 @@ integration_gm()
     cp nodes/127.0.0.1/sdk/* ./client/
 
     # abigen gm
-    execute_cmd "./solc-0.8.11-gm --bin --abi  --overwrite -o .ci/hello .ci/hello/HelloWorld.sol"
-    execute_cmd "./abigen --bin .ci/hello/HelloWorld.bin --abi .ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
+    execute_cmd "./solc-0.8.11-gm --bin --abi  --overwrite -o ../.ci/hello ../.ci/hello/HelloWorld.sol"
+    execute_cmd "./abigen --bin ../.ci/hello/HelloWorld.bin --abi ../.ci/hello/HelloWorld.abi --type Hello --pkg main --out=hello_gm.go --smcrypto=true"
     generate_hello_gm Hello hello_gm.go
     execute_cmd "go build ${ldflags} -o hello_gm hello_gm.go"
-    execute_cmd "go build ${ldflags} -o bn256_gm .ci/ethPrecompiled/bn256_gm.go"
+    execute_cmd "go build ${ldflags} -o bn256_gm ../.ci/ethPrecompiled/bn256_gm.go"
     LOG_INFO "generate hello_gm.go and build hello_gm done."
 
     if [ -z "$(./hello_gm | grep address)" ];then LOG_ERROR "gm deploy contract failed." && exit 1;fi
@@ -439,6 +439,7 @@ parse_params()
 
 main()
 {
+    cd ./v3
     check_env
     get_csdk_lib
     get_build_chain
