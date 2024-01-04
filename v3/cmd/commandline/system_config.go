@@ -17,11 +17,7 @@ Arguments:
 
 For example:
 
-    [setSystemConfigByKey] [tx_count_limit] 10000
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
+    [setSystemConfigByKey] [tx_count_limit] 10000`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		//configMap := make(map[string]struct{})

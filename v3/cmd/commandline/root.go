@@ -5,24 +5,23 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
 	"github.com/spf13/cobra"
 )
 
 var cfgFile string
+var privateKeyFilePath string
+var smCrypto bool
+var disableSsl bool
+var nodeEndpoint string
+var groupID string
+var certPath string
 
 // RPC is the client connected to the blockchain
 var RPC *client.Client
-
-// GroupID default
-var GroupID uint
-
-// ChainID default
-var ChainID int64
-
-// URL default
-var URL string
 
 // GetClient is used for test, it will be init by a config file later.
 func getClient(config *client.Config) *client.Client {
@@ -39,7 +38,7 @@ func getClient(config *client.Config) *client.Client {
 var rootCmd = &cobra.Command{
 	Use:     "console",
 	Short:   "console is a command line tool for FISCO BCOS 3.0.0",
-	Version: "0.10.0",
+	Version: "3.0.0",
 	Long: `console is a Golang client for FISCO BCOS 3.0.0 and it supports the JSON-RPC
 service and the contract operations(e.g. deploying && writing contracts).
 
@@ -71,8 +70,32 @@ func Execute() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+	var privateKey []byte
+	if len(privateKeyFilePath) != 0 {
+		_, err := os.Stat(privateKeyFilePath)
+		if err != nil && os.IsNotExist(err) {
+			fmt.Println("private key file set but not exist, use default private key")
+		}
+		key, curve, err := client.LoadECPrivateKeyFromPEM(privateKeyFilePath)
+		if err != nil {
+			fmt.Printf("parse private key failed, err: %v\n", err)
+			return
+		}
+		if smCrypto && curve != client.Sm2p256v1 {
+			fmt.Printf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
+			return
+		}
+		if !smCrypto && curve != client.Secp256k1 {
+			fmt.Printf("should use secp256k1 private key, but found %s\n", curve)
+		}
+		privateKey = key
+	} else {
+		privateKey, _ = hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	}
+	ret := strings.Split(nodeEndpoint, ":")
+	host := ret[0]
+	port, _ := strconv.Atoi(ret[1])
+	config := &client.Config{IsSMCrypto: smCrypto, GroupID: groupID, DisableSsl: disableSsl,
+		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: certPath + "/ca.crt", TLSKeyFile: certPath + "/sdk.key", TLSCertFile: certPath + "/sdk.crt"}
 	RPC = getClient(config)
 }

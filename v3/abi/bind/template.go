@@ -400,11 +400,11 @@ var (
 		// Watch{{.Normalized.Name}} is a free log subscription operation binding the contract event 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatevent .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) Watch{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) (string, error) {
+		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) Watch{{.Normalized.Name}}(fromBlock *int64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) (string, error) {
 			return _{{$contract.Type}}.contract.WatchLogs(fromBlock, handler, "{{.Original.Name}}"{{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}{{end}}{{end}})
 		}
 
-		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) WatchAll{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+		func (_{{$contract.Type}} *{{$contract.Type}}Filterer) WatchAll{{.Normalized.Name}}(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 			return _{{$contract.Type}}.contract.WatchLogs(fromBlock, handler, "{{.Original.Name}}")
 		}
 
@@ -422,11 +422,11 @@ var (
 		// Watch{{.Normalized.Name}} is a free log subscription operation binding the contract event 0x{{printf "%x" .Original.ID}}.
 		//
 		// Solidity: {{formatevent .Original $structs}}
-		func (_{{$contract.Type}} *{{$contract.Type}}Session) Watch{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) (string, error)  {
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) Watch{{.Normalized.Name}}(fromBlock *int64, handler func(int, []types.Log){{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}} {{bindtype .Type $structs}}{{end}}{{end}}) (string, error)  {
 			return _{{$contract.Type}}.Contract.Watch{{.Normalized.Name}}(fromBlock, handler {{range .Normalized.Inputs}}{{if .Indexed}}, {{.Name}}{{end}}{{end}})
 		}
 
-		func (_{{$contract.Type}} *{{$contract.Type}}Session) WatchAll{{.Normalized.Name}}(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+		func (_{{$contract.Type}} *{{$contract.Type}}Session) WatchAll{{.Normalized.Name}}(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 			return _{{$contract.Type}}.Contract.WatchAll{{.Normalized.Name}}(fromBlock, handler)
 		}
 

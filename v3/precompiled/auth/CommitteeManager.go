@@ -726,11 +726,11 @@ type CommitteeManagerExecResult struct {
 // WatchExecResult is a free log subscription operation binding the contract event 0x7251e13f6f51fdfe60094817f80310366d2e1148fe8a46cb475b582d35bfdea8.
 //
 // Solidity: event execResult(int256 )
-func (_CommitteeManager *CommitteeManagerFilterer) WatchExecResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_CommitteeManager *CommitteeManagerFilterer) WatchExecResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _CommitteeManager.contract.WatchLogs(fromBlock, handler, "execResult")
 }
 
-func (_CommitteeManager *CommitteeManagerFilterer) WatchAllExecResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_CommitteeManager *CommitteeManagerFilterer) WatchAllExecResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _CommitteeManager.contract.WatchLogs(fromBlock, handler, "execResult")
 }
 
@@ -748,11 +748,11 @@ func (_CommitteeManager *CommitteeManagerFilterer) ParseExecResult(log types.Log
 // WatchExecResult is a free log subscription operation binding the contract event 0x7251e13f6f51fdfe60094817f80310366d2e1148fe8a46cb475b582d35bfdea8.
 //
 // Solidity: event execResult(int256 )
-func (_CommitteeManager *CommitteeManagerSession) WatchExecResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_CommitteeManager *CommitteeManagerSession) WatchExecResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _CommitteeManager.Contract.WatchExecResult(fromBlock, handler)
 }
 
-func (_CommitteeManager *CommitteeManagerSession) WatchAllExecResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_CommitteeManager *CommitteeManagerSession) WatchAllExecResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _CommitteeManager.Contract.WatchAllExecResult(fromBlock, handler)
 }
 

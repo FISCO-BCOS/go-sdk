@@ -56,7 +56,7 @@ const (
 // and reset your terminal to use autocompletion.`,
 // 	Run: func(cmd *cobra.Command, args []string) {
 // 		rootCmd.GenZshCompletionFile("_console");
-// 		fmt.Println("zsh file _console had created on your current diretory successfully.")
+// 		fmt.Println("zsh file _console had created on your current directory successfully.")
 // 	},
 // }
 
@@ -89,8 +89,8 @@ The block height is encoded in hex`,
 	},
 }
 
-var getPbftViewCmd = &cobra.Command{
-	Use:   "getPbftView",
+var getPBFTViewCmd = &cobra.Command{
+	Use:   "getPBFTView",
 	Short: "                                   Get the latest PBFT view(PBFT consensus only)",
 	Long: `Returns the latest PBFT view in the specified group where the node is located.
 The PBFT view is encoded in hex`,
@@ -376,7 +376,7 @@ For more information please refer:
 			fmt.Printf("block not found: %v\n", err)
 			return
 		}
-		js, err := json.MarshalIndent(block, "", indent)
+		js, _ := json.MarshalIndent(block, "", indent)
 		fmt.Printf("Block: \n%s\n", js)
 	},
 }
@@ -658,7 +658,7 @@ func init() {
 	// add common command
 	rootCmd.AddCommand(completionCmd)
 	// add node command
-	rootCmd.AddCommand(getGroupIDCmd, getBlockNumberCmd, getPbftViewCmd, getSealerListCmd)
+	rootCmd.AddCommand(getGroupIDCmd, getBlockNumberCmd, getPBFTViewCmd, getSealerListCmd)
 	rootCmd.AddCommand(getObserverListCmd, getConsensusStatusCmd, getSyncStatusCmd, getPeersCmd, getGroupPeersCmd)
 	rootCmd.AddCommand(getNodeIDListCmd, getGroupListCmd, getNodeInfoCmd, getGroupInfoCmd, getGroupInfoListCmd)
 	// add block access command
@@ -671,33 +671,33 @@ func init() {
 
 	// cobra.OnInitialize(initConfig)
 
-	// FIXME: add a custom help command or find a way to make help command work without network
-
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is the project directory ./config.ini)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is the project directory ./config.ini)")
+	rootCmd.Flags().StringVarP(&cfgFile, "privateKeyPath", "p", "", "private key file path of pem format")
+	rootCmd.Flags().BoolVarP(&smCrypto, "smCrypto", "s", false, "use smCrypto or not, default is false")
+	rootCmd.Flags().BoolVarP(&disableSsl, "disableSsl", "d", false, "switch off ssl or not, default use ssl")
+	rootCmd.PersistentFlags().StringVarP(&groupID, "groupID", "g", "group0", "groupID of FISCO BCOS chain")
+	rootCmd.PersistentFlags().StringVarP(&nodeEndpoint, "nodeEndpoint", "n", "127.0.0.1:20200", "node endpoint, default is 127.0.0.1:20200")
+	rootCmd.PersistentFlags().StringVarP(&certPath, "certPath", "c", "./conf", "cert path, default is ./conf, should contain ca.crt, sdk.crt, sdk.key")
 }
 
 func isValidHex(str string) (bool, error) {
 	// starts with "0x"
 	if strings.HasPrefix(str, "0x") {
 		if len(str) == 2 {
-			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s", str, info)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your input: %s%s", str, info)
 		}
 		// is hex string
 		_, err := hexutil.Decode(str)
 		if err != nil {
-			return false, fmt.Errorf("not a valid hex string: arguments error: please check your inpunt: %s%s: %v", str, info, err)
+			return false, fmt.Errorf("not a valid hex string: arguments error: please check your input: %s%s: %v", str, info, err)
 		}
 		return true, nil
 	}
-	return false, fmt.Errorf("arguments error: Not a valid hex string, please check your inpunt: %s%s", str, info)
+	return false, fmt.Errorf("arguments error: Not a valid hex string, please check your input: %s%s", str, info)
 }
 
 func isBlockNumberOutOfRange(blockNumber int64) (bool, error) {

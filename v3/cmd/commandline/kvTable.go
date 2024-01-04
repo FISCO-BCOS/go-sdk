@@ -9,7 +9,7 @@ import (
 
 var createTable = &cobra.Command{
 	Use:   "createTable",
-	Short: "[tableName] [keyName] [valueName]  create table",
+	Short: "<tableName> <keyName> <valueName>",
 	Long: `createTable.
 Arguments:
           [tableName]: string
@@ -18,11 +18,7 @@ Arguments:
 
 For example:
 
-    [createTable] [table1] [key1] [value1]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/console.html#addobserver`,
+    createTable table1 key1 value1`,
 	Args: cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
@@ -60,11 +56,7 @@ Arguments:
 
 For example:
 
-    [set] [table1] [key1] [value1]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/console.html#addsealer`,
+    set table1 key1 value1`,
 	Args: cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]
@@ -104,11 +96,7 @@ Arguments:
 
 For example:
 
-    [get] [tableName] [key1]
-
-For more information please refer:
-
-    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/manual/console.html#removenode`,
+    [get] [tableName] [key1]`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		tableName := args[0]

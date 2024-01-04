@@ -299,11 +299,11 @@ type HelloWorldSetValue struct {
 // WatchSetValue is a free log subscription operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
 //
 // Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
-func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
+func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *int64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
 	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue", from, to)
 }
 
-func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue")
 }
 
@@ -321,11 +321,11 @@ func (_HelloWorld *HelloWorldFilterer) ParseSetValue(log types.Log) (*HelloWorld
 // WatchSetValue is a free log subscription operation binding the contract event 0x1cede41e194608a414a2e1d67987cf390338e67d0ff22be86dee2f3737c23d53.
 //
 // Solidity: event setValue(string v, address indexed from, address indexed to, uint256 value)
-func (_HelloWorld *HelloWorldSession) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
+func (_HelloWorld *HelloWorldSession) WatchSetValue(fromBlock *int64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
 	return _HelloWorld.Contract.WatchSetValue(fromBlock, handler, from, to)
 }
 
-func (_HelloWorld *HelloWorldSession) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_HelloWorld *HelloWorldSession) WatchAllSetValue(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _HelloWorld.Contract.WatchAllSetValue(fromBlock, handler)
 }
 

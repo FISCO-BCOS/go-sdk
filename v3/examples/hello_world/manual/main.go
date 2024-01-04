@@ -75,8 +75,12 @@ func main() {
 	address := common.HexToAddress(receipt.ContractAddress)
 	// SubscribeEventLogs
 	hello := bind.NewBoundContract(address, parsed, client, client, client)
-	fromBlock := uint64(0)
-	hello.WatchLogs(&fromBlock, func(ret int, logs []types.Log) {
+	currentBlock, err := client.GetBlockNumber(context.Background())
+	if err != nil {
+		fmt.Printf("GetBlockNumber() failed: %v", err)
+		return
+	}
+	hello.WatchLogs(&currentBlock, func(ret int, logs []types.Log) {
 		setValue := &struct {
 			V     string
 			From  common.Address

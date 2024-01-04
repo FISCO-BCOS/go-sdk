@@ -82,7 +82,7 @@ type HelloWorldFilterer struct {
 // HelloWorldSession is an auto generated Go binding around a Solidity contract,
 // with pre-set call and transact options.
 type HelloWorldSession struct {
-	Contract     *HelloWorld             // Generic contract binding to set the session for
+	Contract     *HelloWorld       // Generic contract binding to set the session for
 	CallOpts     bind.CallOpts     // Call options to use throughout this session
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
 }
@@ -90,15 +90,15 @@ type HelloWorldSession struct {
 // HelloWorldCallerSession is an auto generated read-only Go binding around a Solidity contract,
 // with pre-set call options.
 type HelloWorldCallerSession struct {
-	Contract *HelloWorldCaller   // Generic contract caller binding to set the session for
-	CallOpts bind.CallOpts // Call options to use throughout this session
+	Contract *HelloWorldCaller // Generic contract caller binding to set the session for
+	CallOpts bind.CallOpts     // Call options to use throughout this session
 }
 
 // HelloWorldTransactorSession is an auto generated write-only Go binding around a Solidity contract,
 // with pre-set transact options.
 type HelloWorldTransactorSession struct {
-	Contract     *HelloWorldTransactor   // Generic contract transactor binding to set the session for
-	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
+	Contract     *HelloWorldTransactor // Generic contract transactor binding to set the session for
+	TransactOpts bind.TransactOpts     // Transaction auth options to use throughout this session
 }
 
 // HelloWorldRaw is an auto generated low-level Go binding around a Solidity contract.
@@ -301,11 +301,11 @@ type HelloWorldSetValue struct {
 // WatchSetValue is a free log subscription operation binding the contract event 0xc3bf5911f8e0476e774566ef3fa1259f04156ba5c61ea5ff35c0201390381f96.
 //
 // Solidity: event setValue(string v, address indexed from, address indexed to, int256 value)
-func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
+func (_HelloWorld *HelloWorldFilterer) WatchSetValue(fromBlock *int64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
 	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue", from, to)
 }
 
-func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_HelloWorld *HelloWorldFilterer) WatchAllSetValue(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _HelloWorld.contract.WatchLogs(fromBlock, handler, "setValue")
 }
 
@@ -323,11 +323,11 @@ func (_HelloWorld *HelloWorldFilterer) ParseSetValue(log types.Log) (*HelloWorld
 // WatchSetValue is a free log subscription operation binding the contract event 0xc3bf5911f8e0476e774566ef3fa1259f04156ba5c61ea5ff35c0201390381f96.
 //
 // Solidity: event setValue(string v, address indexed from, address indexed to, int256 value)
-func (_HelloWorld *HelloWorldSession) WatchSetValue(fromBlock *uint64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
+func (_HelloWorld *HelloWorldSession) WatchSetValue(fromBlock *int64, handler func(int, []types.Log), from common.Address, to common.Address) (string, error) {
 	return _HelloWorld.Contract.WatchSetValue(fromBlock, handler, from, to)
 }
 
-func (_HelloWorld *HelloWorldSession) WatchAllSetValue(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_HelloWorld *HelloWorldSession) WatchAllSetValue(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _HelloWorld.Contract.WatchAllSetValue(fromBlock, handler)
 }
 
