@@ -31,6 +31,7 @@ type tmplContract struct {
 	Type        string                 // Type name of the main contract binding
 	InputABI    string                 // JSON ABI used as the input to generate the binding from
 	InputBin    string                 // Optional EVM bytecode used to denetare deploy code from
+	InputSMBin  string                 // Optional EVM bytecode used to denetare deploy code from
 	FuncSigs    map[string]string      // Optional map: string signature -> 4-byte signature
 	Constructor abi.Method             // Contract constructor for deploy parametrization
 	Calls       map[string]*tmplMethod // Contract calls that only read state data
@@ -87,6 +88,7 @@ const tmplSourceGo = `
 package {{.Package}}
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -131,6 +133,7 @@ var (
 	{{if .InputBin}}
 		// {{.Type}}Bin is the compiled bytecode used for deploying new contracts.
 		var {{.Type}}Bin = "0x{{.InputBin}}"
+		var {{.Type}}SMBin = "0x{{.InputSMBin}}"
 
 		// Deploy{{.Type}} deploys a new contract, binding an instance of {{.Type}} to it.
 		func Deploy{{.Type}}(auth *bind.TransactOpts, backend bind.ContractBackend {{range .Constructor.Inputs}}, {{.Name}} {{bindtype .Type $structs}}{{end}}) (common.Address,  *types.Receipt, *{{.Type}}, error) {
@@ -142,7 +145,16 @@ var (
 			{{decapitalise $name}}Addr, _, _, _ := Deploy{{capitalise $name}}(auth, backend)
 			{{$contract.Type}}Bin = strings.Replace({{$contract.Type}}Bin, "__${{$pattern}}$__", {{decapitalise $name}}Addr.String()[2:], -1)
 		  {{end}}
-		  address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex({{.Type}}Bin), backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
+		  var bytecode []byte
+          if backend.SMCrypto() {
+            bytecode = common.FromHex({{.Type}}SMBin)
+          } else {
+            bytecode = common.FromHex({{.Type}}Bin)
+          }
+		  if len(bytecode) == 0 {
+		    return common.Address{}, nil, nil, fmt.Errorf("cannot deploy empty bytecode")
+		  }
+		  address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
 		  if err != nil {
 		    return common.Address{}, nil, nil, err
 		  }
@@ -158,7 +170,16 @@ var (
 			{{decapitalise $name}}Addr, _, _, _ := AsyncDeploy{{capitalise $name}}(auth, backend)
 			{{$contract.Type}}Bin = strings.Replace({{$contract.Type}}Bin, "__${{$pattern}}$__", {{decapitalise $name}}Addr.String()[2:], -1)
 		  {{end}}
-		  tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex({{.Type}}Bin), backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
+		  var bytecode []byte
+          if backend.SMCrypto() {
+            bytecode = common.FromHex({{.Type}}SMBin)
+          } else {
+            bytecode = common.FromHex({{.Type}}Bin)
+          }
+		  if len(bytecode) == 0 {
+		    return nil, fmt.Errorf("cannot deploy empty bytecode")
+		  }
+		  tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
 		  if err != nil {
 		    return nil, err
 		  }
