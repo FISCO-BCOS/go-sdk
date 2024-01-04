@@ -164,6 +164,7 @@ cp .ci/hello/HelloWorld.sol ./hello
 
 ```bash
 # 国密请使用 ./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go --smcrypto=true
+# 注意：国密模式，请使用国密solc编译得到bin
 ./abigen --bin ./hello/HelloWorld.bin --abi ./hello/HelloWorld.abi --pkg hello --type HelloWorld --out ./hello/HelloWorld.go
 ```
 
@@ -243,7 +244,12 @@ func main() {
         return
     }
     done := make(chan bool)
-    _, err = helloSession.WatchAllSetValue(nil, func(ret int, logs []types.Log) {
+    currentBlock, err := client.GetBlockNumber(context.Background())
+    if err != nil {
+        fmt.Printf("GetBlockNumber() failed: %v", err)
+        return
+    }
+    _, err = helloSession.WatchAllSetValue(&currentBlock, func(ret int, logs []types.Log) {
         fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
         setValue, err := helloSession.ParseSetValue(logs[0])
         if err != nil {

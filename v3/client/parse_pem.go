@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	secp256k1 = "secp256k1"
-	sm2p256v1 = "sm2p256v1"
+	Secp256k1 = "secp256k1"
+	Sm2p256v1 = "sm2p256v1"
 )
 
 var (

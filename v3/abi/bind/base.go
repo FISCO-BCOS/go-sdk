@@ -248,7 +248,7 @@ func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Addre
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(fromBlock *uint64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
+func (c *BoundContract) WatchLogs(fromBlock *int64, handler func(int, []types.Log), name string, query ...interface{}) (string, error) {
 	from := int64(1)
 	to := int64(-1)
 	// Don't crash on a lazy user

@@ -271,11 +271,11 @@ type KVTableTestInsertResult struct {
 // WatchInsertResult is a free log subscription operation binding the contract event 0xc57b01fa77f41df77eaab79a0e2623fab2e7ae3e9530d9b1cab225ad65f2b7ce.
 //
 // Solidity: event InsertResult(int256 count)
-func (_KVTableTest *KVTableTestFilterer) WatchInsertResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_KVTableTest *KVTableTestFilterer) WatchInsertResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _KVTableTest.contract.WatchLogs(fromBlock, handler, "InsertResult")
 }
 
-func (_KVTableTest *KVTableTestFilterer) WatchAllInsertResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_KVTableTest *KVTableTestFilterer) WatchAllInsertResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _KVTableTest.contract.WatchLogs(fromBlock, handler, "InsertResult")
 }
 
@@ -293,11 +293,11 @@ func (_KVTableTest *KVTableTestFilterer) ParseInsertResult(log types.Log) (*KVTa
 // WatchInsertResult is a free log subscription operation binding the contract event 0xc57b01fa77f41df77eaab79a0e2623fab2e7ae3e9530d9b1cab225ad65f2b7ce.
 //
 // Solidity: event InsertResult(int256 count)
-func (_KVTableTest *KVTableTestSession) WatchInsertResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_KVTableTest *KVTableTestSession) WatchInsertResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _KVTableTest.Contract.WatchInsertResult(fromBlock, handler)
 }
 
-func (_KVTableTest *KVTableTestSession) WatchAllInsertResult(fromBlock *uint64, handler func(int, []types.Log)) (string, error) {
+func (_KVTableTest *KVTableTestSession) WatchAllInsertResult(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _KVTableTest.Contract.WatchAllInsertResult(fromBlock, handler)
 }
 
