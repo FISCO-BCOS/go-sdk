@@ -676,9 +676,9 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is the project directory ./config.ini)")
-	rootCmd.Flags().StringVarP(&cfgFile, "privateKeyPath", "p", "", "private key file path of pem format")
-	rootCmd.Flags().BoolVarP(&smCrypto, "smCrypto", "s", false, "use smCrypto or not, default is false")
-	rootCmd.Flags().BoolVarP(&disableSsl, "disableSsl", "d", false, "switch off ssl or not, default use ssl")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "privateKeyPath", "p", "", "private key file path of pem format")
+	rootCmd.PersistentFlags().BoolVarP(&smCrypto, "smCrypto", "s", false, "use smCrypto or not, default is false")
+	rootCmd.PersistentFlags().BoolVarP(&disableSsl, "disableSsl", "d", false, "switch off ssl or not, default use ssl")
 	rootCmd.PersistentFlags().StringVarP(&groupID, "groupID", "g", "group0", "groupID of FISCO BCOS chain")
 	rootCmd.PersistentFlags().StringVarP(&nodeEndpoint, "nodeEndpoint", "n", "127.0.0.1:20200", "node endpoint, default is 127.0.0.1:20200")
 	rootCmd.PersistentFlags().StringVarP(&certPath, "certPath", "c", "./conf", "cert path, default is ./conf, should contain ca.crt, sdk.crt, sdk.key")

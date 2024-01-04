@@ -45,11 +45,15 @@ var (
 	// Flags needed by abigen
 	abiFlag = &cli.StringFlag{
 		Name:  "abi",
-		Usage: "Path to the Ethereum contract ABI json to bind, - for STDIN",
+		Usage: "Path to the Solidity contract ABI json to bind, - for STDIN",
 	}
 	binFlag = &cli.StringFlag{
 		Name:  "bin",
-		Usage: "Path to the Ethereum contract bytecode (generate deploy method)",
+		Usage: "Path to the Solidity contract bytecode (generate deploy method)",
+	}
+	smBinFlag = &cli.StringFlag{
+		Name:  "smbin",
+		Usage: "Path to the Solidity contract sm crypto bytecode (generate deploy method)",
 	}
 	typeFlag = &cli.StringFlag{
 		Name:  "type",
@@ -101,6 +105,7 @@ func init() {
 		langFlag,
 		aliasFlag,
 		cryptoFlag,
+		smBinFlag,
 	}
 	app.Action = abigen
 }
@@ -127,6 +132,7 @@ func abigen(c *cli.Context) error {
 	var (
 		abis    []string
 		bins    []string
+		smBins  []string
 		types   []string
 		sigs    []map[string]string
 		libs    = make(map[string]string)
@@ -159,6 +165,17 @@ func abigen(c *cli.Context) error {
 			}
 		}
 		bins = append(bins, string(bin))
+
+		var smBin []byte
+		if smBinFile := c.String(smBinFlag.Name); smBinFile != "" {
+			if smBin, err = os.ReadFile(smBinFile); err != nil {
+				utils.Fatalf("Failed to read input sm crypto bytecode: %v", err)
+			}
+			if strings.Contains(string(smBin), "//") {
+				utils.Fatalf("Contract has additional library references, please use other mode(e.g. --combined-json) to catch library infos")
+			}
+		}
+		smBins = append(smBins, string(smBin))
 
 		kind := c.String(typeFlag.Name)
 		if kind == "" {
@@ -232,7 +249,7 @@ func abigen(c *cli.Context) error {
 		}
 	}
 	// Generate the contract binding
-	code, err := bind.Bind(types, abis, bins, sigs, c.String(pkgFlag.Name), lang, libs, aliases, smcrypto)
+	code, err := bind.Bind(types, abis, bins, sigs, c.String(pkgFlag.Name), lang, libs, aliases, smcrypto, smBins)
 	if err != nil {
 		utils.Fatalf("Failed to generate ABI binding: %v", err)
 	}
