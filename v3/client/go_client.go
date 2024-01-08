@@ -327,6 +327,10 @@ func (c *Client) SetPrivateKey(privateKey []byte) error {
 	return c.conn.GetCSDK().SetPrivateKey(privateKey)
 }
 
+func (c *Client) PrivateKeyBytes() []byte {
+	return c.conn.GetCSDK().PrivateKeyBytes()
+}
+
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
@@ -428,26 +432,29 @@ func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
 	// Raft consensus
 }
 
+type ConsensusNodeInfo struct {
+	ID     string `json:"nodeID"`
+	Weight uint   `json:"weight"`
+}
+
 // GetSealerList returns the list of consensus nodes' ID according to the groupID
-func (c *Client) GetSealerList(ctx context.Context) ([]byte, error) {
-	var raw interface{}
+func (c *Client) GetSealerList(ctx context.Context) ([]ConsensusNodeInfo, error) {
+	var raw []ConsensusNodeInfo
 	err := c.conn.CallContext(ctx, &raw, "getSealerList")
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+	return raw, err
 }
 
 // GetObserverList returns the list of observer nodes' ID according to the groupID
-func (c *Client) GetObserverList(ctx context.Context) ([]byte, error) {
-	var raw interface{}
+func (c *Client) GetObserverList(ctx context.Context) ([]string, error) {
+	var raw []string
 	err := c.conn.CallContext(ctx, &raw, "getObserverList")
 	if err != nil {
 		return nil, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+	return raw, err
 }
 
 // GetConsensusStatus returns the status information about the consensus algorithm on a specific groupID
@@ -625,14 +632,13 @@ func (c *Client) GetContractAddress(ctx context.Context, txHash common.Hash) (co
 }
 
 // GetPendingTxSize returns amount of the pending transactions
-func (c *Client) GetPendingTxSize(ctx context.Context) ([]byte, error) {
-	var raw interface{}
+func (c *Client) GetPendingTxSize(ctx context.Context) (int64, error) {
+	var raw int64
 	err := c.conn.CallContext(ctx, &raw, "getPendingTxSize")
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	js, err := json.MarshalIndent(raw, "", indent)
-	return js, err
+	return raw, err
 }
 
 // GetCode returns the contract code according to the contract address

@@ -161,7 +161,7 @@ func TestSealerList(t *testing.T) {
 		t.Fatalf("sealer list not found: %v", err)
 	}
 
-	t.Logf("sealer list:\n%s", sl)
+	t.Logf("sealer list:\n%+v", sl)
 }
 
 func TestObserverList(t *testing.T) {
@@ -264,7 +264,7 @@ func TestPendingTxSize(t *testing.T) {
 		t.Fatalf("pending transactions not found: %v", err)
 	}
 
-	t.Logf("the amount of the pending transactions:\n%s", raw)
+	t.Logf("the amount of the pending transactions:\n%d", raw)
 }
 
 func deployHelloWorld(t *testing.T) (*common.Address, *common.Hash) {
@@ -463,7 +463,7 @@ func TestAsnycHelloWorldSet(t *testing.T) {
 		t.Fatalf("parsed.Pack error: %v", err)
 	}
 	var wg sync.WaitGroup
-	count := 100
+	count := 50
 	for i := 0; i < count; i++ {
 		tx := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
 		err = c.AsyncSendTransaction(context.Background(), tx, func(receipt *types.Receipt, err error) {

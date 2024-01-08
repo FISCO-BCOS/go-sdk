@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
+	"github.com/FISCO-BCOS/go-sdk/v3/smcrypto"
 	"github.com/spf13/cobra"
 )
 
@@ -75,27 +76,43 @@ func initConfig() {
 		_, err := os.Stat(privateKeyFilePath)
 		if err != nil && os.IsNotExist(err) {
 			fmt.Println("private key file set but not exist, use default private key")
-		}
-		key, curve, err := client.LoadECPrivateKeyFromPEM(privateKeyFilePath)
-		if err != nil {
-			fmt.Printf("parse private key failed, err: %v\n", err)
+		} else if err != nil {
+			fmt.Printf("check private key file failed, err: %v\n", err)
 			return
+		} else {
+			key, curve, err := client.LoadECPrivateKeyFromPEM(privateKeyFilePath)
+			if err != nil {
+				fmt.Printf("parse private key failed, err: %v\n", err)
+				return
+			}
+			if smCrypto && curve != client.Sm2p256v1 {
+				fmt.Printf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
+				return
+			}
+			if !smCrypto && curve != client.Secp256k1 {
+				fmt.Printf("should use secp256k1 private key, but found %s\n", curve)
+				return
+			}
+			privateKey = key
 		}
-		if smCrypto && curve != client.Sm2p256v1 {
-			fmt.Printf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
-			return
-		}
-		if !smCrypto && curve != client.Secp256k1 {
-			fmt.Printf("should use secp256k1 private key, but found %s\n", curve)
-		}
-		privateKey = key
 	} else {
+		address := "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 		privateKey, _ = hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+		if smCrypto {
+			address = smcrypto.SM2KeyToAddress(privateKey).Hex()
+		}
+		fmt.Println("use default private key, address: ", address)
 	}
 	ret := strings.Split(nodeEndpoint, ":")
 	host := ret[0]
 	port, _ := strconv.Atoi(ret[1])
-	config := &client.Config{IsSMCrypto: smCrypto, GroupID: groupID, DisableSsl: disableSsl,
-		PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: certPath + "/ca.crt", TLSKeyFile: certPath + "/sdk.key", TLSCertFile: certPath + "/sdk.crt"}
+	var config *client.Config
+	if !smCrypto {
+		config = &client.Config{IsSMCrypto: smCrypto, GroupID: groupID, DisableSsl: disableSsl,
+			PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: certPath + "/ca.crt", TLSKeyFile: certPath + "/sdk.key", TLSCertFile: certPath + "/sdk.crt"}
+	} else {
+		config = &client.Config{IsSMCrypto: smCrypto, GroupID: groupID, DisableSsl: disableSsl,
+			PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: certPath + "/sm_ca.crt", TLSKeyFile: certPath + "/sm_sdk.key", TLSCertFile: certPath + "/sm_sdk.crt", TLSSmEnKeyFile: certPath + "/sm_ensdk.key", TLSSmEnCertFile: certPath + "/sm_ensdk.crt"}
+	}
 	RPC = getClient(config)
 }

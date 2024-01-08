@@ -8,7 +8,9 @@ import (
 	"strconv"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/precompiled/auth"
+	"github.com/FISCO-BCOS/go-sdk/v3/smcrypto"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 )
 
@@ -183,7 +185,7 @@ Arguments:
 
 For example:
 
-    [resetAdmin] [0x112fb844934c794a9e425dd6b4e57eff1b519f17][0x112fb844934c794a9e425dd6b4e57eff1b519f17]
+    resetAdmin 0x112fb844934c794a9e425dd6b4e57eff1b519f17 0x112fb844934c794a9e425dd6b4e57eff1b519f17
 
 For more information please refer:
 
@@ -200,15 +202,25 @@ For more information please refer:
 			fmt.Printf("the format of contractAddr %v is invalid\n", contractAddr)
 			return
 		}
-
+		var currentAddress string
+		if RPC.SMCrypto() {
+			currentAddress = smcrypto.SM2KeyToAddress(RPC.PrivateKeyBytes()).Hex()
+		} else {
+			private, err := crypto.ToECDSA(RPC.PrivateKeyBytes())
+			if err != nil {
+				fmt.Printf("resetAdmin get current private failed,  err:%v\n", err)
+				return
+			}
+			currentAddress = crypto.PubkeyToAddress(private.PublicKey).Hex()
+		}
 		authManagerService, err := auth.NewAuthManagerService(RPC)
 		if err != nil {
-			fmt.Printf("resetAdmin failed,  err:%v\n", err)
+			fmt.Printf("resetAdmin failed, currentAccount: %s,  err:%v\n", currentAddress, err)
 			return
 		}
 		result, err := authManagerService.ResetAdmin(common.HexToAddress(newAdmin), common.HexToAddress(contractAddr))
 		if err != nil {
-			fmt.Printf("resetAdmin failed,  err: %v\n", err)
+			fmt.Printf("resetAdmin failed, currentAccount: %s,  err: %v\n", currentAddress, err)
 			return
 		}
 		fmt.Println(result)

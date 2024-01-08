@@ -22,7 +22,7 @@ For example:
     setSystemConfigByKey tx_count_limit 10000`, configSet.String()),
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		if configSet.Contains(args[0]) {
+		if !configSet.Contains(args[0]) {
 			fmt.Printf("The key not found: %s, currently only support %v", args[0], configSet)
 			return
 		}
