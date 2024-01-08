@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/abi/bind"
@@ -164,12 +163,20 @@ func (c *Client) CodeAt(ctx context.Context, address common.Address, blockNumber
 	return js, err
 }
 
-// Filters
-func toBlockNumArg(number *big.Int) string {
-	if number == nil {
-		return "latest"
+func (c *Client) GetABI(ctx context.Context, address common.Address) (string, error) {
+	req, err := c.conn.NewMessage("getABI", c.groupID, "", address.Hex())
+	if err != nil {
+		return "", err
 	}
-	return hexutil.EncodeBig(number)
+	message, err := json.Marshal(req)
+	if err != nil {
+		return "", err
+	}
+	response, err := c.conn.sendRPCRequest(c.groupID, "", string(message))
+	if err != nil {
+		return "", err
+	}
+	return string(response.Result), nil
 }
 
 // PendingCodeAt returns the contract code of the given account in the pending state.
@@ -231,15 +238,15 @@ func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) 
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error) {
+func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	var err error
 	var anonymityReceipt = &struct {
 		types.Receipt
 	}{}
-	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, strings.ToLower(contract.String()))
+	if tx.To() != nil {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", tx.Input(), strings.ToLower(tx.To().String()))
 	} else {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, "")
+		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", tx.Input(), "", tx.ABI())
 	}
 	if err != nil {
 		errorStr := fmt.Sprintf("%s", err)
@@ -253,15 +260,15 @@ func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction, con
 }
 
 // AsyncSendTransaction send transaction async
-func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
+func (c *Client) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
 	var err error
 	var anonymityReceipt = &struct {
 		types.Receipt
 	}{}
-	if contract != nil {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, strings.ToLower(contract.String()[2:]), handler)
+	if tx.To() != nil {
+		err = c.conn.CallContext(ctx, anonymityReceipt, "asyncSendTransaction", tx.Input(), strings.ToLower(tx.To().String()), handler)
 	} else {
-		err = c.conn.CallContext(ctx, anonymityReceipt, "sendTransaction", input, "", handler)
+		err = c.conn.CallContext(ctx, anonymityReceipt, "asyncSendTransaction", tx.Input(), "", handler, tx.ABI())
 	}
 	if err != nil {
 		return err
@@ -678,21 +685,4 @@ func (c *Client) GetSystemConfigByKey(ctx context.Context, configKey string) (*t
 	}
 	//js, err := json.MarshalIndent(raw, "", indent)
 	return &raw, err
-}
-
-func getVersionNumber(strVersion string) (int, error) {
-	strList := strings.Split(strVersion, ".")
-	if len(strList) != 3 {
-		return 0, fmt.Errorf("strList length must be 3")
-	}
-	var versionNumber int
-	for i := 0; i < len(strList); i++ {
-		num, err := strconv.Atoi(strList[i])
-		if err != nil {
-			return 0, fmt.Errorf("getVersionNumber failed, err: %v", err)
-		}
-		versionNumber += num
-		versionNumber = versionNumber << 8
-	}
-	return versionNumber, nil
 }

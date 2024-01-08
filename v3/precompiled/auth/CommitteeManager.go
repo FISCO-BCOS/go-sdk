@@ -37,7 +37,7 @@ func DeployCommitteeManager(auth *bind.TransactOpts, backend bind.ContractBacken
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(CommitteeManagerBin), backend, initGovernors, weights, participatesRate, winRate)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(CommitteeManagerBin), CommitteeManagerABI, backend, initGovernors, weights, participatesRate, winRate)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployCommitteeManager(auth *bind.TransactOpts, handler func(*types.Re
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(CommitteeManagerBin), backend, initGovernors, weights, participatesRate, winRate)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(CommitteeManagerBin), CommitteeManagerABI, backend, initGovernors, weights, participatesRate, winRate)
 	if err != nil {
 		return nil, err
 	}

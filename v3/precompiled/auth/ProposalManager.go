@@ -48,7 +48,7 @@ func DeployProposalManager(auth *bind.TransactOpts, backend bind.ContractBackend
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ProposalManagerBin), backend, committeeMgrAddress, committeeAddress)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ProposalManagerBin), ProposalManagerABI, backend, committeeMgrAddress, committeeAddress)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -61,7 +61,7 @@ func AsyncDeployProposalManager(auth *bind.TransactOpts, handler func(*types.Rec
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ProposalManagerBin), backend, committeeMgrAddress, committeeAddress)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ProposalManagerBin), ProposalManagerABI, backend, committeeMgrAddress, committeeAddress)
 	if err != nil {
 		return nil, err
 	}

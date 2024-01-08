@@ -58,7 +58,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is invalid\n", accountAddress)
 			return
 		}
 
@@ -87,7 +87,7 @@ Arguments:
 
 For example:
 
-    [checkMethodAuth] [0x112fb844934c794a9e425dd6b4e57eff1b519f17][c53057b4][0x112fb844934c794a9e425dd6b4e57eff1b519f17]
+    [checkMethodAuth] 0x112fb844934c794a9e425dd6b4e57eff1b519f17  c53057b4  0x112fb844934c794a9e425dd6b4e57eff1b519f17
 
 For more information please refer:
 
@@ -96,18 +96,18 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddr := args[0]
 		if !IsValidAccount(contractAddr) {
-			fmt.Printf("the format of contractAddr %v is unvalid\n", contractAddr)
+			fmt.Printf("the format of contractAddr %v is invalid\n", contractAddr)
 			return
 		}
 
 		funcSelectorStr := args[1]
 		funcByte, err := hex.DecodeString(funcSelectorStr)
 		if err != nil {
-			fmt.Printf("the format of funcSelector %v is unvalid , hex decode err\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid , hex decode err\n", funcSelectorStr)
 			return
 		}
 		if len(funcByte) != 4 {
-			fmt.Printf("the format of funcSelector %v is unvalid\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid\n", funcSelectorStr)
 			return
 		}
 
@@ -119,7 +119,7 @@ For more information please refer:
 
 		accountAddress := args[2]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is invalid\n", accountAddress)
 			return
 		}
 
@@ -155,7 +155,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddr := args[0]
 		if !IsValidAccount(contractAddr) {
-			fmt.Printf("the format of contractAddr %v is unvalid\n", contractAddr)
+			fmt.Printf("the format of contractAddr %v is invalid\n", contractAddr)
 			return
 		}
 
@@ -192,12 +192,12 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		newAdmin := args[0]
 		if !IsValidAccount(newAdmin) {
-			fmt.Printf("the format of newAdmin %v is unvalid\n", newAdmin)
+			fmt.Printf("the format of newAdmin %v is invalid\n", newAdmin)
 			return
 		}
 		contractAddr := args[1]
 		if !IsValidAccount(contractAddr) {
-			fmt.Printf("the format of contractAddr %v is unvalid\n", contractAddr)
+			fmt.Printf("the format of contractAddr %v is invalid\n", contractAddr)
 			return
 		}
 
@@ -234,7 +234,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is invalid\n", accountAddress)
 			return
 		}
 
@@ -375,7 +375,7 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is invalid\n", accountAddress)
 			return
 		}
 
@@ -498,18 +498,18 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		accountAddress := args[0]
 		if !IsValidAccount(accountAddress) {
-			fmt.Printf("the format of accountAddress %v is unvalid\n", accountAddress)
+			fmt.Printf("the format of accountAddress %v is invalid\n", accountAddress)
 			return
 		}
 
 		funcSelectorStr := args[1]
 		funcByte, err := hex.DecodeString(funcSelectorStr)
 		if err != nil {
-			fmt.Printf("the format of funcSelector %v is unvalid , hex decode err\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid , hex decode err\n", funcSelectorStr)
 			return
 		}
 		if len(funcByte) != 4 {
-			fmt.Printf("the format of funcSelector %v is unvalid\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid\n", funcSelectorStr)
 			return
 		}
 
@@ -565,18 +565,18 @@ For more information please refer:
 	Run: func(cmd *cobra.Command, args []string) {
 		contractAddr := args[0]
 		if !IsValidAccount(contractAddr) {
-			fmt.Printf("the format of contractAddr %v is unvalid\n", contractAddr)
+			fmt.Printf("the format of contractAddr %v is invalid\n", contractAddr)
 			return
 		}
 
 		funcSelectorStr := args[1]
 		funcByte, err := hex.DecodeString(funcSelectorStr)
 		if err != nil {
-			fmt.Printf("the format of funcSelector %v is unvalid , hex decode err\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid , hex decode err\n", funcSelectorStr)
 			return
 		}
 		if len(funcByte) != 4 {
-			fmt.Printf("the format of funcSelector %v is unvalid\n", funcSelectorStr)
+			fmt.Printf("the format of funcSelector %v is invalid\n", funcSelectorStr)
 			return
 		}
 
@@ -588,7 +588,7 @@ For more information please refer:
 
 		accountAddr := args[2]
 		if !IsValidAccount(accountAddr) {
-			fmt.Printf("the format of accountAddr %v is unvalid\n", accountAddr)
+			fmt.Printf("the format of accountAddr %v is invalid\n", accountAddr)
 			return
 		}
 

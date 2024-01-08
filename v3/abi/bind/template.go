@@ -154,7 +154,7 @@ var (
 		  if len(bytecode) == 0 {
 		    return common.Address{}, nil, nil, fmt.Errorf("cannot deploy empty bytecode")
 		  }
-		  address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
+		  address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, {{.Type}}ABI, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
 		  if err != nil {
 		    return common.Address{}, nil, nil, err
 		  }
@@ -179,7 +179,7 @@ var (
 		  if len(bytecode) == 0 {
 		    return nil, fmt.Errorf("cannot deploy empty bytecode")
 		  }
-		  tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
+		  tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, {{.Type}}ABI, backend {{range .Constructor.Inputs}}, {{.Name}}{{end}})
 		  if err != nil {
 		    return nil, err
 		  }

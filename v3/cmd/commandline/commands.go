@@ -544,6 +544,38 @@ For more information please refer:
 	},
 }
 
+var getABICmd = &cobra.Command{
+	Use:   "getABI",
+	Short: "[contract address]                 Get the contract data from contract address",
+	Long: `Return contract data queried according to contract address.
+Arguments:
+[contract address]: contract hash string.
+
+For example:
+
+    getABI 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+
+For more information please refer:
+
+    https://fisco-bcos-documentation.readthedocs.io/zh_CN/latest/docs/api.html#`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		_, err := isValidHex(args[0])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		contractAdd := common.HexToAddress(args[0])
+		abi, err := RPC.GetABI(context.Background(), contractAdd)
+		if err != nil {
+			fmt.Printf("This address does not exist: %v\n", err)
+			return
+		}
+		fmt.Printf("Contract Code: \n%s\n", abi)
+	},
+}
+
 var getTotalTransactionCountCmd = &cobra.Command{
 	Use:   "getTotalTransactionCount",
 	Short: "                                   Get the total transactions and the latest block height",
@@ -666,7 +698,7 @@ func init() {
 	// add transaction/receipt command
 	rootCmd.AddCommand(getTransactionByHashCmd, getTransactionReceiptCmd, getPendingTxSizeCmd)
 	// add contract command
-	rootCmd.AddCommand(getCodeCmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
+	rootCmd.AddCommand(getCodeCmd, getABICmd, getTotalTransactionCountCmd, getSystemConfigByKeyCmd)
 	// add contract command
 
 	// cobra.OnInitialize(initConfig)

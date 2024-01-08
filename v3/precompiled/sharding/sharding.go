@@ -37,7 +37,7 @@ func DeploySharding(auth *bind.TransactOpts, backend bind.ContractBackend) (comm
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ShardingBin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ShardingBin), ShardingABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeploySharding(auth *bind.TransactOpts, handler func(*types.Receipt, e
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ShardingBin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ShardingBin), ShardingABI, backend)
 	if err != nil {
 		return nil, err
 	}

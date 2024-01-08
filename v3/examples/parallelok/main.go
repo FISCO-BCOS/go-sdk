@@ -39,7 +39,7 @@ func main() {
 	fmt.Println("start perf groupID:", groupID, "userCount:", userCount, "total:", total, "qps:", qps)
 
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &client.Config{IsSMCrypto: false, GroupID: groupID, DisableSsl: false,
+	config := &client.Config{IsSMCrypto: false, GroupID: groupID, DisableSsl: true,
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./conf/ca.crt", TLSKeyFile: "./conf/sdk.key", TLSCertFile: "./conf/sdk.crt"}
 	client, err := client.DialContext(context.Background(), config)
 	// client, err := client.Dial("./config.ini", groupID, privateKey)

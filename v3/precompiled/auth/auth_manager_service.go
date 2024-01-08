@@ -39,6 +39,12 @@ type AuthManagerService struct {
 	proposalManager  *ProposalManager
 }
 
+const (
+	ACCOUNT_STATUS_NORMAL = iota
+	ACCOUNT_STATUS_FREEZE
+	ACCOUNT_STATUS_ABOLISH
+)
+
 var committeeManagerAddress = common.HexToAddress("0000000000000000000000000000000000010001")
 
 var accountManagerAddress = common.HexToAddress("0000000000000000000000000000000000010003")

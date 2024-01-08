@@ -37,7 +37,7 @@ func DeployKVTableTest(auth *bind.TransactOpts, backend bind.ContractBackend) (c
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(KVTableTestBin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(KVTableTestBin), KVTableTestABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployKVTableTest(auth *bind.TransactOpts, handler func(*types.Receipt
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(KVTableTestBin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(KVTableTestBin), KVTableTestABI, backend)
 	if err != nil {
 		return nil, err
 	}

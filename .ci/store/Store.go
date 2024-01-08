@@ -37,7 +37,7 @@ func DeployStore(auth *bind.TransactOpts, backend bind.ContractBackend, _version
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(StoreBin), backend, _version)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(StoreBin), StoreABI, backend, _version)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployStore(auth *bind.TransactOpts, handler func(*types.Receipt, erro
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(StoreBin), backend, _version)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(StoreBin), StoreABI, backend, _version)
 	if err != nil {
 		return nil, err
 	}
@@ -294,11 +294,11 @@ type StoreItemSet struct {
 // WatchItemSet is a free log subscription operation binding the contract event 0xe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4.
 //
 // Solidity: event ItemSet(bytes32 key, bytes32 value)
-func (_Store *StoreFilterer) WatchItemSet(fromBlock *int64, handler func(int, []types.Log)) error {
+func (_Store *StoreFilterer) WatchItemSet(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _Store.contract.WatchLogs(fromBlock, handler, "ItemSet")
 }
 
-func (_Store *StoreFilterer) WatchAllItemSet(fromBlock *int64, handler func(int, []types.Log)) error {
+func (_Store *StoreFilterer) WatchAllItemSet(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _Store.contract.WatchLogs(fromBlock, handler, "ItemSet")
 }
 
@@ -316,11 +316,11 @@ func (_Store *StoreFilterer) ParseItemSet(log types.Log) (*StoreItemSet, error) 
 // WatchItemSet is a free log subscription operation binding the contract event 0xe79e73da417710ae99aa2088575580a60415d359acfad9cdd3382d59c80281d4.
 //
 // Solidity: event ItemSet(bytes32 key, bytes32 value)
-func (_Store *StoreSession) WatchItemSet(fromBlock *int64, handler func(int, []types.Log)) error {
+func (_Store *StoreSession) WatchItemSet(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _Store.Contract.WatchItemSet(fromBlock, handler)
 }
 
-func (_Store *StoreSession) WatchAllItemSet(fromBlock *int64, handler func(int, []types.Log)) error {
+func (_Store *StoreSession) WatchAllItemSet(fromBlock *int64, handler func(int, []types.Log)) (string, error) {
 	return _Store.Contract.WatchAllItemSet(fromBlock, handler)
 }
 

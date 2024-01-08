@@ -48,7 +48,7 @@ func DeployTransfer(auth *bind.TransactOpts, backend bind.ContractBackend) (comm
 	if len(bytecode) == 0 {
 		return common.Address{}, nil, nil, fmt.Errorf("cannot deploy empty bytecode")
 	}
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, TransferABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -70,7 +70,7 @@ func AsyncDeployTransfer(auth *bind.TransactOpts, handler func(*types.Receipt, e
 	if len(bytecode) == 0 {
 		return nil, fmt.Errorf("cannot deploy empty bytecode")
 	}
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, TransferABI, backend)
 	if err != nil {
 		return nil, err
 	}

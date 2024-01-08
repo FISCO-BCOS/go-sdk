@@ -37,7 +37,7 @@ func DeployPrecompiledbn256(auth *bind.TransactOpts, backend bind.ContractBacken
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(Precompiledbn256Bin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(Precompiledbn256Bin), Precompiledbn256ABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployPrecompiledbn256(auth *bind.TransactOpts, handler func(*types.Re
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(Precompiledbn256Bin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(Precompiledbn256Bin), Precompiledbn256ABI, backend)
 	if err != nil {
 		return nil, err
 	}

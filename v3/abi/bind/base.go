@@ -97,26 +97,27 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Receipt, *BoundContract, error) {
-	_, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (common.Address, *types.Receipt, *BoundContract, error) {
+	_, receipt, c, err := deploy(opts, abi, bytecode, abiStr, backend, params...)
 	addr := common.Address{}
 	if receipt != nil {
 		addr = common.HexToAddress(receipt.ContractAddress)
 	}
 	return addr, receipt, c, err
 }
-func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
-	tx, receipt, c, err := deploy(opts, abi, bytecode, backend, params...)
+
+func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
+	tx, receipt, c, err := deploy(opts, abi, bytecode, abiStr, backend, params...)
 	return tx, receipt, c, err
 }
 
-func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
+func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
 	input, err := c.abi.Pack("", params...)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	tx, receipt, err := c.transact(opts, nil, append(bytecode, input...))
+	tx, receipt, err := c.transact(opts, nil, append(bytecode, input...), abiStr)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -127,7 +128,7 @@ func deploy(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBa
 	return tx, receipt, c, nil
 }
 
-func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error), abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (*types.Transaction, error) {
+func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error), abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (*types.Transaction, error) {
 	// Otherwise try to deploy the contract
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
@@ -135,7 +136,7 @@ func AsyncDeployContract(opts *TransactOpts, handler func(*types.Receipt, error)
 	if err != nil {
 		return nil, err
 	}
-	return c.asyncTransact(opts, nil, append(bytecode, input...), handler)
+	return c.asyncTransact(opts, nil, append(bytecode, input...), abiStr, handler)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -198,7 +199,7 @@ func (c *BoundContract) TransactWithResult(opts *TransactOpts, result interface{
 	if err != nil {
 		return nil, nil, err
 	}
-	tx, receipt, err := c.transact(opts, &c.address, input)
+	tx, receipt, err := c.transact(opts, &c.address, input, "")
 	c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
 	return tx, receipt, err
 }
@@ -210,7 +211,7 @@ func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...in
 	if err != nil {
 		return nil, nil, err
 	}
-	return c.transact(opts, &c.address, input)
+	return c.transact(opts, &c.address, input, "")
 }
 
 func (c *BoundContract) AsyncTransact(opts *TransactOpts, handler func(*types.Receipt, error), method string, params ...interface{}) (*types.Transaction, error) {
@@ -219,28 +220,30 @@ func (c *BoundContract) AsyncTransact(opts *TransactOpts, handler func(*types.Re
 	if err != nil {
 		return nil, err
 	}
-	return c.asyncTransact(opts, &c.address, input, handler)
+	return c.asyncTransact(opts, &c.address, input, "", handler)
 }
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, *types.Receipt, error) {
-	return c.transact(opts, &c.address, nil)
+	return c.transact(opts, &c.address, nil, "")
 }
 
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
-func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, *types.Receipt, error) {
+func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte, abi string) (*types.Transaction, *types.Receipt, error) {
 	var receipt *types.Receipt
 	var err error
-	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), nil, contract, input); err != nil {
+	tx := types.NewSimpleTx(contract, input, abi, "", "", c.transactor.SMCrypto())
+	if receipt, err = c.transactor.SendTransaction(ensureContext(opts.Context), tx); err != nil {
 		return nil, nil, err
 	}
 	return nil, receipt, nil
 }
 
-func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, handler func(*types.Receipt, error)) (*types.Transaction, error) {
-	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), nil, contract, input, handler); err != nil {
+func (c *BoundContract) asyncTransact(opts *TransactOpts, contract *common.Address, input []byte, abi string, handler func(*types.Receipt, error)) (*types.Transaction, error) {
+	tx := types.NewSimpleTx(contract, input, abi, "", "", c.transactor.SMCrypto())
+	if err := c.transactor.AsyncSendTransaction(ensureContext(opts.Context), tx, handler); err != nil {
 		return nil, err
 	}
 	return nil, nil

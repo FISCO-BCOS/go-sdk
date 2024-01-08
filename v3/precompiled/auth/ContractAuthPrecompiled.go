@@ -37,7 +37,7 @@ func DeployContractAuthPrecompiled(auth *bind.TransactOpts, backend bind.Contrac
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ContractAuthPrecompiledBin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ContractAuthPrecompiledBin), ContractAuthPrecompiledABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployContractAuthPrecompiled(auth *bind.TransactOpts, handler func(*t
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ContractAuthPrecompiledBin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ContractAuthPrecompiledBin), ContractAuthPrecompiledABI, backend)
 	if err != nil {
 		return nil, err
 	}
