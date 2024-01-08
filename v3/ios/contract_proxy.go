@@ -27,7 +27,7 @@ type ContractProxy struct {
 	chainID   string
 	smCrypto  bool
 	callback  PostCallback
-	idCounter uint32
+	idCounter uint64
 }
 
 // CodeAt returns the code of the given account. This is needed to differentiate
@@ -185,7 +185,7 @@ func (c *ContractProxy) UnSubscribeEventLogs(ctx context.Context, filterID strin
 }
 
 func (c *ContractProxy) nextID() json.RawMessage {
-	id := atomic.AddUint32(&c.idCounter, 1)
+	id := atomic.AddUint64(&c.idCounter, 1)
 	return strconv.AppendUint(nil, uint64(id), 10)
 }
 func (c *ContractProxy) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {

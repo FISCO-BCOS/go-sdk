@@ -62,31 +62,31 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	return tx.WithSignature(s, sig)
 }
 
-// Sender returns the address derived from the signature (V, R, S) using secp256k1
-// elliptic curve and an error if it failed deriving or upon an incorrect
-// signature.
-//
-// Sender may cache the address, allowing it to be used regardless of
-// signing method. The cache is invalidated if the cached signer does
-// not match the signer used in the current call.
-func Sender(signer Signer, tx *Transaction) (common.Address, error) {
-	if sc := tx.from.Load(); sc != nil {
-		sigCache := sc.(sigCache)
-		// If the signer used to derive from in a previous
-		// call is not the same as used current, invalidate
-		// the cache.
-		if sigCache.signer.Equal(signer) {
-			return sigCache.from, nil
-		}
-	}
+// // Sender returns the address derived from the signature (V, R, S) using secp256k1
+// // elliptic curve and an error if it failed deriving or upon an incorrect
+// // signature.
+// //
+// // Sender may cache the address, allowing it to be used regardless of
+// // signing method. The cache is invalidated if the cached signer does
+// // not match the signer used in the current call.
+// func Sender(signer Signer, tx *Transaction) (common.Address, error) {
+// 	if sc := tx.Sender.Load(); sc != nil {
+// 		sigCache := sc.(sigCache)
+// 		// If the signer used to derive from in a previous
+// 		// call is not the same as used current, invalidate
+// 		// the cache.
+// 		if sigCache.signer.Equal(signer) {
+// 			return sigCache.from, nil
+// 		}
+// 	}
 
-	addr, err := signer.Sender(tx)
-	if err != nil {
-		return common.Address{}, err
-	}
-	tx.from.Store(sigCache{signer: signer, from: addr})
-	return addr, nil
-}
+// 	addr, err := signer.Sender(tx)
+// 	if err != nil {
+// 		return common.Address{}, err
+// 	}
+// 	tx.Sender.Store(sigCache{signer: signer, from: addr})
+// 	return addr, nil
+// }
 
 // Signer encapsulates transaction signature handling. Note that this interface is not a
 // stable API and may change at any time to accommodate new protocol rules.
@@ -131,9 +131,9 @@ func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
 	if tx.ChainID().Cmp(s.chainId) != 0 {
 		return common.Address{}, ErrInvalidChainID
 	}
-	V := new(big.Int).Sub(tx.data.V, s.chainIdMul)
+	V := new(big.Int).Sub(tx.V, s.chainIdMul)
 	V.Sub(V, big8)
-	return recoverPlain(s.Hash(tx), tx.data.R, tx.data.S, V, true)
+	return recoverPlain(s.Hash(tx), tx.R, tx.S, V, true)
 }
 
 // SignatureValues returns signature values. This signature
@@ -154,16 +154,16 @@ func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big
 // It does not uniquely identify the transaction.
 func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
 	return rlpHash([]interface{}{
-		tx.data.AccountNonce,
-		tx.data.Price,
-		tx.data.GasLimit,
-		tx.data.BlockLimit,
-		tx.data.Recipient,
-		tx.data.Amount,
-		tx.data.Payload,
-		tx.data.ChainID,
-		tx.data.GroupID,
-		tx.data.ExtraData,
+		tx.Data.Nonce,
+		tx.Data.GasPrice,
+		tx.Data.GasLimit,
+		tx.Data.BlockLimit,
+		tx.Data.To,
+		tx.Data.Value,
+		tx.Data.Input,
+		tx.Data.ChainID,
+		tx.Data.GroupID,
+		tx.ExtraData,
 		s.chainId, uint(0), uint(0),
 	})
 }
@@ -184,7 +184,7 @@ func (hs HomesteadSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v 
 }
 
 func (hs HomesteadSigner) Sender(tx *Transaction) (common.Address, error) {
-	return recoverPlain(hs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, true)
+	return recoverPlain(hs.Hash(tx), tx.R, tx.S, tx.V, true)
 }
 
 type FrontierSigner struct{}
@@ -210,21 +210,21 @@ func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *
 // It does not uniquely identify the transaction.
 func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
 	return rlpHash([]interface{}{
-		tx.data.AccountNonce,
-		tx.data.Price,
-		tx.data.GasLimit,
-		tx.data.BlockLimit,
-		tx.data.Recipient,
-		tx.data.Amount,
-		tx.data.Payload,
-		tx.data.ChainID,
-		tx.data.GroupID,
-		tx.data.ExtraData,
+		tx.Data.Nonce,
+		tx.Data.GasPrice,
+		tx.Data.GasLimit,
+		tx.Data.BlockLimit,
+		tx.Data.To,
+		tx.Data.Value,
+		tx.Data.Input,
+		tx.Data.ChainID,
+		tx.Data.GroupID,
+		tx.ExtraData,
 	})
 }
 
 func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {
-	return recoverPlain(fs.Hash(tx), tx.data.R, tx.data.S, tx.data.V, false)
+	return recoverPlain(fs.Hash(tx), tx.R, tx.S, tx.V, false)
 }
 
 func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (common.Address, error) {

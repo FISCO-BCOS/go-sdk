@@ -37,7 +37,7 @@ func DeployHelloWorld(auth *bind.TransactOpts, backend bind.ContractBackend) (co
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(HelloWorldBin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(HelloWorldBin), HelloWorldABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployHelloWorld(auth *bind.TransactOpts, handler func(*types.Receipt,
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(HelloWorldBin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(HelloWorldBin), HelloWorldABI, backend)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,7 +34,7 @@ import (
 var (
 	ErrClientQuit                = errors.New("client is closed")
 	ErrNoResult                  = errors.New("no result in JSON-RPC response")
-	ErrNoRpcMehtod               = errors.New("no rpc method")
+	ErrNoRpcMethod               = errors.New("no rpc method")
 	ErrSubscriptionQueueOverflow = errors.New("subscription queue overflow")
 	errClientReconnected         = errors.New("client reconnected")
 	errDead                      = errors.New("connection lost")
@@ -47,20 +46,7 @@ const (
 	defaultDialTimeout   = 10 * time.Second // used if context has no deadline
 	subscribeTimeout     = 5 * time.Second  // overall timeout eth_subscribe, rpc_modules calls
 	amopTimeout          = 1000
-)
-
-const (
-	// Subscriptions are removed when the subscriber cannot keep up.
-	//
-	// This can be worked around by supplying a channel with sufficiently sized buffer,
-	// but this can be inconvenient and hard to explain in the docs. Another issue with
-	// buffered channels is that the buffer is static even though it might not be needed
-	// most of the time.
-	//
-	// The approach taken here is to maintain a per-subscription linked list buffer
-	// shrinks on demand. If the buffer reaches the size below, the subscription is
-	// dropped.
-	maxClientSubscriptionBuffer = 20000
+	jsonRPCVersion       = "2.0"
 )
 
 // Error wraps RPC errors, which contain an error code in addition to the message.
@@ -69,59 +55,12 @@ type Error interface {
 	ErrorCode() int // returns the code
 }
 
-// ServerCodec implements reading, parsing and writing RPC messages for the server side of
-// a RPC session. Implementations must be go-routine safe since the codec can be called in
-// multiple go-routines concurrently.
-type ServerCodec interface {
-	Read() (msgs []*jsonrpcMessage, isBatch bool, err error)
-	Close()
-	jsonWriter
-}
-
-// jsonWriter can write JSON messages to its underlying connection.
-// Implementations must be safe for concurrent use.
-type jsonWriter interface {
-	Write(context.Context, interface{}) error
-	// Closed returns a channel which is closed when the connection is closed.
-	Closed() <-chan interface{}
-	// RemoteAddr returns the peer address of the connection.
-	RemoteAddr() string
-}
-
 // Connection represents a connection to an RPC server.
 type Connection struct {
 	csdk              *csdk.CSDK
-	idCounter         uint32
+	idCounter         int64
 	blockNumberNotify func(int64)
 	notifyLock        sync.Mutex
-
-	// This function, if non-nil, is called when the connection is lost.
-	reconnectFunc reconnectFunc
-
-	// writeConn is used for writing to the connection on the caller's goroutine. It should
-	// only be accessed outside of dispatch, with the write lock held. The write lock is
-	// taken by sending on requestOp and released by sending on sendDone.
-	writeConn jsonWriter
-
-	// for dispatch
-	didClose    chan struct{}    // closed when client quits
-	reconnected chan ServerCodec // where write/reconnect sends the new connection
-}
-
-type reconnectFunc func(ctx context.Context) (ServerCodec, error)
-
-type clientContextKey struct{}
-
-type clientConn struct {
-	codec ServerCodec
-}
-
-func (c *Connection) newClientConn(conn ServerCodec) *clientConn {
-	return &clientConn{conn}
-}
-
-func (cc *clientConn) close(err error, inflightReq *requestOp) {
-	cc.codec.Close()
 }
 
 type requestOp struct {
@@ -195,28 +134,12 @@ func processEventLogMsg(respBody []byte, handler interface{}) {
 	handler.(func(int, []types.Log))(int(eventLogResponse.Status), logs)
 }
 
-// ClientFromContext Connection retrieves the client from the context, if any. This can be used to perform
-// 'reverse calls' in a handler method.
-func ClientFromContext(ctx context.Context) (*Connection, bool) {
-	client, ok := ctx.Value(clientContextKey{}).(*Connection)
-	return client, ok
-}
-
-func NewClient(connect reconnectFunc, csdk *csdk.CSDK) (*Connection, error) {
-	c := initClient(nil)
-	c.reconnectFunc = connect
-	c.csdk = csdk
-	return c, nil
-}
-
 func NewConnectionByFile(configFile, groupID string, privateKey []byte) (*Connection, error) {
 	sdk, err := csdk.NewSDKByConfigFile(configFile, groupID, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	c := initClient(nil)
-	c.reconnectFunc = nil
-	c.csdk = sdk
+	c := &Connection{csdk: sdk}
 	return c, nil
 }
 
@@ -245,28 +168,28 @@ func NewConnection(config *Config) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := initClient(nil)
-	c.reconnectFunc = nil
-	c.csdk = sdk
+	c := &Connection{csdk: sdk}
 	return c, nil
-}
-
-func initClient(conn ServerCodec) *Connection {
-	c := &Connection{
-		writeConn:   conn,
-		didClose:    make(chan struct{}),
-		reconnected: make(chan ServerCodec),
-	}
-	return c
 }
 
 func (c *Connection) GetCSDK() *csdk.CSDK {
 	return c.csdk
 }
 
-func (c *Connection) nextID() json.RawMessage {
-	id := atomic.AddUint32(&c.idCounter, 1)
-	return strconv.AppendUint(nil, uint64(id), 10)
+func (c *Connection) nextID() int64 {
+	id := atomic.AddInt64(&c.idCounter, 1)
+	return id
+}
+
+func (c *Connection) NewMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {
+	msg := &jsonrpcMessage{Version: jsonRPCVersion, ID: c.nextID(), Method: method}
+	if paramsIn != nil { // prevent sending "params":null
+		var err error
+		if msg.Params, err = json.Marshal(paramsIn); err != nil {
+			return nil, err
+		}
+	}
+	return msg, nil
 }
 
 // Close closes the client, aborting any in-flight requests.
@@ -435,6 +358,8 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		c.csdk.GetGroupInfoList(op.respChanData)
 	case "getPendingTxSize":
 		c.csdk.GetPendingTxSize(op.respChanData)
+	case "asyncSendTransaction":
+		fallthrough
 	case "sendTransaction":
 		fallthrough
 	case "SendEncodedTransaction":
@@ -442,10 +367,23 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 		if method == "sendTransaction" {
 			data := hexutil.Encode(args[0].([]byte))
 			contractAddress := args[1].(string)
-			if len(args) >= 3 {
-				handler = args[2].(func(*types.Receipt, error))
+			var abiStr string
+			if len(args) >= 3 && len(contractAddress) == 0 {
+				abiStr = args[2].(string)
 			}
-			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, "", true)
+			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", true)
+			if err != nil {
+				return err
+			}
+		} else if method == "asyncSendTransaction" {
+			data := hexutil.Encode(args[0].([]byte))
+			contractAddress := args[1].(string)
+			handler = args[2].(func(*types.Receipt, error))
+			var abiStr string
+			if len(args) >= 4 && len(contractAddress) == 0 {
+				abiStr = args[3].(string)
+			}
+			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", true)
 			if err != nil {
 				return err
 			}
@@ -487,7 +425,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 			return nil
 		}
 	default:
-		return ErrNoRpcMehtod
+		return ErrNoRpcMethod
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
@@ -504,27 +442,19 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 	}
 }
 
-func (c *Connection) reconnect(ctx context.Context) error {
-	if c.reconnectFunc == nil {
-		return errDead
-	}
-
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, defaultDialTimeout)
-		defer cancel()
-	}
-	newconn, err := c.reconnectFunc(ctx)
+func (c *Connection) sendRPCRequest(group, node, jsonRequest string) (*jsonrpcMessage, error) {
+	callback := &csdk.CallbackChan{Data: make(chan csdk.Response, 1)}
+	err := c.csdk.SendRPCRequest(group, node, jsonRequest, callback)
 	if err != nil {
-		// logrus.Trace("RPC client reconnect failed", "err", err)
-		return err
+		return nil, err
 	}
-	select {
-	case c.reconnected <- newconn:
-		c.writeConn = newconn
-		return nil
-	case <-c.didClose:
-		newconn.Close()
-		return ErrClientQuit
+	respBody := <-callback.Data
+	var respData jsonrpcMessage
+	if respBody.Err == nil {
+		if err = json.Unmarshal(respBody.Result.([]byte), &respData); err != nil {
+			return nil, err
+		}
+		return &respData, nil
 	}
+	return nil, respBody.Err
 }

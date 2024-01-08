@@ -37,7 +37,7 @@ func DeployParallelOk(auth *bind.TransactOpts, backend bind.ContractBackend) (co
 		return common.Address{}, nil, nil, err
 	}
 
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ParallelOkBin), backend)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ParallelOkBin), ParallelOkABI, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func AsyncDeployParallelOk(auth *bind.TransactOpts, handler func(*types.Receipt,
 		return nil, err
 	}
 
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ParallelOkBin), backend)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, common.FromHex(ParallelOkBin), ParallelOkABI, backend)
 	if err != nil {
 		return nil, err
 	}

@@ -270,12 +270,12 @@ func TestPendingTxSize(t *testing.T) {
 func deployHelloWorld(t *testing.T) (*common.Address, *common.Hash) {
 	c := GetClient(t)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, tx, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		t.Errorf("DeployHelloWorld failed: %v", err)
 		return nil, nil
 	}
-	txHash := common.HexToHash(tx.TransactionHash)
+	txHash := common.HexToHash(receipt.TransactionHash)
 	return &address, &txHash
 }
 
@@ -286,7 +286,16 @@ func TestGetCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("contract not found: %v", err)
 	}
-
+	abi, err := c.GetABI(context.Background(), *address)
+	if err != nil {
+		t.Fatalf("abi not found: %v", err)
+	}
+	abi = strings.ReplaceAll(abi, "\\", "")
+	abi = abi[1:]
+	abi = abi[:len(abi)-1]
+	if abi != HelloWorldABI {
+		t.Fatalf("abi mismatch: %s != %s", abi, HelloWorldABI)
+	}
 	t.Logf("the contract code:\n%s", raw)
 }
 
@@ -442,7 +451,7 @@ func TestCreateEncodedTransactionAndSend(t *testing.T) {
 func TestAsnycHelloWorldSet(t *testing.T) {
 	c := GetClient(t)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		t.Fatalf("DeployHelloWorld failed: %v", err)
 	}
@@ -456,7 +465,8 @@ func TestAsnycHelloWorldSet(t *testing.T) {
 	var wg sync.WaitGroup
 	count := 100
 	for i := 0; i < count; i++ {
-		err = c.AsyncSendTransaction(context.Background(), nil, &address, input, func(receipt *types.Receipt, err error) {
+		tx := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+		err = c.AsyncSendTransaction(context.Background(), tx, func(receipt *types.Receipt, err error) {
 			wg.Done()
 			if err != nil {
 				t.Fatalf("SendTransaction error: %v", err)
@@ -476,7 +486,7 @@ func TestAsnycHelloWorldSet(t *testing.T) {
 func TestHelloWorldSet(t *testing.T) {
 	c := GetClient(t)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		t.Fatalf("DeployHelloWorld failed: %v", err)
 	}
@@ -489,7 +499,8 @@ func TestHelloWorldSet(t *testing.T) {
 	}
 	count := 5
 	for i := 0; i < count; i++ {
-		receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+		tx := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+		receipt, err = c.SendTransaction(context.Background(), tx)
 		if err != nil {
 			t.Fatalf("SendTransaction error: %v", err)
 		}
@@ -502,7 +513,7 @@ func TestHelloWorldSet(t *testing.T) {
 func TestSetPrivateKey(t *testing.T) {
 	c := GetClient(t)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		t.Fatalf("DeployHelloWorld failed: %v", err)
 	}
@@ -519,7 +530,8 @@ func TestSetPrivateKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parsed.Pack error: %v", err)
 	}
-	receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+	txPointer := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+	receipt, err = c.SendTransaction(context.Background(), txPointer)
 	if err != nil {
 		t.Fatalf("SendTransaction error: %v", err)
 	}
@@ -535,7 +547,8 @@ func TestSetPrivateKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SetPrivateKey failed of %v", err)
 	}
-	receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+	txPointer = types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+	receipt, err = c.SendTransaction(context.Background(), txPointer)
 	if err != nil {
 		t.Fatalf("SendTransaction error: %v", err)
 	}
@@ -565,7 +578,7 @@ func GetClientForBench(b *testing.B) *Client {
 func BenchmarkHelloWorldSet(b *testing.B) {
 	c := GetClientForBench(b)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		b.Fatalf("DeployHelloWorld failed: %v", err)
 	}
@@ -578,7 +591,8 @@ func BenchmarkHelloWorldSet(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		receipt, err = c.SendTransaction(context.Background(), nil, &address, input)
+		txPointer := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+		receipt, err = c.SendTransaction(context.Background(), txPointer)
 		if err != nil {
 			b.Fatalf("SendTransaction error: %v", err)
 		}
@@ -591,7 +605,7 @@ func BenchmarkHelloWorldSet(b *testing.B) {
 func BenchmarkAsyncHelloWorldSet(b *testing.B) {
 	c := GetClientForBench(b)
 	parsed, _ := abi.JSON(strings.NewReader(HelloWorldABI))
-	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), c)
+	address, receipt, _, err := bind.DeployContract(c.GetTransactOpts(), parsed, common.FromHex(HelloWorldBin), HelloWorldABI, c)
 	if err != nil {
 		b.Fatalf("DeployHelloWorld failed: %v", err)
 	}
@@ -605,7 +619,8 @@ func BenchmarkAsyncHelloWorldSet(b *testing.B) {
 		if err != nil {
 			b.Fatalf("parsed.Pack error: %v", err)
 		}
-		err = c.AsyncSendTransaction(context.Background(), nil, &address, input, func(receipt *types.Receipt, err error) {
+		txPointer := types.NewSimpleTx(&address, input, HelloWorldABI, "", "", c.SMCrypto())
+		err = c.AsyncSendTransaction(context.Background(), txPointer, func(receipt *types.Receipt, err error) {
 			wg.Done()
 			if err != nil {
 				b.Fatalf("SendTransaction error: %v", err)

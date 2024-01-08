@@ -45,7 +45,7 @@ func DeployHelloWorld(auth *bind.TransactOpts, backend bind.ContractBackend, ini
 	} else {
 		bytecode = common.FromHex(HelloWorldBin)
 	}
-	address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, backend, initValue)
+	address, receipt, contract, err := bind.DeployContract(auth, parsed, bytecode, HelloWorldABI, backend, initValue)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -63,7 +63,7 @@ func AsyncDeployHelloWorld(auth *bind.TransactOpts, handler func(*types.Receipt,
 	} else {
 		bytecode = common.FromHex(HelloWorldBin)
 	}
-	tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, backend, initValue)
+	tx, err := bind.AsyncDeployContract(auth, handler, parsed, bytecode, HelloWorldABI, backend, initValue)
 	if err != nil {
 		return nil, err
 	}
