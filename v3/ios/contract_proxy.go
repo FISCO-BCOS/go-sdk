@@ -32,13 +32,13 @@ type ContractProxy struct {
 
 // CodeAt returns the code of the given account. This is needed to differentiate
 // between contract internal errors and the local chain being out of sync.
-func (c *ContractProxy) CodeAt(ctx context.Context, contract common.Address, blockNumber *big.Int) ([]byte, error) {
+func (c *ContractProxy) CodeAt(ctx context.Context, contract common.Address) ([]byte, error) {
 	return []byte{}, nil
 }
 
 // ContractCall executes a Solidity contract call with the specified data as the
 // input.
-func (c *ContractProxy) CallContract(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (c *ContractProxy) CallContract(ctx context.Context, call ethereum.CallMsg) ([]byte, error) {
 	return c.Call(ctx, c.groupID, call)
 }
 
@@ -49,7 +49,7 @@ func (c *ContractProxy) PendingCodeAt(ctx context.Context, account common.Addres
 
 // SendTransaction injects the transaction into the pending pool for execution.
 // todo ios 怎么处理？
-func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte) (*types.Receipt, error) {
+func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		fmt.Printf("rlp encode tx error!")
@@ -87,8 +87,8 @@ func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transacti
 }
 
 // AsyncSendTransaction injects the transaction into the pending pool for execution.
-func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, contract *common.Address, input []byte, handler func(*types.Receipt, error)) error {
-	receipt, err := c.SendTransaction(ctx, tx, contract, nil)
+func (c *ContractProxy) AsyncSendTransaction(ctx context.Context, tx *types.Transaction, handler func(*types.Receipt, error)) error {
+	receipt, err := c.SendTransaction(ctx, tx)
 	handler(receipt, err)
 	return err
 }

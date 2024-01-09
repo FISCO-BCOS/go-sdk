@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -153,7 +152,7 @@ func (c *Client) SMCrypto() bool {
 
 // CodeAt returns the contract code of the given account.
 // The block number can be nil, in which case the code is taken from the latest known block.
-func (c *Client) CodeAt(ctx context.Context, address common.Address, blockNumber *big.Int) ([]byte, error) {
+func (c *Client) CodeAt(ctx context.Context, address common.Address) ([]byte, error) {
 	var raw interface{}
 	err := c.conn.CallContext(ctx, &raw, "getCode", address.Hex())
 	if err != nil {
@@ -191,7 +190,7 @@ func (c *Client) PendingCodeAt(ctx context.Context, address common.Address) ([]b
 }
 
 // CallContract invoke the call method of rpc api
-func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg) ([]byte, error) {
 	var hexBytes hexutil.Bytes
 	var cr *callResult
 	err := c.conn.CallContext(ctx, &cr, "call", toCallArg(msg))
@@ -202,30 +201,6 @@ func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNu
 		var errorMessage string
 		if len(cr.Output) >= 138 {
 			outputBytes := common.FromHex(cr.Output)
-			errorMessage = string(outputBytes[68:])
-		}
-		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
-	}
-	hexBytes = common.FromHex(cr.Output)
-	return hexBytes, nil
-}
-
-// PendingCallContract executes a message call transaction using the EVM.
-// The state seen by the contract call is the pending state.
-func (c *Client) PendingCallContract(ctx context.Context, msg ethereum.CallMsg) ([]byte, error) {
-	var hexBytes hexutil.Bytes
-	var cr *callResult
-	err := c.conn.CallContext(ctx, &cr, "call", toCallArg(msg))
-	if err != nil {
-		return nil, err
-	}
-	if cr.Status != 0 {
-		var errorMessage string
-		if len(cr.Output) >= 138 {
-			outputBytes, err := hex.DecodeString(cr.Output[2:])
-			if err != nil {
-				return nil, fmt.Errorf("call error of status %d, hex.DecodeString failed", cr.Status)
-			}
 			errorMessage = string(outputBytes[68:])
 		}
 		return nil, fmt.Errorf("call error of status %d, %v", cr.Status, errorMessage)
@@ -337,7 +312,6 @@ func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*t
 	return c.GetTransactionReceipt(ctx, txHash, true)
 }
 
-// eventlog
 func (c *Client) SubscribeEventLogs(ctx context.Context, eventLogParams types.EventLogParams, handler func(int, []types.Log)) (string, error) {
 	return c.conn.SubscribeEventLogs(eventLogParams, handler)
 }
@@ -347,7 +321,6 @@ func (c *Client) UnSubscribeEventLogs(ctx context.Context, taskId string) error 
 	return nil
 }
 
-// amop
 func (c *Client) SubscribeAmopTopic(ctx context.Context, topic string, handler func([]byte, *[]byte)) error {
 	return c.conn.SubscribeAmopTopic(topic, handler)
 }
@@ -403,20 +376,6 @@ func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 	}
 	return raw, err
 }
-
-// // GetBlockLimit returns the blocklimit for current blocknumber
-// func (c *Client) GetBlockLimit(ctx context.Context) (*big.Int, error) {
-// 	var blockLimit *big.Int
-// 	defaultNumber := big.NewInt(BlockLimit)
-// 	var raw int
-// 	err := c.conn.CallContext(ctx, &raw, "getBlockNumber")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	blockLimit = defaultNumber.Add(defaultNumber, big.NewInt(int64(raw)))
-// 	return blockLimit, nil
-// }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
 // if the consensus algorithm is not the PBFT.
@@ -492,7 +451,7 @@ func (c *Client) GetPeers(ctx context.Context) ([]byte, error) {
 	return js, err
 }
 
-// GetGroupPeers returns the nodes and the overser nodes list on a specific group
+// GetGroupPeers returns the nodes and the observer nodes list on a specific group
 func (c *Client) GetGroupPeers(ctx context.Context) ([]byte, error) {
 	var raw interface{}
 	err := c.conn.CallContext(ctx, &raw, "getGroupPeers")

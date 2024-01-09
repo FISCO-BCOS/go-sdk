@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
@@ -46,12 +45,10 @@ func getNodeID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sealer list not found: %v", err)
 	}
-	reg := regexp.MustCompile(`[\w]+`)
-	nodeList := reg.FindAllString(string(sealerList), -1)
-	if len(nodeList) < 2 {
+	if len(sealerList) < 2 {
 		t.Fatalf("the number of nodes does not exceed 2")
 	}
-	nodeID = nodeList[1]
+	nodeID = sealerList[1].ID
 }
 
 func TestMain(m *testing.M) {

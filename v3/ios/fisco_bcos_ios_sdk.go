@@ -159,7 +159,7 @@ func (sdk *BcosSDK) DeployContract(contractAbi string, contractBin string, param
 	if err != nil {
 		return toReceiptResult(nil, errors.New("params error: "+err.Error()))
 	}
-	_, receipt, _, err := bind.DeployContractGetReceipt(sdk.auth, parsedAbi, common.FromHex(contractBin), sdk.backend, goParam...)
+	_, receipt, _, err := bind.DeployContractGetReceipt(sdk.auth, parsedAbi, common.FromHex(contractBin), contractAbi, sdk.backend, goParam...)
 	return toReceiptResult(receipt, err)
 }
 
