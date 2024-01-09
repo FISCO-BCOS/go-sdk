@@ -19,11 +19,6 @@ const (
 	invalidNodeID int64 = -51100
 )
 
-type nodeIdList struct {
-	nodeID string `json:"nodeID"`
-	weight uint   `json:"weight"`
-}
-
 // getErrorMessage returns the message of error code
 func getErrorMessage(errorCode int64) string {
 	var message string
@@ -82,15 +77,9 @@ func (service *Service) AddObserver(nodeID string) (int64, error) {
 	//	return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
 	//}
 
-	observerRaw, err := service.client.GetObserverList(context.Background())
+	nodeIDs, err := service.client.GetObserverList(context.Background())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("get the observer list failed: %v", err)
-	}
-
-	var nodeIDs []string
-	err = json.Unmarshal(observerRaw, &nodeIDs)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the observer list failed: %v", err)
 	}
 
 	for _, nID := range nodeIDs {
@@ -115,19 +104,13 @@ func (service *Service) AddSealer(nodeID string, weight int64) (int64, error) {
 	//	return precompiled.DefaultErrorCode, fmt.Errorf("the node is not reachable")
 	//}
 
-	sealerRaw, err := service.client.GetSealerList(context.Background())
+	nodes, err := service.client.GetSealerList(context.Background())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("get the sealer list failed: %v", err)
 	}
 
-	var nodeIDs []nodeIdList
-	err = json.Unmarshal(sealerRaw, &nodeIDs)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the sealer list failed: %v", err)
-	}
-
-	for _, nID := range nodeIDs {
-		if nID.nodeID == nodeID {
+	for _, node := range nodes {
+		if node.ID == nodeID {
 			return precompiled.DefaultErrorCode, fmt.Errorf("the node is already in the sealer list")
 		}
 	}
@@ -194,17 +177,21 @@ func (service *Service) isValidNodeID(nodeID string) (bool, error) {
 }
 
 func (service *Service) SetWeight(nodeID string, weight int64) (int64, error) {
-	sealerRaw, err := service.client.GetSealerList(context.Background())
+	nodes, err := service.client.GetSealerList(context.Background())
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("get the sealer list failed: %v", err)
 	}
 
-	var nodeIDs []nodeIdList
-	err = json.Unmarshal(sealerRaw, &nodeIDs)
-	if err != nil {
-		return precompiled.DefaultErrorCode, fmt.Errorf("unmarshal the sealer list failed: %v", err)
+	find := false
+	for _, node := range nodes {
+		if node.ID == nodeID {
+			find = true
+			break
+		}
 	}
-
+	if !find {
+		return precompiled.DefaultErrorCode, fmt.Errorf("the node is not in the sealer list")
+	}
 	_, _, receipt, err := service.consensus.SetWeight(service.consensusAuth, nodeID, big.NewInt(weight))
 	if err != nil {
 		return precompiled.DefaultErrorCode, fmt.Errorf("ConsensusService setWeight failed: %+v", err)

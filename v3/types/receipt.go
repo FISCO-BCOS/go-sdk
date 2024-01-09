@@ -197,7 +197,7 @@ func (r *Receipt) GetErrorMessage() string {
 	return fmt.Sprintf("receipt error code: %v, receipt error message: %v", r.Status, errorMessage)
 }
 
-// String returns the string representation of Receipt sturct.
+// String returns the string representation of Receipt struct.
 func (r *Receipt) String() string {
 	out, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {

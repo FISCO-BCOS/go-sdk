@@ -116,7 +116,7 @@ var getSealerListCmd = &cobra.Command{
 			fmt.Printf("sealer list not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Sealer List: \n%s\n", sealerList)
+		fmt.Printf("Sealer List: \n%+v\n", sealerList)
 	},
 }
 
@@ -500,7 +500,7 @@ var getPendingTxSizeCmd = &cobra.Command{
 			fmt.Printf("transactions not found: %v\n", err)
 			return
 		}
-		fmt.Printf("Pending Transactions Count: \n    hex: %s\n", tx)
+		fmt.Printf("Pending Transactions Count: %d\n", tx)
 	},
 }
 
@@ -708,7 +708,7 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is the project directory ./config.ini)")
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "privateKeyPath", "p", "", "private key file path of pem format")
+	rootCmd.PersistentFlags().StringVarP(&privateKeyFilePath, "privateKeyPath", "p", "", "private key file path of pem format")
 	rootCmd.PersistentFlags().BoolVarP(&smCrypto, "smCrypto", "s", false, "use smCrypto or not, default is false")
 	rootCmd.PersistentFlags().BoolVarP(&disableSsl, "disableSsl", "d", false, "switch off ssl or not, default use ssl")
 	rootCmd.PersistentFlags().StringVarP(&groupID, "groupID", "g", "group0", "groupID of FISCO BCOS chain")
