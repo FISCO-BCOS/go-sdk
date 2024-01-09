@@ -68,7 +68,7 @@ func WaitDeployed(ctx context.Context, b DeployBackend, tx *types.Transaction) (
 	// Check that code has indeed been deployed at the address.
 	// This matters on pre-Homestead chains: OOG in the constructor
 	// could leave an empty account behind.
-	code, err := b.CodeAt(ctx, common.HexToAddress(receipt.ContractAddress), nil)
+	code, err := b.CodeAt(ctx, common.HexToAddress(receipt.ContractAddress))
 	if err == nil && len(code) == 0 {
 		err = ErrNoCodeAfterDeploy
 	}

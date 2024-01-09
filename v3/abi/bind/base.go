@@ -160,30 +160,13 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 		code   []byte
 		output []byte
 	)
-
-	if opts.Pending {
-		pb, ok := c.caller.(PendingContractCaller)
-		if !ok {
-			return ErrNoPendingState
-		}
-		output, err = pb.PendingCallContract(ctx, msg)
-		if err == nil && len(output) == 0 {
-			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = pb.PendingCodeAt(ctx, c.address); err != nil {
-				return err
-			} else if len(code) == 0 {
-				return ErrNoCode
-			}
-		}
-	} else {
-		output, err = c.caller.CallContract(ctx, msg, opts.BlockNumber)
-		if err == nil && len(output) == 0 {
-			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = c.caller.CodeAt(ctx, c.address, opts.BlockNumber); err != nil {
-				return err
-			} else if len(code) == 0 {
-				return ErrNoCode
-			}
+	output, err = c.caller.CallContract(ctx, msg)
+	if err == nil && len(output) == 0 {
+		// Make sure we have a contract to operate on, and bail out otherwise.
+		if code, err = c.caller.CodeAt(ctx, c.address); err != nil {
+			return err
+		} else if len(code) == 0 {
+			return ErrNoCode
 		}
 	}
 	if err != nil {
