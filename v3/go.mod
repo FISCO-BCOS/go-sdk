@@ -16,8 +16,10 @@ require (
 	github.com/schollz/progressbar/v3 v3.14.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.5
 	github.com/urfave/cli/v2 v2.10.2
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 )
 
 require (
@@ -71,7 +73,6 @@ require (
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/status-im/keycard-go v0.0.0-20190316090335-8537d3370df4 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
@@ -83,7 +84,6 @@ require (
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

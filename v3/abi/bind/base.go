@@ -19,6 +19,7 @@ package bind
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -100,10 +101,15 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (common.Address, *types.Receipt, *BoundContract, error) {
 	_, receipt, c, err := deploy(opts, abi, bytecode, abiStr, backend, params...)
 	addr := common.Address{}
-	if receipt != nil {
-		addr = common.HexToAddress(receipt.ContractAddress)
+	if receipt != nil && err == nil {
+		if receipt.Status == types.Success {
+			addr = common.HexToAddress(receipt.ContractAddress)
+			return addr, receipt, c, nil
+		} else {
+			return addr, receipt, c, fmt.Errorf("deploy failed, receipt status: %d, message: %s", receipt.Status, receipt.GetErrorMessage())
+		}
 	}
-	return addr, receipt, c, err
+	return addr, nil, nil, err
 }
 
 func DeployContractGetReceipt(opts *TransactOpts, abi abi.ABI, bytecode []byte, abiStr string, backend ContractBackend, params ...interface{}) (*types.Transaction, *types.Receipt, *BoundContract, error) {

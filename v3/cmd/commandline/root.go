@@ -95,7 +95,8 @@ func initConfig() {
 			}
 			privateKey = key
 		}
-	} else {
+	}
+	if len(privateKey) == 0 {
 		address := "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
 		privateKey, _ = hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
 		if smCrypto {
