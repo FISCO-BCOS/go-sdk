@@ -48,7 +48,9 @@ const (
 
 // Dial connects a client to the given URL and groupID.
 func Dial(configFile, groupID string, privateKey []byte) (*Client, error) {
-
+	if len(privateKey) == 0 {
+		return nil, errors.New("private key is empty")
+	}
 	c, err := NewConnectionByFile(configFile, groupID, privateKey)
 	if err != nil {
 		return nil, err
@@ -58,6 +60,12 @@ func Dial(configFile, groupID string, privateKey []byte) (*Client, error) {
 
 // DialContext pass the context to the rpc client
 func DialContext(ctx context.Context, config *Config) (*Client, error) {
+	if config == nil {
+		return nil, errors.New("config is nil")
+	}
+	if len(config.PrivateKey) == 0 {
+		return nil, errors.New("private key is empty")
+	}
 	c, err := NewConnection(config)
 	if err != nil {
 		return nil, err

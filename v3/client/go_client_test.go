@@ -13,6 +13,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/v3/abi"
 	"github.com/FISCO-BCOS/go-sdk/v3/abi/bind"
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -27,8 +28,8 @@ func GetClient(t *testing.T) *Client {
 	if err != nil {
 		t.Fatalf("decode hex failed of %v", err)
 	}
-	config := &Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt", DisableSsl: false}
+	config := &Config{IsSMCrypto: false, GroupID: "group0", DisableSsl: false,
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := DialContext(context.Background(), config)
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
@@ -345,6 +346,16 @@ func TestSystemConfigByKey(t *testing.T) {
 	}
 
 	t.Logf("the value got by the key:\n%s", raw.GetValue())
+}
+
+func TestCallEmptyAddress(t *testing.T) {
+	c := GetClient(t)
+	address := common.HexToAddress("0x0")
+	msg := ethereum.CallMsg{To: &address, Data: []byte{0, 0, 0, 0}}
+	_, err := c.CallContract(context.Background(), msg)
+	if err == nil {
+		t.Fatalf("call empty address, the err is nil")
+	}
 }
 
 func TestCreateEncodedTransactionAndSend(t *testing.T) {

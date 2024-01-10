@@ -8,39 +8,73 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
+	"github.com/FISCO-BCOS/go-sdk/v3/smcrypto"
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
 	"github.com/schollz/progressbar/v3"
+	flag "github.com/spf13/pflag"
 )
 
 func main() {
-	if len(os.Args) < 5 {
-		fmt.Printf("Usage: ./%s groupID userCount total qps", os.Args[0])
-		return
-	}
-	groupID := os.Args[1]
-	userCount, err := strconv.Atoi(os.Args[2])
-	if err != nil {
-		fmt.Println("parse userCount error", err)
-		return
-	}
-	total, err := strconv.Atoi(os.Args[3])
-	if err != nil {
-		fmt.Println("parse total error", err)
-		return
-	}
-	qps, err := strconv.Atoi(os.Args[4])
-	if err != nil {
-		fmt.Println("parse qps error", err)
-		return
-	}
-	fmt.Println("start perf groupID:", groupID, "userCount:", userCount, "total:", total, "qps:", qps)
+	pemFileName := flag.StringP("pem", "p", "", "pem file path")
+	groupID := flag.StringP("group", "g", "group0", "groupID")
+	disableSsl := flag.BoolP("disableSsl", "d", false, "disable ssl")
+	isSmCrypto := flag.BoolP("smCrypto", "s", false, "use sm crypto")
+	endpoint := flag.StringP("endpoint", "e", "127.0.0.1:20200", "node endpoint")
+	certPath := flag.StringP("cert", "c", "./conf/", "cert path")
+	userCount := flag.IntP("userCount", "u", 1000, "user count")
+	totalTx := flag.IntP("totalTxTx", "t", 10000, "totalTx tx")
+	qps := flag.IntP("qps", "q", 1000, "qps")
+	flag.Parse()
+	fmt.Printf("pem: %s, groupID: %s, disableSsl: %v, isSmCrypto: %v, endpoint: %s, certPath: %s, userCount: %d, totalTx: %d, qps: %d\n", *pemFileName, *groupID, *disableSsl, *isSmCrypto, *endpoint, *certPath, *userCount, *totalTx, *qps)
 
-	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	config := &client.Config{IsSMCrypto: false, GroupID: groupID, DisableSsl: false,
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./conf/ca.crt", TLSKeyFile: "./conf/sdk.key", TLSCertFile: "./conf/sdk.crt"}
+	var privateKey []byte
+	if len(*pemFileName) != 0 {
+		_, err := os.Stat(*pemFileName)
+		if err != nil && os.IsNotExist(err) {
+			fmt.Println("private key file set but not exist, use default private key")
+		} else if err != nil {
+			fmt.Printf("check private key file failed, err: %v\n", err)
+			return
+		} else {
+			key, curve, err := client.LoadECPrivateKeyFromPEM(*pemFileName)
+			if err != nil {
+				fmt.Printf("parse private key failed, err: %v\n", err)
+				return
+			}
+			if *isSmCrypto && curve != client.Sm2p256v1 {
+				fmt.Printf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
+				return
+			}
+			if !*isSmCrypto && curve != client.Secp256k1 {
+				fmt.Printf("should use secp256k1 private key, but found %s\n", curve)
+				return
+			}
+			privateKey = key
+		}
+	}
+	if len(privateKey) == 0 {
+		address := "0xFbb18d54e9Ee57529cda8c7c52242EFE879f064F"
+		privateKey, _ = hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+		if *isSmCrypto {
+			address = smcrypto.SM2KeyToAddress(privateKey).Hex()
+		}
+		fmt.Println("use default private key, address: ", address)
+	}
+	ret := strings.Split(*endpoint, ":")
+	host := ret[0]
+	port, _ := strconv.Atoi(ret[1])
+	var config *client.Config
+	if !*isSmCrypto {
+		config = &client.Config{IsSMCrypto: *isSmCrypto, GroupID: *groupID, DisableSsl: *disableSsl,
+			PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: *certPath + "/ca.crt", TLSKeyFile: *certPath + "/sdk.key", TLSCertFile: *certPath + "/sdk.crt"}
+	} else {
+		config = &client.Config{IsSMCrypto: *isSmCrypto, GroupID: *groupID, DisableSsl: *disableSsl,
+			PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: *certPath + "/sm_ca.crt", TLSKeyFile: *certPath + "/sm_sdk.key", TLSCertFile: *certPath + "/sm_sdk.crt", TLSSmEnKeyFile: *certPath + "/sm_ensdk.key", TLSSmEnCertFile: *certPath + "/sm_ensdk.crt"}
+	}
 	client, err := client.DialContext(context.Background(), config)
 	// client, err := client.Dial("./config.ini", groupID, privateKey)
 	if err != nil {
@@ -68,7 +102,7 @@ func main() {
 	balance := sync.Map{}
 	initValue := int64(1000000000)
 	failedCount := 0
-	for i := 0; i < userCount; i++ {
+	for i := 0; i < *userCount; i++ {
 		_, err = transfer.AsyncSet(func(receipt *types.Receipt, err error) {
 			if err != nil {
 				fmt.Println("add user error", err)
@@ -89,8 +123,8 @@ func main() {
 	wg.Wait()
 	fmt.Println("start transfer")
 	var wg2 sync.WaitGroup
-	sendBar := progressbar.Default(int64(total), "send")
-	receiveBar := progressbar.Default(int64(total), "receive")
+	sendBar := progressbar.Default(int64(*totalTx), "send")
+	receiveBar := progressbar.Default(int64(*totalTx), "receive")
 	// routineCount := (qps + 4000) / 4000
 	// sended := int64(0)
 	// for i := 0; i < routineCount; i++ {
@@ -145,9 +179,9 @@ func main() {
 	// time.Sleep(time.Second * 5)
 	// wg2.Wait()
 
-	for i := 0; i < total; i++ {
-		from := i % userCount
-		to := (i + userCount/2) % userCount
+	for i := 0; i < *totalTx; i++ {
+		from := i % *userCount
+		to := (i + *userCount/2) % *userCount
 		amount := int64(1)
 		_, err = transfer.AsyncTransfer(func(receipt *types.Receipt, err error) {
 			receiveBar.Add(1)
@@ -187,7 +221,7 @@ func main() {
 	// check balance
 	fmt.Println("check balance...")
 	var wg3 sync.WaitGroup
-	for i := 0; i < userCount; i++ {
+	for i := 0; i < *userCount; i++ {
 		wg3.Add(1)
 		go func(i int) {
 			b, err := transfer.BalanceOf(strconv.Itoa(i))
