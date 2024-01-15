@@ -25,14 +25,14 @@ var certPath string
 var RPC *client.Client
 
 // GetClient is used for test, it will be init by a config file later.
-func getClient(config *client.Config) *client.Client {
+func getClient(config *client.Config) (*client.Client, error) {
 	// RPC API
 	c, err := client.DialContext(context.Background(), config) // change to your RPC and groupID
 	if err != nil {
 		fmt.Println("can not dial to FISCO node, please check config. error message: ", err)
-		os.Exit(1)
+		return nil, err
 	}
-	return c
+	return c, nil
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -53,7 +53,12 @@ or
 Please access the github site for more details:
 	https://github.com/FISCO-BCOS/go-sdk.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		initConfig()
+		// fmt.Println("console flags:", cmd.Flags())
+		err := initConfig()
+		if err != nil {
+			fmt.Println("init config failed, err: ", err)
+			os.Exit(1)
+		}
 	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -70,28 +75,25 @@ func Execute() {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
+func initConfig() error {
+	fmt.Printf("private key file: %s, groupID: %s, disableSsl: %v, isSmCrypto: %v, endpoint: %s, certPath: %s\n", privateKeyFilePath, groupID, disableSsl, smCrypto, nodeEndpoint, certPath)
 	var privateKey []byte
 	if len(privateKeyFilePath) != 0 {
 		_, err := os.Stat(privateKeyFilePath)
 		if err != nil && os.IsNotExist(err) {
 			fmt.Println("private key file set but not exist, use default private key")
 		} else if err != nil {
-			fmt.Printf("check private key file failed, err: %v\n", err)
-			return
+			return fmt.Errorf("check private key file failed, err: %v\n", err)
 		} else {
 			key, curve, err := client.LoadECPrivateKeyFromPEM(privateKeyFilePath)
 			if err != nil {
-				fmt.Printf("parse private key failed, err: %v\n", err)
-				return
+				return fmt.Errorf("parse private key failed, err: %v\n", err)
 			}
 			if smCrypto && curve != client.Sm2p256v1 {
-				fmt.Printf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
-				return
+				return fmt.Errorf("smCrypto should use sm2p256v1 private key, but found %s\n", curve)
 			}
 			if !smCrypto && curve != client.Secp256k1 {
-				fmt.Printf("should use secp256k1 private key, but found %s\n", curve)
-				return
+				return fmt.Errorf("should use secp256k1 private key, but found %s\n", curve)
 			}
 			privateKey = key
 		}
@@ -115,5 +117,10 @@ func initConfig() {
 		config = &client.Config{IsSMCrypto: smCrypto, GroupID: groupID, DisableSsl: disableSsl,
 			PrivateKey: privateKey, Host: host, Port: port, TLSCaFile: certPath + "/sm_ca.crt", TLSKeyFile: certPath + "/sm_sdk.key", TLSCertFile: certPath + "/sm_sdk.crt", TLSSmEnKeyFile: certPath + "/sm_ensdk.key", TLSSmEnCertFile: certPath + "/sm_ensdk.crt"}
 	}
-	RPC = getClient(config)
+	var err error
+	RPC, err = getClient(config)
+	if err != nil {
+		return err
+	}
+	return nil
 }
