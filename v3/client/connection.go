@@ -371,7 +371,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 			if len(args) >= 3 && len(contractAddress) == 0 {
 				abiStr = args[2].(string)
 			}
-			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", true)
+			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", false)
 			if err != nil {
 				return err
 			}
@@ -383,7 +383,7 @@ func (c *Connection) CallContext(ctx context.Context, result interface{}, method
 			if len(args) >= 4 && len(contractAddress) == 0 {
 				abiStr = args[3].(string)
 			}
-			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", true)
+			_, err := c.csdk.CreateAndSendTransaction(op.respChanData, contractAddress, data, abiStr, "", false)
 			if err != nil {
 				return err
 			}

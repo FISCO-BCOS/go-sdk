@@ -141,7 +141,7 @@ func main() {
 		log.Fatalf("CreateEncodedTransaction error: %v", err)
 	}
 	var wg sync.WaitGroup
-	err = client.AsyncSendEncodedTransaction(context.Background(), tx, true, func(receipt *types.Receipt, err error) {
+	err = client.AsyncSendEncodedTransaction(context.Background(), tx, false, func(receipt *types.Receipt, err error) {
 		if err != nil {
 			log.Fatalf("AsyncSendEncodedTransaction error: %v", err)
 		}
