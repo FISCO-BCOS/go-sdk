@@ -3,13 +3,13 @@ module github.com/FISCO-BCOS/go-sdk/v3
 go 1.21.5
 
 replace (
-	// github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240105080731-14b9b42a47a9 => ../../bcos-c-sdk
+	// github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240122125257-ba87131d4c17 => ../../bcos-c-sdk
 	golang.org/x/net => github.com/golang/net v0.0.0-20190415214537-1da14a5a36f2
 	golang.org/x/sync => github.com/golang/sync v0.0.0-20190412183630-56d357773e84
 )
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240105080731-14b9b42a47a9
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240122125257-ba87131d4c17
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/TarsCloud/TarsGo v1.4.5
 	github.com/deckarep/golang-set/v2 v2.6.0

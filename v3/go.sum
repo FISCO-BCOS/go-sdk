@@ -21,8 +21,8 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
-github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240105080731-14b9b42a47a9 h1:7nDyMqU60RVTdEfpaQy5d+JCzERuXOnzrYngs/434J0=
-github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240105080731-14b9b42a47a9/go.mod h1:n2KxbYa73MW3xdLVu2vpPpoblZMms+CwPmvFkubO9xM=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240122125257-ba87131d4c17 h1:Sl9134y03PD98vO3fSMqABhUT6JFQJZiEOXHvLRuejE=
+github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240122125257-ba87131d4c17/go.mod h1:n2KxbYa73MW3xdLVu2vpPpoblZMms+CwPmvFkubO9xM=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1 h1:ThPht4qK10+cMZC5COIjHPq0INm5HAMVYqrez5zEgFI=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1/go.mod h1:UrLdwsFrjiaCsvdcPLcH6B7s/FUmym3qfM93u2ziR+4=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=

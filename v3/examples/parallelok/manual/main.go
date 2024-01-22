@@ -134,7 +134,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("CreateEncodedTransactionDataV1 error: %v", err)
 		}
-		err = client.AsyncSendEncodedTransaction(context.Background(), tx, true, func(receipt *types.Receipt, err error) {
+		err = client.AsyncSendEncodedTransaction(context.Background(), tx, false, func(receipt *types.Receipt, err error) {
 			if err != nil {
 				log.Fatalf("AsyncSendEncodedTransaction error: %v", err)
 			}
@@ -197,7 +197,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("limiter Wait error: %v", err)
 		}
-		err = client.AsyncSendEncodedTransaction(context.Background(), tx, true, func(receipt *types.Receipt, err error) {
+		err = client.AsyncSendEncodedTransaction(context.Background(), tx, false, func(receipt *types.Receipt, err error) {
 			receiveBar.Add(1)
 			if err != nil {
 				fmt.Println("transfer error", err)
