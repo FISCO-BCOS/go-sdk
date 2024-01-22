@@ -128,9 +128,9 @@ func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
 	if !tx.Protected() {
 		return HomesteadSigner{}.Sender(tx)
 	}
-	if tx.ChainID().Cmp(s.chainId) != 0 {
-		return common.Address{}, ErrInvalidChainID
-	}
+	// if tx.ChainID().Cmp(s.chainId) != 0 {
+	// 	return common.Address{}, ErrInvalidChainID
+	// }
 	V := new(big.Int).Sub(tx.V, s.chainIdMul)
 	V.Sub(V, big8)
 	return recoverPlain(s.Hash(tx), tx.R, tx.S, V, true)
@@ -153,19 +153,7 @@ func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
-	return rlpHash([]interface{}{
-		tx.Data.Nonce,
-		tx.Data.GasPrice,
-		tx.Data.GasLimit,
-		tx.Data.BlockLimit,
-		tx.Data.To,
-		tx.Data.Value,
-		tx.Data.Input,
-		tx.Data.ChainID,
-		tx.Data.GroupID,
-		tx.ExtraData,
-		s.chainId, uint(0), uint(0),
-	})
+	return tx.Hash()
 }
 
 // HomesteadTransaction implements TransactionInterface using the
@@ -209,18 +197,7 @@ func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
-	return rlpHash([]interface{}{
-		tx.Data.Nonce,
-		tx.Data.GasPrice,
-		tx.Data.GasLimit,
-		tx.Data.BlockLimit,
-		tx.Data.To,
-		tx.Data.Value,
-		tx.Data.Input,
-		tx.Data.ChainID,
-		tx.Data.GroupID,
-		tx.ExtraData,
-	})
+	return tx.Hash()
 }
 
 func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {
@@ -252,17 +229,4 @@ func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (commo
 	var addr common.Address
 	copy(addr[:], crypto.Keccak256(pub[1:])[12:])
 	return addr, nil
-}
-
-// deriveChainID derives the chain id from the given v parameter
-func deriveChainID(v *big.Int) *big.Int {
-	if v.BitLen() <= 64 {
-		v := v.Uint64()
-		if v == 27 || v == 28 {
-			return new(big.Int)
-		}
-		return new(big.Int).SetUint64((v - 35) / 2)
-	}
-	v = new(big.Int).Sub(v, big.NewInt(35))
-	return v.Div(v, big.NewInt(2))
 }

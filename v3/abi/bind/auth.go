@@ -94,7 +94,10 @@ func NewSMCryptoTransactor(sm2Key []byte) *TransactOpts {
 			if address != keyAddr {
 				return nil, errors.New("not authorized to sign this account")
 			}
-			signature, err := smcrypto.Sign(tx.SM3HashNonSig().Bytes(), sm2Key)
+			if !tx.SMCrypto {
+				tx.SMCrypto = true
+			}
+			signature, err := smcrypto.Sign(tx.Hash().Bytes(), sm2Key)
 			if err != nil {
 				return nil, err
 			}

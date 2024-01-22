@@ -112,6 +112,7 @@ func main() {
 		if err != nil {
 			fmt.Println("add user error", err)
 			failedCount++
+			continue
 		}
 		balance.Store(i, initValue)
 		wg.Add(1)
@@ -185,11 +186,11 @@ func main() {
 		amount := int64(1)
 		_, err = transfer.AsyncTransfer(func(receipt *types.Receipt, err error) {
 			receiveBar.Add(1)
-			wg2.Done()
 			if err != nil {
-				fmt.Println("transfer error", err)
+				fmt.Println("AsyncTransfer error", err)
 				return
 			}
+			wg2.Done()
 			currentFrom, _ := balance.Load(from)
 			currentTo, _ := balance.Load(to)
 			if !balance.CompareAndSwap(from, currentFrom.(int64), currentFrom.(int64)-amount) {
