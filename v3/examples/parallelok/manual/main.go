@@ -199,11 +199,11 @@ func main() {
 		}
 		err = client.AsyncSendEncodedTransaction(context.Background(), tx, true, func(receipt *types.Receipt, err error) {
 			receiveBar.Add(1)
-			wg2.Done()
 			if err != nil {
 				fmt.Println("transfer error", err)
 				return
 			}
+			wg2.Done()
 			if receipt.Status != 0 {
 				fmt.Println("transfer error", receipt.GetErrorMessage())
 				return
