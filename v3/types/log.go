@@ -18,7 +18,6 @@ package types
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 //go:generate gencodec -type Log -field-override logMarshaling -out gen_log_json.go
@@ -57,13 +56,6 @@ type EventLogParams struct {
 	ToBlock   int64    `json:"toBlock"`
 	Addresses []string `json:"addresses"`
 	Topics    []string `json:"topics"`
-}
-
-type logMarshaling struct {
-	Data        hexutil.Bytes
-	BlockNumber hexutil.Uint64
-	TxIndex     hexutil.Uint
-	Index       hexutil.Uint
 }
 
 // NewLog is used for the receipt

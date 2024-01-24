@@ -4,7 +4,7 @@ set -e
 install_path="/usr/local/lib/"
 version="3.5.0"
 OS="linux"
-versions=(3.2.0 3.4.0 3.5.0)
+versions=(3.2.0 3.4.0 3.5.0 3.6.0)
 
 LOG_WARN()
 {

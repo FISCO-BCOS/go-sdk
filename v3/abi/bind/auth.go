@@ -21,7 +21,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"io"
-	"io/ioutil"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/smcrypto"
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
@@ -34,7 +33,7 @@ import (
 // NewTransactor is a utility method to easily create a transaction signer from
 // an encrypted json key stream and the associated passphrase.
 func NewTransactor(keyin io.Reader, passphrase string) (*TransactOpts, error) {
-	json, err := ioutil.ReadAll(keyin)
+	json, err := io.ReadAll(keyin)
 	if err != nil {
 		return nil, err
 	}
