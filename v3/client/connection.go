@@ -13,7 +13,6 @@
 
 package client
 
-import "C"
 import (
 	"context"
 	"encoding/json"
