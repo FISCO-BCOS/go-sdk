@@ -16,6 +16,7 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
 	"github.com/schollz/progressbar/v3"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/time/rate"
 )
 
 func main() {
@@ -126,6 +127,8 @@ func main() {
 	var wg2 sync.WaitGroup
 	sendBar := progressbar.Default(int64(*totalTx), "send")
 	receiveBar := progressbar.Default(int64(*totalTx), "receive")
+	limiter := rate.NewLimiter(rate.Limit(*qps), *qps)
+
 	// routineCount := (qps + 4000) / 4000
 	// sended := int64(0)
 	// for i := 0; i < routineCount; i++ {
@@ -184,6 +187,10 @@ func main() {
 		from := i % *userCount
 		to := (i + *userCount/2) % *userCount
 		amount := int64(1)
+		err = limiter.Wait(context.Background())
+		if err != nil {
+			log.Fatalf("limiter Wait error: %v", err)
+		}
 		_, err = transfer.AsyncTransfer(func(receipt *types.Receipt, err error) {
 			receiveBar.Add(1)
 			if err != nil {

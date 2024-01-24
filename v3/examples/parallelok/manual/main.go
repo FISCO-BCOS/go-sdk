@@ -179,7 +179,7 @@ func main() {
 	var wg2 sync.WaitGroup
 	sendBar := progressbar.Default(int64(*totalTx), "send")
 	receiveBar := progressbar.Default(int64(*totalTx), "receive")
-	limiter := rate.NewLimiter(rate.Limit(*totalTx), *qps)
+	limiter := rate.NewLimiter(rate.Limit(*qps), *qps)
 	for i := 0; i < *totalTx; i++ {
 		from := i % *userCount
 		to := (i + *userCount/2) % *userCount
