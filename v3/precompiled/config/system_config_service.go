@@ -65,7 +65,7 @@ func NewSystemConfigService(client *client.Client) (*SystemConfigService, error)
 func (s *SystemConfigService) SetValueByKey(key string, value string) (int64, error) {
 	_, _, receipt, err := s.systemConfig.SetValueByKey(s.client.GetTransactOpts(), key, value)
 	if err != nil {
-		return types.PrecompiledError, fmt.Errorf("client.WaitMined failed, err: %v", err)
+		return types.PrecompiledError, fmt.Errorf("SetValueByKey failed, err: %v", err)
 	}
 	errorMessage := receipt.GetErrorMessage()
 	if errorMessage != "" {

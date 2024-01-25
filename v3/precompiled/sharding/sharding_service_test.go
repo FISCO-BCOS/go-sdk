@@ -3,17 +3,14 @@ package sharding
 import (
 	"context"
 	"encoding/hex"
+	"math/big"
 	"os"
 	"testing"
-
-	// "fmt"
-	"math/big"
 	"time"
 
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
 	"github.com/FISCO-BCOS/go-sdk/v3/precompiled"
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
-	// "github.com/ethereum/go-ethereum/common"
 )
 
 const (
