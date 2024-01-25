@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,6 @@ import (
 	"github.com/FISCO-BCOS/go-sdk/v3/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -106,17 +106,17 @@ func toCallArg(msg ethereum.CallMsg) interface{} {
 		"to":   strings.ToLower(msg.To.String()[2:]),
 	}
 	if len(msg.Data) > 0 {
-		arg["data"] = hexutil.Bytes(msg.Data).String()
+		arg["data"] = hex.EncodeToString(msg.Data)
 	}
 	if msg.Value != nil {
-		arg["value"] = (*hexutil.Big)(msg.Value).String()
+		arg["value"] = fmt.Sprintf("%#x", msg.Value)
 	}
 
 	if msg.Gas != 0 {
-		arg["gas"] = hexutil.Uint64(msg.Gas)
+		arg["gas"] = fmt.Sprintf("%#x", msg.Gas)
 	}
 	if msg.GasPrice != nil {
-		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)
+		arg["gasPrice"] = fmt.Sprintf("%#x", msg.GasPrice)
 	}
 
 	return arg
@@ -146,11 +146,6 @@ func (c *Client) SetCallOpts(opts *bind.CallOpts) {
 // GetCallOpts return *bind.CallOpts
 func (c *Client) GetCallOpts() *bind.CallOpts {
 	return c.callOpts
-}
-
-// WaitMined is wrapper of bind.WaitMined
-func (c *Client) WaitMined(tx *types.Transaction) (*types.Receipt, error) {
-	return bind.WaitMined(context.Background(), c, tx)
 }
 
 // SMCrypto returns true if use sm crypto
@@ -199,7 +194,7 @@ func (c *Client) PendingCodeAt(ctx context.Context, address common.Address) ([]b
 
 // CallContract invoke the call method of rpc api
 func (c *Client) CallContract(ctx context.Context, msg ethereum.CallMsg) ([]byte, error) {
-	var hexBytes hexutil.Bytes
+	var hexBytes []byte
 	var cr *callResult
 	err := c.conn.CallContext(ctx, &cr, "call", toCallArg(msg))
 	if err != nil {
@@ -386,7 +381,6 @@ func (c *Client) GetBlockNumber(ctx context.Context) (int64, error) {
 }
 
 // GetPBFTView returns the latest PBFT view(hex format) of the specific group and it will returns a wrong sentence
-// if the consensus algorithm is not the PBFT.
 func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
 	var raw interface{}
 	err := c.conn.CallContext(ctx, &raw, "getPbftView")
@@ -395,8 +389,6 @@ func (c *Client) GetPBFTView(ctx context.Context) ([]byte, error) {
 	}
 	js, err := json.MarshalIndent(raw, "", indent)
 	return js, err
-	// TODO
-	// Raft consensus
 }
 
 type ConsensusNodeInfo struct {

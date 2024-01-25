@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -50,14 +49,10 @@ func (c *ContractProxy) PendingCodeAt(ctx context.Context, account common.Addres
 // SendTransaction injects the transaction into the pending pool for execution.
 // todo ios 怎么处理？
 func (c *ContractProxy) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
-	data, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		fmt.Printf("rlp encode tx error!")
-		return nil, err
-	}
+	data := tx.Bytes()
 	msg, err := c.newMessage("sendTransaction", c.groupID, hexutil.Encode(data))
 	if err != nil {
-		fmt.Printf("rlp encode tx error!")
+		fmt.Printf("encode tx error!")
 		return nil, err
 	}
 	respString := c.callback.SendRequest(msg.String())
