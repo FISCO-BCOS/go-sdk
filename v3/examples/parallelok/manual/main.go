@@ -96,6 +96,9 @@ func main() {
 		log.Fatalf("GetBlockNumber error: %v", err)
 	}
 	parsed, err := abi.JSON(strings.NewReader(TransferABI))
+	if client.SMCrypto() {
+		parsed.SetSMCrypto()
+	}
 	if err != nil {
 		log.Fatalf("abi.JSON error: %v", err)
 	}
