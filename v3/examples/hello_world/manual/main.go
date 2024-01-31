@@ -41,6 +41,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("abi.JSON error: %v", err)
 	}
+	if client.SMCrypto() {
+		parsed.SetSMCrypto()
+	}
 	input, err := parsed.Pack("", "hello, world init")
 	if err != nil {
 		log.Fatalf("parsed.Pack error: %v", err)
