@@ -1070,8 +1070,13 @@ func (hc *channelSession) processMessages() {
 		select {
 		case <-hc.closed:
 			// delete old network
-			_ = hc.c.Close()
-			hc.c = nil
+			if hc.c != nil {
+				err := hc.c.Close()
+				if err != nil {
+					logrus.Warnf("close channel failed, err: %v\n", err)
+				}
+				hc.c = nil
+			}
 			// return err for responses and receiptResponses
 			hc.mu.Lock()
 			for _, response := range hc.responses {
