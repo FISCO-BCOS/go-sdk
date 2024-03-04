@@ -3,7 +3,7 @@ set -e
 
 GOPATH_BIN=$(go env GOPATH)/bin
 
-c_sdk_version="v3.5.0"
+c_sdk_version="v3.6.0"
 
 LOG_ERROR() {
     content=${1}
