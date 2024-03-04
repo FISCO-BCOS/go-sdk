@@ -75,8 +75,8 @@ type Config struct {
 ```bash
 git clone https://github.com/FISCO-BCOS/go-sdk.git
 cd go-sdk
-go mod tidy
 cd v3
+go mod tidy
 go build -ldflags="-r /usr/local/lib" -o console ./cmd/console.go
 ./console help
 ```
@@ -144,6 +144,8 @@ bash tools/download_solc.sh -v 0.8.11
 # 下面指令在go-sdk目录下操作，编译生成abigen工具
 cd v3
 go build ./cmd/abigen
+cd ..
+cp v3/abigen .
 ```
 
 执行命令后，检查根目录下是否存在`abigen`，并将准备的智能合约`HelloWorld.sol`放置在一个新的目录下：
@@ -158,6 +160,17 @@ cp .ci/hello/HelloWorld.sol ./hello
 ```bash
 # 国密请使用 ./solc-0.8.11-gm --bin --abi -o ./hello ./hello/HelloWorld.sol
 ./solc-0.8.11 --bin --abi -o ./hello ./hello/HelloWorld.sol
+```
+
+在MacOS下运行`./solc-0.8.11`时如果出现找不到`libz3.dylib`的错误,例如:
+```bash
+dyld[42564]: Library not loaded: /opt/homebrew/opt/z3/lib/libz3.dylib
+  Referenced from: <08BAD135-54EC-3430-A170-26E7B4A5BA96> xxxxxx/.fisco/solc/solc-0.8.11
+  Reason: tried xxxxxx
+```
+可尝试以下命令安装`libz3`
+```bash
+brew installz3
 ```
 
 `HelloWorld.sol`目录下会生成`HelloWorld.bin`和`HelloWorld.abi`。此时利用`abigen`工具将`HelloWorld.bin`和`HelloWorld.abi`转换成`HelloWorld.go`：
@@ -180,107 +193,120 @@ HelloWorld.abi  HelloWorld.bin  HelloWorld.go  HelloWorld.sol
 
 ### 部署智能合约
 
-创建main函数，调用合约，
-
-```bash
-touch hello_main.go
-```
-
 下面的例子先部署合约，在部署过程中设置的`HelloWorld.sol`合约中有一个公开的名为`version`的全局变量，这种公开的成员将自动创建`getter`函数，然后调用`Version()`来获取version的值。
 
 写入智能合约需要我们用私钥来对交易事务进行签名，我们创建的智能合约有一个名为`Set`的方法，它接受`string`类型的参数，然后将其设置为`value`，并且将`version`加1。
 
+新建一个go工程，目录结构如下
+```bash
+hello
+  ｜—— HelloWorld.go
+ca.crt
+go.mod
+go.sum
+hello_main.go
+sdk.crt
+sdk.key
+```
+
+`hello_main.go`代码如下
 ```go
 package main
 
 import (
-    "context"
-    "encoding/hex"
-    "fmt"
-    "log"
+	"context"
+	"encoding/hex"
+	"fmt"
+	"log"
 
-    "github.com/FISCO-BCOS/go-sdk/v3/client"
-    "github.com/FISCO-BCOS/go-sdk/v3/types"
-    "github.com/FISCO-BCOS/go-sdk/hello"
+	"example/go-sdk/hello"
+
+	"github.com/FISCO-BCOS/go-sdk/v3/client"
+	"github.com/FISCO-BCOS/go-sdk/v3/types"
 )
 
 func main() {
-     privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-    config := &client.Config{IsSMCrypto: false, GroupID: "group0",
-        PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
-    client, err := client.DialContext(context.Background(), config)
-    if err != nil {
-        log.Fatal(err)
-    }
-    input := "HelloWorld deployment 1.0"
-    fmt.Println("=================DeployHelloWorld===============")
-    address, receipt, instance, err := hello.DeployHelloWorld(client.GetTransactOpts(), client, input)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
-    fmt.Println("transaction hash: ", receipt.TransactionHash)
+	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+	client, err := client.DialContext(context.Background(), config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	input := "HelloWorld deployment 1.0"
+	fmt.Println("=================DeployHelloWorld===============")
+	address, receipt, instance, err := hello.DeployHelloWorld(client.GetTransactOpts(), client, input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("contract address: ", address.Hex()) // the address should be saved, will use in next example
+	fmt.Println("transaction hash: ", receipt.TransactionHash)
 
-    // load the contract
-    // contractAddress := common.HexToAddress("contract address in hex String")
-    // instance, err := hello.NewStore(contractAddress, client)
-    // if err != nil {
-    //     log.Fatal(err)
-    // }
+	// load the contract
+	// contractAddress := common.HexToAddress("contract address in hex String")
+	// instance, err := hello.NewHelloWorld(contractAddress, client)
+	// if err != nil {
+	//     log.Fatal(err)
+	// }
 
-    fmt.Println("================================")
-    helloSession := &hello.HelloWorldSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
+	fmt.Println("================================")
+	helloSession := &hello.HelloWorldSession{Contract: instance, CallOpts: *client.GetCallOpts(), TransactOpts: *client.GetTransactOpts()}
 
-    version, err := helloSession.Version()
-    if err != nil {
-        log.Fatal(err)
-    }
+	version, err := helloSession.Version()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    fmt.Println("version :", version) // "HelloWorld deployment 1.0"
+	fmt.Println("version :", version) // "HelloWorld deployment 1.0"
 
-    ret, err := helloSession.Get()
-    if err != nil {
-        fmt.Printf("hello.Get() failed: %v", err)
-        return
-    }
-    done := make(chan bool)
-    currentBlock, err := client.GetBlockNumber(context.Background())
-    if err != nil {
-        fmt.Printf("GetBlockNumber() failed: %v", err)
-        return
-    }
-    _, err = helloSession.WatchAllSetValue(&currentBlock, func(ret int, logs []types.Log) {
-        fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
-        setValue, err := helloSession.ParseSetValue(logs[0])
-        if err != nil {
-            fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-            panic("WatchAllSetValue hello.WatchAllSetValue() failed")
-        }
-        fmt.Printf("receive setValue: %+v\n", *setValue)
-        done <- true
-    })
-    if err != nil {
-        fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
-        return
-    }
-    fmt.Printf("Get: %s\n", ret)
-    fmt.Println("================================")
+	ret, err := helloSession.Get()
+	if err != nil {
+		fmt.Printf("hello.Get() failed: %v", err)
+		return
+	}
+	done := make(chan bool)
+	currentBlock, err := client.GetBlockNumber(context.Background())
+	if err != nil {
+		fmt.Printf("GetBlockNumber() failed: %v", err)
+		return
+	}
+	_, err = helloSession.WatchAllSetValue(&currentBlock, func(ret int, logs []types.Log) {
+		fmt.Printf("WatchAllSetValue receive statud: %d, logs: %v\n", ret, logs)
+		setValue, err := helloSession.ParseSetValue(logs[0])
+		if err != nil {
+			fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+			panic("WatchAllSetValue hello.WatchAllSetValue() failed")
+		}
+		fmt.Printf("receive setValue: %+v\n", *setValue)
+		done <- true
+	})
+	if err != nil {
+		fmt.Printf("hello.WatchAllSetValue() failed: %v", err)
+		return
+	}
+	fmt.Printf("Get: %s\n", ret)
+	fmt.Println("================================")
 
-    oldValue, _, receipt, err := helloSession.Set("hello fisco")
-    fmt.Println("old value is: ", oldValue)
-    if err != nil {
-        log.Fatal(err)
-    }
+	oldValue, _, receipt, err := helloSession.Set("hello fisco")
+	fmt.Println("old value is: ", oldValue)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
+	fmt.Printf("transaction hash of receipt: %s\n", receipt.GetTransactionHash())
 
-    ret, err = helloSession.Get()
-    if err != nil {
-        fmt.Printf("hello.Get() failed: %v", err)
-        return
-    }
-    fmt.Printf("Get: %s\n", ret)
-    <-done
+	ret, err = helloSession.Get()
+	if err != nil {
+		fmt.Printf("hello.Get() failed: %v", err)
+		return
+	}
+	fmt.Printf("Get: %s\n", ret)
+	<-done
 }
 
+```
+
+在项目目录下运行`hello_world.go`
+```bash
+go run -ldflags="-r /usr/local/lib" main.go
 ```
