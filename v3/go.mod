@@ -5,12 +5,11 @@ go 1.21.5
 // replace github.com/FISCO-BCOS/bcos-c-sdk => ../../bcos-c-sdk
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240219081048-53240138c396
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240305024607-895d57002774
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/TarsCloud/TarsGo v1.4.5
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/ethereum/go-ethereum v1.13.10
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/schollz/progressbar/v3 v3.14.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.5.0
@@ -81,6 +80,7 @@ require (
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.12.0 // indirect
