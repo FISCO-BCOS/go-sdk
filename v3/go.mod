@@ -5,7 +5,7 @@ go 1.21.5
 // replace github.com/FISCO-BCOS/bcos-c-sdk => ../../bcos-c-sdk
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240305024607-895d57002774
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240312060251-eb8cfc6bfffc
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/TarsCloud/TarsGo v1.4.5
 	github.com/deckarep/golang-set/v2 v2.6.0
