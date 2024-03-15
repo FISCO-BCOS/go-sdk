@@ -26,33 +26,41 @@ type Receipt struct {
 }
 
 const (
-	Success = iota
-	Unknown
-	BadRLP
-	InvalidFormat
-	OutOfGasIntrinsic
-	InvalidSignature
-	InvalidNonce
-	NotEnoughCash
-	OutOfGasBase
-	BlockGasLimitReached
-	BadInstruction
-	BadJumpDestination
-	OutOfGas
-	OutOfStack
-	StackUnderflow
-	NonceCheckFail
-	BlockLimitCheckFail
-	FilterCheckFail
-	NoDeployPermission
-	NoCallPermission
-	NoTxPermission
-	PrecompiledError
-	RevertInstruction
-	InvalidZeroSignatureFormat
-	AddressAlreadyUsed
-	PermissionDenied
-	CallAddressError
+	Success                    = iota
+	Unknown                    = 1
+	OutOfGasLimit              = 2 ///< Too little gas to pay for the base transaction cost.
+	NotEnoughCash              = 7
+	BadInstruction             = 10
+	BadJumpDestination         = 11
+	OutOfGas                   = 12 ///< Ran out of gas executing code of the transaction.
+	OutOfStack                 = 13 ///< Ran out of stack executing code of the transaction.
+	StackUnderflow             = 14
+	PrecompiledError           = 15
+	RevertInstruction          = 16
+	ContractAddressAlreadyUsed = 17
+	PermissionDenied           = 18
+	CallAddressError           = 19
+	GasOverflow                = 20
+	ContractFrozen             = 21
+	AccountFrozen              = 22
+	AccountAbolished           = 23
+	ContractAbolished          = 24
+	WASMValidationFailure      = 32
+	WASMArgumentOutOfRange     = 33
+	WASMUnreachableInstruction = 34
+	WASMTrap                   = 35
+	NonceCheckFail             = 10000 /// txPool related errors
+	BlockLimitCheckFail        = 10001
+	TxPoolIsFull               = 10002
+	Malformed                  = 10003
+	AlreadyInTxPool            = 10004
+	TxAlreadyInChain           = 10005
+	InvalidChainId             = 10006
+	InvalidGroupId             = 10007
+	InvalidSignature           = 10008
+	RequestNotBelongToTheGroup = 10009
+	TransactionPoolTimeout     = 10010
+	AlreadyInTxPoolAndAccept   = 10011
 )
 
 // GetStatusMessage returns the status message
@@ -63,22 +71,8 @@ func getStatusMessage(status int) string {
 		message = "success"
 	case Unknown:
 		message = "unknown"
-	case BadRLP:
-		message = "bad RLP"
-	case InvalidFormat:
-		message = "invalid format"
-	case OutOfGasIntrinsic:
-		message = "out of gas intrinsic"
-	case InvalidSignature:
-		message = "invalid signature"
-	case InvalidNonce:
-		message = "invalid nonce"
 	case NotEnoughCash:
 		message = "not enough cash"
-	case OutOfGasBase:
-		message = "out of gas base"
-	case BlockGasLimitReached:
-		message = "block gas limit reached"
 	case BadInstruction:
 		message = "bad instruction"
 	case BadJumpDestination:
@@ -89,30 +83,58 @@ func getStatusMessage(status int) string {
 		message = "out of stack"
 	case StackUnderflow:
 		message = "stack underflow"
-	case NonceCheckFail:
-		message = "nonce check fail"
-	case BlockLimitCheckFail:
-		message = "block limit check fail"
-	case FilterCheckFail:
-		message = "filter check fail"
-	case NoDeployPermission:
-		message = "no deploy permission"
-	case NoCallPermission:
-		message = "no call permission"
-	case NoTxPermission:
-		message = "no tx permission"
 	case PrecompiledError:
 		message = "precompiled error"
 	case RevertInstruction:
 		message = "revert instruction"
-	case InvalidZeroSignatureFormat:
-		message = "invalid zero signature format"
-	case AddressAlreadyUsed:
-		message = "address already used"
+	case ContractAddressAlreadyUsed:
+		message = "contract address already used"
 	case PermissionDenied:
 		message = "permission denied"
 	case CallAddressError:
 		message = "call address error"
+	case GasOverflow:
+		message = "gas overflow"
+	case ContractFrozen:
+		message = "contract frozen"
+	case AccountFrozen:
+		message = "account frozen"
+	case AccountAbolished:
+		message = "account abolished"
+	case ContractAbolished:
+		message = "contract abolished"
+	case WASMValidationFailure:
+		message = "WASM validation failure"
+	case WASMArgumentOutOfRange:
+		message = "WASM argument out of range"
+	case WASMUnreachableInstruction:
+		message = "WASM unreachable instruction"
+	case WASMTrap:
+		message = "WASM trap"
+	case NonceCheckFail:
+		message = "nonce check fail"
+	case BlockLimitCheckFail:
+		message = "block limit check fail"
+	case TxPoolIsFull:
+		message = "tx pool is full"
+	case Malformed:
+		message = "malformed"
+	case AlreadyInTxPool:
+		message = "already in tx pool"
+	case TxAlreadyInChain:
+		message = "tx already in chain"
+	case InvalidChainId:
+		message = "invalid chain id"
+	case InvalidGroupId:
+		message = "invalid group id"
+	case InvalidSignature:
+		message = "invalid signature"
+	case RequestNotBelongToTheGroup:
+		message = "request not belong to the group"
+	case TransactionPoolTimeout:
+		message = "transaction pool timeout"
+	case AlreadyInTxPoolAndAccept:
+		message = "already in tx pool and accept"
 	default:
 		message = strconv.Itoa(status)
 	}
