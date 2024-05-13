@@ -46,6 +46,9 @@ jobs:
       - name: test all
         if: ${{ runner.os == 'Linux' }}
         run: bash -x .ci/integration_test.sh -a
+      - name: install deps
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install zlib z3
       - name: test without amop
         if: ${{ runner.os == 'macOS' }}
         run: bash .ci/integration_test.sh
