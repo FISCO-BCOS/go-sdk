@@ -307,13 +307,19 @@ get_csdk_lib()
     if [ ! -d "/usr/local/lib/" ];then
         sudo mkdir -p /usr/local/lib
     fi
+    local platform_arch=$(uname -p)
+
     local suffix="so"
     if [ ! -z "${macOS}" ];then # macOS
         suffix="dylib"
     fi
-    if [ ! -f "/usr/local/lib/libbcos-c-sdk.${suffix}" ];then
-        curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/${c_sdk_version}/libbcos-c-sdk.${suffix}"
-        sudo cp "libbcos-c-sdk.${suffix}" /usr/local/lib/
+    local c_sdk_lib_name="libbcos-c-sdk.${suffix}"
+    if [ "${platform_arch}" == "arm" ];then
+        c_sdk_lib_name="libbcos-c-sdk-aarch64.${suffix}"
+    fi
+    if [ ! -f "/usr/local/lib/${c_sdk_lib_name}" ];then
+        curl -#LO "https://github.com/FISCO-BCOS/bcos-c-sdk/releases/download/${c_sdk_version}/${c_sdk_lib_name}"
+        sudo cp "${c_sdk_lib_name}" /usr/local/lib/
     fi
 }
 
