@@ -2,7 +2,8 @@
 
 set -e
 
-c_sdk_version="v3.5.0"
+c_sdk_version="v3.7.0"
+chain_version="v3.7.1"
 start_time=15
 macOS=
 ldflags="-ldflags=\"-r /usr/local/lib/\""
@@ -296,7 +297,7 @@ get_build_chain()
     # else
     #     latest_version="${latest_release}"
     # fi
-    latest_version="${c_sdk_version}"
+    latest_version="${chain_version}"
     echo "download build_chain.sh from https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
     curl -#LO "https://github.com/FISCO-BCOS/FISCO-BCOS/releases/download/${latest_version}/build_chain.sh"
     chmod u+x build_chain.sh

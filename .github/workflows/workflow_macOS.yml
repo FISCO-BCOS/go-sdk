@@ -1,4 +1,4 @@
-name: FISCO-BCOS Go-SDK GitHub Actions
+name: FISCO-BCOS Go-SDK GitHub Actions macOS
 on:
   push:
     # branches-ignore:
@@ -17,10 +17,9 @@ on:
 jobs:
   build:
     name: build
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     strategy:
       matrix:
-        os: [ubuntu-latest]
         go: ["1.21", "1.22"]
     steps:
       - uses: actions/checkout@v2
