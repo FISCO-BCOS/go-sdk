@@ -189,7 +189,13 @@ func (c *BoundContract) TransactWithResult(opts *TransactOpts, result interface{
 		return nil, nil, err
 	}
 	tx, receipt, err := c.transact(opts, &c.address, input, "")
-	c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
+	if err != nil {
+		return tx, receipt, err
+	}
+	err = c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
+	if err != nil {
+		return tx, receipt, err
+	}
 	return tx, receipt, err
 }
 
