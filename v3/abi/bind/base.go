@@ -192,6 +192,9 @@ func (c *BoundContract) TransactWithResult(opts *TransactOpts, result interface{
 	if err != nil {
 		return tx, receipt, err
 	}
+	if receipt.Status != types.Success {
+		return tx, receipt, fmt.Errorf("transact failed, receipt status: %d, message: %s", receipt.Status, receipt.GetErrorMessage())
+	}
 	err = c.abi.Unpack(result, method, common.FromHex(receipt.GetOutput()))
 	if err != nil {
 		return tx, receipt, err

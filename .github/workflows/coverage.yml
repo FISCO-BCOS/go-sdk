@@ -22,8 +22,10 @@ jobs:
       - name: generate code coverage report
         run: bash .ci/generate_coverage.sh
       - name: upload code coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           file: ./v3/coverage.txt
           name: go-sdk code coverage
           fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

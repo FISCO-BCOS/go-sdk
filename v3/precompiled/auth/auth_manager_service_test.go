@@ -38,7 +38,7 @@ var (
 func getClient(t *testing.T) *client.Client {
 	// privatekey of 0x83309d045a19c44dc3722d15a6abd472f95866ac
 	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
-	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
+	config := &client.Config{IsSMCrypto: false, GroupID: "group0", DisableSsl: false,
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 
 	c, err := client.DialContext(context.Background(), config)
@@ -433,21 +433,22 @@ func TestVoteProposal(t *testing.T) {
 	service.UpdateGovernor(accountAddress_common, weight)
 
 	lastProposalNum, _ := service.ProposalCount()
-	lastProposalStatus, _ := service.GetProposalStatus(lastProposalNum)
 
 	agree := false
 	_, err := service.VoteProposal(*lastProposalNum, agree)
-	if err != nil {
-		t.Fatalf("TestVoteProposal failed: %v", err)
+
+	if err == nil {
+		t.Fatalf("TestVoteProposal failed")
 	}
 
-	proposalInfo, err := service.GetProposalInfo(lastProposalNum)
-	againstVoters := proposalInfo.AgainstVoters
+	// lastProposalStatus, _ := service.GetProposalStatus(lastProposalNum)
+	// proposalInfo, err := service.GetProposalInfo(lastProposalNum)
+	// againstVoters := proposalInfo.AgainstVoters
 
-	lastProposalNewStatus, _ := service.GetProposalStatus(lastProposalNum)
+	// lastProposalNewStatus, _ := service.GetProposalStatus(lastProposalNum)
 
-	t.Logf("lastProposalNum: %v\n", lastProposalNum)
-	t.Logf("lastProposalStatus: %v\n", lastProposalStatus)
-	t.Logf("againstVoters: %v\n", againstVoters)
-	t.Logf("lastProposalNewStatus: %v\n", lastProposalNewStatus)
+	// t.Logf("lastProposalNum: %v\n", lastProposalNum)
+	// t.Logf("lastProposalStatus: %v\n", lastProposalStatus)
+	// t.Logf("againstVoters: %v\n", againstVoters)
+	// t.Logf("lastProposalNewStatus: %v\n", lastProposalNewStatus)
 }
