@@ -26,8 +26,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/FISCO-BCOS/go-sdk/abi"
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
+	"github.com/victor7780/go-sdk/abi"
+	"github.com/victor7780/go-sdk/abi/bind"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/ethereum/go-ethereum/crypto"

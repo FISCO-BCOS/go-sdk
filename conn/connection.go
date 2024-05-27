@@ -28,7 +28,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/victor7780/go-sdk/core/types"
 )
 
 var (
@@ -148,9 +148,9 @@ func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, 
 // not affect subsequent interactions with the client.
 func DialContextHTTP(rawurl string) (*Connection, error) {
 	rawurl = strings.ToLower(rawurl)
-	if !strings.Contains(rawurl, "http://") {
-		rawurl = "http://" + rawurl
-	}
+	//if !strings.Contains(rawurl, "http://") {
+	//	rawurl = "http://" + rawurl
+	//}
 	return DialHTTP(rawurl)
 }
 

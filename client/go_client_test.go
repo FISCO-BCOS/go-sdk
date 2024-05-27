@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/FISCO-BCOS/go-sdk/abi"
-	"github.com/FISCO-BCOS/go-sdk/abi/bind"
-	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/victor7780/go-sdk/abi"
+	"github.com/victor7780/go-sdk/abi/bind"
+	"github.com/victor7780/go-sdk/conf"
 	"github.com/ethereum/go-ethereum/common"
 )
 

@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/FISCO-BCOS/go-sdk/client"
-	"github.com/FISCO-BCOS/go-sdk/conf"
+	"github.com/victor7780/go-sdk/client"
+	"github.com/victor7780/go-sdk/conf"
 	"github.com/spf13/cobra"
 )
 

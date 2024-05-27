@@ -1,4 +1,4 @@
-module github.com/FISCO-BCOS/go-sdk
+module github.com/victor7780/go-sdk
 
 go 1.18
 
