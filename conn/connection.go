@@ -148,9 +148,9 @@ func (op *requestOp) wait(ctx context.Context, c *Connection) (*jsonrpcMessage, 
 // not affect subsequent interactions with the client.
 func DialContextHTTP(rawurl string) (*Connection, error) {
 	rawurl = strings.ToLower(rawurl)
-	if !strings.Contains(rawurl, "http://") {
-		rawurl = "http://" + rawurl
-	}
+	//if !strings.Contains(rawurl, "http://") {
+	//	rawurl = "http://" + rawurl
+	//}
 	return DialHTTP(rawurl)
 }
 
