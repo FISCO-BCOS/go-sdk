@@ -28,7 +28,7 @@ import (
 
 	"github.com/FISCO-BCOS/crypto/tls"
 	"github.com/FISCO-BCOS/crypto/x509"
-	"github.com/FISCO-BCOS/go-sdk/core/types"
+	"github.com/victor7780/go-sdk/core/types"
 )
 
 var (
