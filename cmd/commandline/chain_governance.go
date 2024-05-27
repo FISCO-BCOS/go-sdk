@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/FISCO-BCOS/go-sdk/precompiled/chaingovernance"
+	"github.com/victor7780/go-sdk/precompiled/chaingovernance"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )
