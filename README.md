@@ -70,6 +70,7 @@ type Config struct {
     ```
 
 1. ~~go-sdk需要使用cgo，需要设置环境变量`export GODEBUG=cgocheck=0`~~。
+1. 开启CGO支持`go env -w CGO_ENABLED=1`。
 1. 最后，编译控制台程序:
 
 ```bash

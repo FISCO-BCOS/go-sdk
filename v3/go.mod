@@ -5,7 +5,7 @@ go 1.21.5
 // replace github.com/FISCO-BCOS/bcos-c-sdk => ../../bcos-c-sdk
 
 require (
-	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240312060251-eb8cfc6bfffc
+	github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240726021820-a278b4749e34
 	github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1
 	github.com/TarsCloud/TarsGo v1.4.5
 	github.com/deckarep/golang-set/v2 v2.6.0
@@ -44,7 +44,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
-	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
+	github.com/fjl/memsize v0.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/gballet/go-verkle v0.1.1-0.20231031103413-a67434b50f46 // indirect
