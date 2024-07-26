@@ -3,7 +3,7 @@
 set -e
 
 c_sdk_version="v3.7.0"
-chain_version="v3.7.1"
+chain_version="v3.7.3"
 start_time=15
 macOS=
 ldflags="-ldflags=\"-r /usr/local/lib/\""
