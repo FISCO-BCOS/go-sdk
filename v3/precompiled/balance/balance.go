@@ -274,8 +274,7 @@ func (_BalancePrecompiled *BalancePrecompiledCallerSession) ListCaller() ([]comm
 // Solidity: function addBalance(address account, uint256 amount) returns()
 func (_BalancePrecompiled *BalancePrecompiledTransactor) AddBalance(opts *bind.TransactOpts, account common.Address, amount *big.Int) (*types.Transaction, *types.Receipt, error) {
 	var ()
-	out := &[]interface{}{}
-	transaction, receipt, err := _BalancePrecompiled.contract.TransactWithResult(opts, out, "addBalance", account, amount)
+	transaction, receipt, err := _BalancePrecompiled.contract.Transact(opts, "addBalance", account, amount)
 	return transaction, receipt, err
 }
 
@@ -346,8 +345,7 @@ func (_BalancePrecompiled *BalancePrecompiledTransactorSession) AsyncRegisterCal
 // Solidity: function subBalance(address account, uint256 amount) returns()
 func (_BalancePrecompiled *BalancePrecompiledTransactor) SubBalance(opts *bind.TransactOpts, account common.Address, amount *big.Int) (*types.Transaction, *types.Receipt, error) {
 	var ()
-	out := &[]interface{}{}
-	transaction, receipt, err := _BalancePrecompiled.contract.TransactWithResult(opts, out, "subBalance", account, amount)
+	transaction, receipt, err := _BalancePrecompiled.contract.Transact(opts, "subBalance", account, amount)
 	return transaction, receipt, err
 }
 
@@ -382,8 +380,7 @@ func (_BalancePrecompiled *BalancePrecompiledTransactorSession) AsyncSubBalance(
 // Solidity: function transfer(address from, address to, uint256 amount) returns()
 func (_BalancePrecompiled *BalancePrecompiledTransactor) Transfer(opts *bind.TransactOpts, from common.Address, to common.Address, amount *big.Int) (*types.Transaction, *types.Receipt, error) {
 	var ()
-	out := &[]interface{}{}
-	transaction, receipt, err := _BalancePrecompiled.contract.TransactWithResult(opts, out, "transfer", from, to, amount)
+	transaction, receipt, err := _BalancePrecompiled.contract.Transact(opts, "transfer", from, to, amount)
 	return transaction, receipt, err
 }
 

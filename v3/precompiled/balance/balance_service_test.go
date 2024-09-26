@@ -2,7 +2,7 @@ package balanceprecompiled
 
 import (
 	"context"
-	"encoding/hex"
+	"fmt"
 	"github.com/FISCO-BCOS/go-sdk/v3/client"
 	"math/big"
 	"os"
@@ -10,9 +10,12 @@ import (
 )
 
 func getClient(t *testing.T) *client.Client {
-	privateKey, _ := hex.DecodeString("b89d42f12290070f235fb8fb61dcf96e3b11516c5d4f6333f26e49bb955f8b62")
+	keyBytes, _, err := client.LoadECPrivateKeyFromPEM("./0x0d5535bc7f3707053e653c8d525983182fa9b4e6.pem")
+	if err != nil {
+		fmt.Printf("LoadECPrivateKeyFromPEM failed: %+v", err)
+	}
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
-		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20200, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
+		PrivateKey: keyBytes, Host: "127.0.0.1", Port: 20222, TLSCaFile: "./ca.crt", TLSKeyFile: "./sdk.key", TLSCertFile: "./sdk.crt"}
 	c, err := client.DialContext(context.Background(), config)
 	if err != nil {
 		t.Fatalf("Dial to %s:%d failed of %v", config.Host, config.Port, err)
@@ -41,25 +44,27 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetBalance(t *testing.T) {
-	address := "0xc92ad282ba7868b032341a3921b3635b0c45de74"
+	address := "0xc92ad282ba7868b032341a3921b3635b0c45de75"
 	balance, err := service.GetBalance(address)
 	if err != nil {
 		t.Fatalf("get balance failed: %+v", err)
 	}
-	if balance.Cmp(big.NewInt(0)) == 0 {
-		t.Fatalf("0xc92ad282ba7868b032341a3921b3635b0c45de74 balance is 0")
+	t.Logf("TestGetBalance success %+v", balance)
+	if balance.Cmp(big.NewInt(0)) != 0 {
+		t.Fatalf("getBalance failed, balance is not equal to 0")
 	}
-	t.Logf("TestGetBalance failed: %+v", balance)
+	t.Logf("TestGetBalance success %+v", balance)
 }
 
 func TestBalance(t *testing.T) {
-	account := "0xc92ad282ba7868b032341a3921b3635b0c45de74"
+	account := "0xc92ad282ba7868b032341a3921b3635b0c45de77"
 	value := big.NewInt(100)
 	_, err := service.addBalance(account, value)
 	if err != nil {
 		t.Fatalf("add balance failed: %+v", err)
 	}
 	balance, err := service.GetBalance(account)
+	fmt.Println(balance)
 	if err != nil {
 		t.Fatalf("get balance failed: %+v", err)
 	}
@@ -76,11 +81,12 @@ func TestBalance(t *testing.T) {
 	}
 
 	// check balance
-	balance, err = service.GetBalance(account)
+	balance1, err := service.GetBalance(account)
+	fmt.Println(balance1)
 	if err != nil {
 		t.Fatalf("get balance failed: %+v", err)
 	}
-	if balance.Cmp(value1) != 0 {
+	if balance1.Cmp(value1) != 0 {
 		t.Fatalf("sub balance failed, balance is not equal to %+v", value1)
 	}
 
@@ -88,8 +94,8 @@ func TestBalance(t *testing.T) {
 }
 
 func TestTransferBalance(t *testing.T) {
-	from := "0xc92ad282ba7868b032341a3921b3635b0c45de74"
-	to := "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23"
+	from := "0xc92ad282ba7868b032341a3921b3635b0c45de84"
+	to := "0x2c7536e3605d9c16a7a3d7b1898e529396a65c45"
 	value := big.NewInt(10)
 	// addBalance to from
 	_, err := service.addBalance(from, big.NewInt(50))
