@@ -328,7 +328,7 @@ precompiled_test(){
     # TODO: consensus test use getSealer first
     # TODO: cns
     # TODO: permission
-    precompileds=(balance config crud auth config)
+    precompileds=(config crud auth config)
     sleep 10
     for pkg in ${precompileds[*]}; do
         cp -R nodes/127.0.0.1/sdk/* "./precompiled/${pkg}"
