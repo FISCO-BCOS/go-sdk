@@ -347,8 +347,8 @@ type Transaction struct {
 }
 
 // NewTransaction returns a new transaction
-func NewTransaction(to common.Address, amount *big.Int, gasLimit int64, gasPrice *big.Int, blockLimit int64, data []byte, nonce, chainId, groupId, extraData string, smcrypto bool) *Transaction {
-	return newTransaction(&to, amount, gasLimit, gasPrice, blockLimit, data, nonce, chainId, groupId, extraData, smcrypto)
+func NewTransaction(to *common.Address, amount *big.Int, gasLimit int64, gasPrice *big.Int, blockLimit int64, data []byte, nonce, chainId, groupId, extraData string, smcrypto bool) *Transaction {
+	return newTransaction(to, amount, gasLimit, gasPrice, blockLimit, data, nonce, chainId, groupId, extraData, smcrypto)
 }
 
 // NewSimpleTx creates a contract transaction, if nonce is empty string, the nonce will be auto generated
@@ -519,14 +519,14 @@ func (tx *Transaction) keccak256Hash() (h common.Hash) {
 // WithSignature returns a new transaction with the given signature.
 // This signature needs to be in the [R || S || V] format where V is 0 or 1.
 func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
+	tx.Signature = make([]byte, len(sig))
 	r, s, v, err := signer.SignatureValues(tx, sig)
 	if err != nil {
 		return nil, err
 	}
-	cpy := &Transaction{Data: tx.Data}
-	cpy.R, cpy.S, cpy.V = r, s, v
-	cpy.SMCrypto = tx.SMCrypto
-	return cpy, nil
+	copy(tx.Signature, sig)
+	tx.R, tx.S, tx.V = r, s, v
+	return tx, nil
 }
 
 // WithSM2Signature returns a new transaction with the given signature.
@@ -538,10 +538,9 @@ func (tx *Transaction) WithSM2Signature(signer Signer, sig []byte) (*Transaction
 	r := new(big.Int).SetBytes(sig[:32])
 	s := new(big.Int).SetBytes(sig[32:64])
 	v := new(big.Int).SetBytes(sig[64:])
-	cpy := &Transaction{Data: tx.Data}
-	cpy.R, cpy.S, cpy.V = r, s, v
-	cpy.SMCrypto = tx.SMCrypto
-	return cpy, nil
+	copy(tx.Signature, sig)
+	tx.R, tx.S, tx.V = r, s, v
+	return tx, nil
 }
 
 // Cost returns amount + gasprice * gaslimit.
@@ -815,7 +814,7 @@ func (st *Transaction) WriteTo(buf *codec.Buffer) (err error) {
 		}
 	}
 
-	if len(st.Sender) > 0 {
+	if st.Sender != nil {
 		err = buf.WriteHead(codec.SimpleList, 7)
 		if err != nil {
 			return err
