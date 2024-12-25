@@ -10,12 +10,14 @@ require (
 	github.com/TarsCloud/TarsGo v1.4.5
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/ethereum/go-ethereum v1.13.10
+	github.com/google/uuid v1.6.0
 	github.com/schollz/progressbar/v3 v3.14.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/crypto v0.18.0
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 	golang.org/x/time v0.3.0
 )
 
@@ -54,7 +56,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/graph-gophers/graphql-go v1.3.0 // indirect
 	github.com/hashicorp/go-bexpr v0.1.10 // indirect
@@ -99,7 +100,6 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
